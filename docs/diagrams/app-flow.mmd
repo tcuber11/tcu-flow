@@ -1,0 +1,26 @@
+flowchart TD
+    A["Launch TCuFlow on Mac"] --> B{"Required permissions available?"}
+    B -- No --> C["Explain permissions and guide user"]
+    C --> B
+    B -- Yes --> D["Discover Windows Agent"]
+    D --> E{"Device found?"}
+    E -- No --> F["Manual IP / network troubleshooting"]
+    F --> D
+    E -- Yes --> G["Select device and request pairing"]
+    G --> H{"Windows user approves?"}
+    H -- No --> I["Pairing rejected; return to device list"]
+    H -- Yes --> J["Authenticate peer and save trust"]
+    J --> K["Connect and negotiate capabilities"]
+    K --> L["Configure display arrangement"]
+    L --> M["Dashboard: Connected"]
+    M --> N{"User enables keyboard/mouse sharing?"}
+    N -- No --> M
+    N -- Yes --> O["Move pointer to configured edge"]
+    O --> P["Remote control active on Windows"]
+    P --> Q{"Return edge / emergency / disconnect?"}
+    Q -- Return edge --> R["Restore Mac control"]
+    Q -- Emergency --> R
+    Q -- Disconnect --> S["Stop forwarding and release remote states"]
+    S --> T["Local control restored; show connection state"]
+    R --> M
+    T --> M

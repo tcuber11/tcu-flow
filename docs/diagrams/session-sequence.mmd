@@ -1,0 +1,27 @@
+sequenceDiagram
+    participant U as User
+    participant M as macOS Controller
+    participant N as LAN / TLS
+    participant W as Windows Agent
+
+    U->>M: Select discovered Windows device
+    M->>W: Pair request (authenticated transport bootstrap)
+    W->>U: Show pairing approval on Windows
+    U->>W: Approve
+    W-->>M: Pair confirmation / peer identity
+    M->>W: Verify identity and establish trusted session
+    W-->>M: Session ready + capabilities
+    M-->>U: Connected status
+
+    U->>M: Move pointer to configured edge
+    M->>M: Change active input target
+    M->>N: Input events (validated, sequenced)
+    N->>W: Forward input events
+    W->>W: Validate session and inject supported input
+    W-->>M: Input acknowledgement / status
+
+    U->>M: Emergency shortcut or connection loss
+    M->>M: Stop forwarding; restore local input
+    M->>N: End session / release-all if possible
+    N->>W: Session end
+    M-->>U: Local control restored

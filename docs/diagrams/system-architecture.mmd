@@ -1,0 +1,48 @@
+flowchart TB
+    subgraph MAC["macOS — TCuFlow Controller"]
+        UI["SwiftUI App / Menu Bar"]
+        PERM["Permission Coordinator"]
+        DISC_M["Discovery + Pairing"]
+        SESSION_M["Session Manager"]
+        INPUT_M["Input Capture + Boundary Router"]
+        CLIP_M["Clipboard Service"]
+        FILE_M["File Transfer Sender"]
+        DB_M[("SQLite")]
+        KEY_M[("macOS Keychain")]
+        UI --> PERM
+        UI --> DISC_M
+        UI --> SESSION_M
+        SESSION_M --> INPUT_M
+        SESSION_M --> CLIP_M
+        SESSION_M --> FILE_M
+        UI --> DB_M
+        SESSION_M --> KEY_M
+    end
+
+    subgraph LAN["Trusted Local Network"]
+        TLS["Authenticated TLS 1.3 Connection"]
+        DISC["mDNS / Bonjour Discovery"]
+    end
+
+    subgraph WIN["Windows — TCuFlow Agent"]
+        AGENT["Agent Tray / UI"]
+        DISC_W["Discovery + Pairing"]
+        SESSION_W["Session Server"]
+        INJECT["Validated Input Injector"]
+        CLIP_W["Clipboard Service"]
+        FILE_W["File Receiver"]
+        DB_W[("SQLite")]
+        KEY_W[("DPAPI / Credential Manager")]
+        AGENT --> DISC_W
+        AGENT --> SESSION_W
+        SESSION_W --> INJECT
+        SESSION_W --> CLIP_W
+        SESSION_W --> FILE_W
+        AGENT --> DB_W
+        SESSION_W --> KEY_W
+    end
+
+    DISC_M <--> DISC
+    DISC_W <--> DISC
+    SESSION_M <--> TLS
+    TLS <--> SESSION_W
