@@ -22,7 +22,7 @@ Version 1.0 proposed a dark-first purple/blue look. The owner replaced it with a
 - White window and panels in light mode; graphite in dark mode; System / Light / Dark switch in the header.
 - System font (SF Pro / Segoe UI Variable), one accent (system blue by default, replaced by the user's edge-glow colour).
 - Hairline-bordered grouped panels, no decorative shadows or blur.
-- LOKA's "Oka" mascot is replaced by device avatars: a disc tinted per device with a laptop or phone glyph.
+- LOKA's "Oka" mascot is replaced by **Flo**, TCuFlow's own drop-with-a-pointer-tip character (empty state, About, updates, app icon); device rows use tinted avatar discs with a laptop or phone glyph.
 - The security code is shown as six digit boxes, only while a pairing is in progress.
 
 ## 4. Design principles

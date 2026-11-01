@@ -149,6 +149,20 @@ p { text-wrap: pretty; }
   0%, 100% { opacity: 0.45; }
   50% { opacity: 1; }
 }
+/* mascot: an occasional blink, eyes darting while waiting, a bob while searching */
+@keyframes blink {
+  0%, 94%, 100% { transform: scaleY(1); }
+  97% { transform: scaleY(0.1); }
+}
+@keyframes glance {
+  0%, 30% { transform: translateX(-3px); }
+  50%, 80% { transform: translateX(3px); }
+  100% { transform: translateX(-3px); }
+}
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5%); }
+}
 @keyframes ripple {
   from { transform: scale(0.9); opacity: 0.5; }
   to { transform: scale(1.9); opacity: 0; }

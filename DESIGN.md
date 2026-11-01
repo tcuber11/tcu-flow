@@ -130,6 +130,7 @@ Panels 16px, device rows and code boxes 12px, buttons and inputs 8px, status pil
 - **Code boxes:** six bordered boxes, one digit each, shown while a pairing is in progress (outgoing in the Discovery panel, incoming in the request row). The code is never shown when no pairing exists.
 - **Device row:** avatar disc 52px, name, `OS · address` meta, status pill top right, actions below. Selection is an accent border plus a 3px accent halo.
 - **Appearance switch:** three-segment control (display, sun, moon icons) with a raised white segment for the current choice.
+- **Mascot (Flo):** `src/Mascot.tsx`, a chubby drop with a pointer tip and a small trailing wave; accent-coloured, or tinted by a device fingerprint. Moods: idle, searching, waiting, happy, sad. Used where personality belongs (empty state, About, update prompt, phone pairing sheet, app icon), never in device rows, which keep the avatar discs.
 - **Icons:** `src/icons.tsx`, 20-unit grid, 1.6 stroke, round caps, `currentColor`.
 
 ## Do's and Don'ts

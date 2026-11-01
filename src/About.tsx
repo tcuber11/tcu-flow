@@ -2,7 +2,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getVersion } from "@tauri-apps/api/app";
-import { Face } from "./Face";
+import { Mascot } from "./Mascot";
 import { primaryButton, quietButton } from "./Pairing";
 
 const REPO = "tcuber11/tcu-flow";
@@ -148,7 +148,7 @@ export function About({ update, seed, os, onClose, onUpdate, downloadUrl, extra 
         style={{ animation: "sheet-in 0.45s var(--ease-out-expo)" }}
       >
         <header className="flex items-center gap-4 px-7 pt-7">
-          <Face seed={seed} size={52} mood={update.available ? "waiting" : "happy"} />
+          <Mascot seed={seed} size={56} mood={update.available ? "waiting" : "happy"} />
           <div className="min-w-0 flex-1">
             <h2 id="about-title" className="text-xl font-semibold leading-tight tracking-[-0.015em]">
               TCuFlow

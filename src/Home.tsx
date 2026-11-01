@@ -8,6 +8,7 @@ import { About, useUpdate } from "./About";
 import { UpdatePrompt } from "./UpdatePrompt";
 import { Calibrate } from "./Calibrate";
 import { Face } from "./Face";
+import { Mascot } from "./Mascot";
 import { Badge, CodeBoxes, ConnectionCheck, StateBadge, StateNote, Troubleshoot, deviceState, linkButton, osLabel, primaryButton, quietButton, stateReason, usePairRequest, type Device, type Peer } from "./Pairing";
 import { CheckIcon, ClockIcon, CloseIcon, DisplayIcon, IncomingIcon, LinkIcon, MoonIcon, PlusCircleIcon, SunIcon, WavesIcon } from "./icons";
 import { THEMES, type Theme, loadTheme, saveTheme } from "./theme";
@@ -399,7 +400,7 @@ function Devices({ device, peers, onChange }: { device: Device; peers: Peer[]; o
             ))}
             {empty && (
               <li className="flex items-center gap-4 rounded-xl border border-dashed border-line p-4">
-                <Face seed={device.info.fingerprint} size={52} mood="searching" />
+                <Mascot size={56} mood="searching" />
                 <div>
                   <p className="text-[15px] font-semibold">No computers found yet</p>
                   <p className="mt-0.5 text-sm text-muted">Open TCuFlow on the other computer, on the same network.</p>

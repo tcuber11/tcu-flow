@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
-import { Face } from "./Face";
+import { Mascot } from "./Mascot";
 import type { Portal } from "./calibration";
 import { CheckIcon, CloseIcon, RetryIcon } from "./icons";
 
@@ -252,8 +252,8 @@ export function PairPrompt({ selfSeed }: { selfSeed: string }) {
         style={{ animation: "sheet-in 0.35s var(--ease-out-soft)" }}
       >
         <div className="flex items-center justify-center gap-3">
-          <Face seed={fingerprint} size={52} />
-          <Face seed={selfSeed} size={52} />
+          <Mascot seed={fingerprint} size={56} mood="waiting" />
+          <Mascot seed={selfSeed} size={56} mood="idle" />
         </div>
         <h2 id="pair-title" className="mt-5 text-xl font-semibold tracking-[-0.015em]">
           Link with {alias}?

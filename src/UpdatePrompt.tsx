@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { Face } from "./Face";
+import { Mascot } from "./Mascot";
 import { Notes, type Update } from "./About";
 import { primaryButton, quietButton } from "./Pairing";
 
@@ -52,7 +52,7 @@ export function UpdatePrompt({ update, seed, downloadUrl, onClose }: { update: U
             <span key={d} aria-hidden className="absolute inset-3 rounded-full border-2 border-accent/60" style={{ animation: `ripple 1.6s ease-out ${d}s infinite` }} />
           ))}
           <div style={{ animation: phase.at === "failed" ? undefined : "hop 1.6s ease-in-out infinite" }}>
-            <Face seed={seed} size={84} mood={phase.at === "failed" ? "sad" : busy ? "waiting" : "happy"} />
+            <Mascot seed={seed} size={88} mood={phase.at === "failed" ? "sad" : busy ? "waiting" : "happy"} />
           </div>
         </div>
 

@@ -1,21 +1,24 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- TCuFlow app icon: Flo, the drop that flows between screens -->
   <defs>
-    <linearGradient id="b" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#b7ecff"/>
-      <stop offset="1" stop-color="#3fa9e6"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2a8fff"/>
+      <stop offset="1" stop-color="#0a5fd6"/>
     </linearGradient>
-    <filter id="g" x="-2" y="-0.5" width="5" height="2"><feGaussianBlur stdDeviation="22"/></filter>
+    <radialGradient id="gloss" cx="40%" cy="35%" r="70%">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.4"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
   </defs>
-  <rect width="1024" height="1024" rx="230" fill="#0b0d16"/>
-  <rect x="842" y="250" width="34" height="524" rx="17" fill="#4cc9ff" filter="url(#g)"/>
-  <rect x="848" y="262" width="22" height="500" rx="11" fill="#dff6ff"/>
-  <g transform="translate(150 150) scale(7.4)">
-    <path d="M24 9 L24 78 L41 63 L51 83 L62 78 L53 59 L78 58 Z" fill="url(#b)" stroke="url(#b)" stroke-width="15" stroke-linejoin="round"/>
-    <path d="M22 16 L22 40" stroke="#fff" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"/>
-    <ellipse cx="36" cy="45" rx="3.4" ry="4.6" fill="#05060c"/>
-    <ellipse cx="51" cy="45" rx="3.4" ry="4.6" fill="#05060c"/>
-    <circle cx="37.2" cy="43.3" r="1.25" fill="#fff"/>
-    <circle cx="52.2" cy="43.3" r="1.25" fill="#fff"/>
-    <path d="M39.5 56 Q44 63 48.5 56 Z" fill="#05060c" stroke="#05060c" stroke-width="2.6" stroke-linejoin="round"/>
+  <rect x="64" y="64" width="896" height="896" rx="220" fill="url(#bg)"/>
+  <g transform="translate(142 142) scale(7.4)">
+    <path d="M60 93 C 68 99, 78 97, 86 90" fill="none" stroke="#0a5fd6" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+    <path d="M18 14 C 46 16, 86 34, 86 62 C 86 80, 72 92, 54 92 C 36 92, 22 80, 20 62 C 18 44, 14 28, 18 14 Z" fill="#ffffff"/>
+    <path d="M18 14 C 46 16, 86 34, 86 62 C 86 80, 72 92, 54 92 C 36 92, 22 80, 20 62 C 18 44, 14 28, 18 14 Z" fill="url(#gloss)"/>
+    <ellipse cx="38" cy="66" rx="4.5" ry="2.6" fill="#ff8aa0" opacity="0.6"/>
+    <ellipse cx="70" cy="66" rx="4.5" ry="2.6" fill="#ff8aa0" opacity="0.6"/>
+    <path d="M41 58 Q 46 51 51 58" fill="none" stroke="#1d1d1f" stroke-width="3" stroke-linecap="round"/>
+    <path d="M57 58 Q 62 51 67 58" fill="none" stroke="#1d1d1f" stroke-width="3" stroke-linecap="round"/>
+    <path d="M46 68 Q 54 78 62 68 Z" fill="#1d1d1f"/>
   </g>
 </svg>
