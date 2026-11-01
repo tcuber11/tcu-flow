@@ -1,4 +1,5 @@
 // Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
+import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { quietButton, type Sharing as SharingPrefs } from "./Pairing";
@@ -20,18 +21,33 @@ export function Toggle({ on, onChange, label, hint, disabled }: { on: boolean; o
 
 const folderName = (p: string) => p.split(/[\\/]/).filter(Boolean).pop() ?? p;
 
-/** Where received files go. TCuFlow does not offer LOKA's folder, sound, mic, notification or terminal
- *  sharing (out of MVP scope; the backend refuses those services too). */
-export function Sharing({ received, mac, onChange }: { initial: SharingPrefs; received: string; mac: boolean; onChange: () => void }) {
+/** What linked computers may do here (screen view; off until turned on) and where received files go. TCuFlow
+ *  does not offer LOKA's folder, sound, mic, notification or terminal sharing (the backend refuses those too). */
+export function Sharing({ initial, received, mac, onChange }: { initial: SharingPrefs; received: string; mac: boolean; onChange: () => void }) {
+  const [s, setS] = useState(initial);
+  const change = (patch: Partial<SharingPrefs>) => {
+    const next = { ...s, ...patch };
+    setS(next);
+    invoke("set_sharing", { sharing: next }).then(onChange);
+  };
   const pick = async () => (await open({ directory: true })) as string | null;
   const kbd = "rounded-md bg-tint/10 px-1.5 py-0.5 font-sans text-xs text-fg";
 
   return (
     <section aria-labelledby="sharing-title" className="rise mt-5 rounded-2xl border border-line bg-raised p-5" style={{ "--i": 6 } as React.CSSProperties}>
       <h2 id="sharing-title" className="text-[17px] font-semibold tracking-[-0.01em]">
-        Received files
+        This computer shares
       </h2>
-      <p className="mt-1 text-sm text-muted">Only from paired devices, over their encrypted link.</p>
+      <p className="mt-1 text-sm text-muted">Only with linked computers, over their encrypted link.</p>
+      <div className="mt-5">
+        <Toggle
+          on={s.screen}
+          onChange={(screen) => change({ screen })}
+          label="Its screen"
+          hint={mac ? "Linked computers can view and control this screen in a window. Needs Screen Recording permission the first time." : "Linked computers can view and control this screen in a window."}
+        />
+      </div>
+      <p className="mt-6 text-[15px] font-semibold">Received files</p>
 
       <div className="mt-7 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5 text-sm">
         <p className="min-w-0 text-muted">

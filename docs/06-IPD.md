@@ -37,6 +37,8 @@ tcu-flow/
 | 4 | File transfer | Implemented; SHA-256 verification missing (FR-017) |
 | 5 | Stabilization and release | Open |
 
+Remote screen (ADR-002): slice 1 implemented (view + control a linked computer's primary display, JPEG); slice 2 (hardware H.264, multi-display, being-viewed indicator) open.
+
 Fork work already done: rebrand and internal renames, protocol/port separation from LOKA, removal of out-of-scope services, opt-in start with computer, TCuFlow updater key, Windows installer workflow, light/dark redesign.
 
 ## 4. Next work, in order

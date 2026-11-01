@@ -66,6 +66,8 @@ pub struct Sharing {
     pub sound: bool,
     pub notifications: bool,
     pub mic: bool,
+    /// paired devices may view and control this computer's screen (TCuFlow)
+    pub screen: bool,
 }
 
 impl Settings {

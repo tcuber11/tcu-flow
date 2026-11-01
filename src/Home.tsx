@@ -208,6 +208,7 @@ function Devices({ device, peers, onChange }: { device: Device; peers: Peer[]; o
     const paths = await open({ multiple: true });
     if (paths?.length) invoke("send_paths", { fingerprint: f, paths }).catch((err) => message(String(err), { title: "Couldn't send", kind: "error" }));
   };
+  const viewScreen = (f: string, alias: string) => invoke("open_remote_window", { fingerprint: f, alias }).catch((err) => message(String(err), { title: "Couldn't open the screen", kind: "error" }));
   const unpair = (f: string) => {
     invoke("unpair", { fingerprint: f });
     if (selected === f) select(null);
@@ -219,6 +220,7 @@ function Devices({ device, peers, onChange }: { device: Device; peers: Peer[]; o
     return [
       { text: stateOf(p) === "setup" ? `Control: finish setup on ${p.info.alias}` : "Control", enabled: placed(f) && stateOf(p) === "ready", action: () => void invoke("control", { fingerprint: f }) },
       { text: "Send files…", action: () => void sendFiles(f) },
+      { text: "View screen…", enabled: stateOf(p) !== "offline", action: () => void viewScreen(f, p.info.alias) },
       placed(f) && { text: "Take off screens", action: () => void invoke("set_portal", { fingerprint: f, portal: null, sync: true }).then(onChange) },
       { item: "Separator" },
       { text: "Unlink", action: () => unpair(f) },
@@ -360,9 +362,14 @@ function Devices({ device, peers, onChange }: { device: Device; peers: Peer[]; o
                             </button>
                           )}
                           {paired && (
-                            <button onClick={() => unpair(f)} className={quietButton}>
-                              Unlink
-                            </button>
+                            <>
+                              <button onClick={() => void viewScreen(f, p.info.alias)} className={quietButton}>
+                                View screen
+                              </button>
+                              <button onClick={() => unpair(f)} className={quietButton}>
+                                Unlink
+                              </button>
+                            </>
                           )}
                         </div>
                       )}

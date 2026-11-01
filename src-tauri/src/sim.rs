@@ -126,6 +126,7 @@ pub fn start(app: &AppHandle, state: &AppState) -> tauri::Result<()> {
     });
 
     // Pairing prompts appear in the phone window; the pairing itself is stored by this host's side.
+    let screen_paired = paired.clone();
     let allow = move |fp: &str| if paired(fp) { Ok(()) } else { Err(kvm::Refusal::NotPaired) };
     let (a, st) = (app.clone(), state.clone());
     let ask = move |ip: std::net::IpAddr, fp: String, code: String| {
@@ -139,10 +140,24 @@ pub fn start(app: &AppHandle, state: &AppState) -> tauri::Result<()> {
         }
     };
     let h = app.clone();
+    // TCuFlow: the simulated phone "shares its screen" (this host's own display) so the remote viewer can be
+    // tried on one computer; its input lands on this host too, so don't click around in that window
+    let screen_app = app.clone();
+    let allow_service = move |service: kvm::Service, fp: &str| matches!(service, kvm::Service::Screen) && screen_paired(fp);
+    let on_service = move |_: kvm::Service, _: String, stream: crate::network::secure::Stream| {
+        let app = screen_app.clone();
+        tauri::async_runtime::spawn(async move {
+            let engine = app.state::<Arc<dyn crate::platform::SpatialPlatformEngine>>().inner().clone();
+            let screens = app.available_monitors().unwrap_or_default().iter().map(|m| crate::platform::Rect { x: m.position().x as f64, y: m.position().y as f64, w: m.size().width as f64, h: m.size().height as f64 }).collect();
+            if let Err(e) = crate::screen::serve(stream, engine, screens).await {
+                journal!("sim screen: {e}");
+            }
+        });
+    };
     tauri::async_runtime::spawn(async move {
         let sink = move |_: &str, _| Some(WindowSink(h.clone()));
         // the simulated phone keeps no layout of its own: the host already moves its window (`place`)
-        if let Err(e) = kvm::serve(tls, KVM_PORT, allow, ask, |_, _| false, |_, _, _| {}, |_, _| true, sink).await {
+        if let Err(e) = kvm::serve(tls, KVM_PORT, allow, ask, allow_service, on_service, |_, _| true, sink).await {
             journal!("sim kvm receiver stopped: {e}");
         }
     });

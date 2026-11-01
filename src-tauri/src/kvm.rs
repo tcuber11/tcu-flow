@@ -105,11 +105,13 @@ pub enum Service {
     Mic = 5,
     /// its diagnostics report and log tail, for a support report covering both sides (any paired device)
     Diagnostics = 6,
+    /// its primary display as a video stream, with the viewer's input injected (TCuFlow)
+    Screen = 7,
 }
 
 impl Service {
     fn from_u8(b: u8) -> Option<Self> {
-        [Service::Shell, Service::Files, Service::Sound, Service::Notifications, Service::Mic, Service::Diagnostics].into_iter().find(|s| *s as u8 == b)
+        [Service::Shell, Service::Files, Service::Sound, Service::Notifications, Service::Mic, Service::Diagnostics, Service::Screen].into_iter().find(|s| *s as u8 == b)
     }
 
     fn not_shared(self) -> &'static str {
@@ -120,6 +122,7 @@ impl Service {
             Service::Notifications => "the other computer isn't sharing its notifications",
             Service::Mic => "the other computer isn't sharing its microphone",
             Service::Diagnostics => "the other device didn't send its report",
+            Service::Screen => "the other computer isn't sharing its screen: turn on \"Share my screen\" there",
         }
     }
 }

@@ -18,6 +18,7 @@ mod settings;
 #[cfg(desktop)]
 mod share;
 #[cfg(desktop)]
+mod screen;
 mod shell;
 #[cfg(desktop)]
 mod sim;
@@ -1197,6 +1198,10 @@ pub fn run() {
             audio::set_mic,
             #[cfg(desktop)]
             update::check_update,
+            screen::remote_open,
+            screen::remote_input,
+            screen::remote_close,
+            screen::open_remote_window,
             #[cfg(desktop)]
             update::install_update,
             notify::set_mirroring
@@ -1853,7 +1858,8 @@ fn spawn_kvm_receiver(app: AppHandle, engine: Arc<dyn SpatialPlatformEngine>, st
         };
         let st = state.clone();
         // TCuFlow: remote shell, shared folder, sound, mic and notification mirroring are out of MVP scope
-        // (PRD §6), so they are refused here regardless of saved settings; only diagnostics stays.
+        // (PRD §6), so they are refused here regardless of saved settings; diagnostics stays, and the
+        // screen only when its user turned "Share my screen" on.
         let allow_service = move |service: kvm::Service, fp: &str| {
             let s = st.lock().unwrap();
             s.settings.is_paired(fp)
@@ -1864,14 +1870,26 @@ fn spawn_kvm_receiver(app: AppHandle, engine: Arc<dyn SpatialPlatformEngine>, st
                     | kvm::Service::Notifications
                     | kvm::Service::Mic => false,
                     kvm::Service::Diagnostics => true,
+                    kvm::Service::Screen => cfg!(desktop) && s.settings.sharing.screen,
                 }
         };
         let st = state.clone();
-        let on_service = move |service: kvm::Service, _fp: String, mut stream: secure::Stream| {
+        let screen_app = reporter.clone();
+        let on_service = move |service: kvm::Service, fp: String, mut stream: secure::Stream| {
             let folder = st.lock().unwrap().settings.sharing.folder.clone();
             let reporter = reporter.clone();
+            let screen_app = screen_app.clone();
             tauri::async_runtime::spawn(async move {
                 let r = match service {
+                    #[cfg(desktop)]
+                    kvm::Service::Screen => {
+                        let engine = screen_app.state::<Arc<dyn SpatialPlatformEngine>>().inner().clone();
+                        let screens = screens(&screen_app);
+                        journal!("screen shared with {}", screen_app.state::<AppState>().lock().unwrap().who(&fp).0);
+                        screen::serve(stream, engine, screens).await
+                    }
+                    #[cfg(mobile)]
+                    kvm::Service::Screen => Ok(drop((stream, &fp))),
                     kvm::Service::Diagnostics => {
                         use tokio::io::AsyncWriteExt;
                         let text = report(&reporter);
