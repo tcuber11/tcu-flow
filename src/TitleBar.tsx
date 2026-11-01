@@ -22,7 +22,7 @@ function Glyph({ name }: { name: keyof typeof GLYPH }) {
 }
 
 const control =
-  "grid h-full w-[46px] place-items-center text-[10px] text-muted transition-colors duration-100 hover:bg-white/[0.06] hover:text-fg active:bg-white/[0.04] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent";
+  "grid h-full w-[46px] place-items-center text-[10px] text-muted transition-colors duration-100 hover:bg-tint/[0.06] hover:text-fg active:bg-tint/[0.04] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent";
 
 /**
  * The window's own title bar: drag area (double-click maximizes), click-sound toggle and, on Windows,

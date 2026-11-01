@@ -1,3 +1,4 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 fn main() {
     // the Android side of "let computers control this phone" (TcuflowPlugin.kt); no Rust commands of its own
     let tcuflow = tauri_build::InlinedPlugin::new()

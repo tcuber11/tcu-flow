@@ -1,7 +1,7 @@
 # Phase 0 — Implementation-Readiness Report
 
 **Date:** 2 November 2026
-**Status:** Draft for review. No Phase 1 work starts until the user approves this report.
+**Status:** Superseded by [ADR-001](../adr/ADR-001-fork-loka.md) (fork of LOKA). The native Swift/C# ADR proposals below were not adopted; the environment findings remain accurate.
 **Scope:** Environment inventory, document review, platform constraints and proposed ADRs. No application code yet.
 
 ## 1. Environment inventory (macOS controller host)

@@ -157,7 +157,7 @@ export function Mobile() {
 
       {!running && controlCard}
 
-      <h1 className="mt-8 font-display text-[32px] font-extrabold leading-none tracking-[-0.035em]">Your computers</h1>
+      <h1 className="mt-8 font-display text-[32px] font-bold leading-none tracking-[-0.02em]">Your computers</h1>
 
       {device.paired.length === 0 && nearby.length === 0 && (
         <div className="mt-10 flex flex-col items-center text-center">
@@ -174,13 +174,13 @@ export function Mobile() {
           const usable = peer && state !== "update";
           const reason = stateReason(state, d.alias, peer?.info.os);
           return (
-            <li key={d.fingerprint} className="rise rounded-[24px] bg-raised p-4 ring-1 ring-line" style={{ "--i": i } as React.CSSProperties}>
+            <li key={d.fingerprint} className="rise rounded-2xl bg-raised p-4 ring-1 ring-line" style={{ "--i": i } as React.CSSProperties}>
               <div className="flex items-center gap-3">
                 <Face seed={d.fingerprint} size={44} mood={state === "ready" ? "idle" : "sad"} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold">{d.alias}</p>
                   <p className="text-xs text-muted">
-                    {!peer ? "Not on this Wi-Fi" : state === "update" ? osLabel(peer.info.os) : <><span className="text-accent">Online</span> · {osLabel(peer.info.os)}</>}
+                    {!peer ? "Not on this Wi-Fi" : state === "update" ? osLabel(peer.info.os) : <><span className="text-accent-ink">Online</span> · {osLabel(peer.info.os)}</>}
                   </p>
                 </div>
                 <StateBadge state={state} />
@@ -226,7 +226,7 @@ export function Mobile() {
               const mood: Mood = s?.state === "waiting" ? "waiting" : s ? "sad" : "idle";
               const note = outdated(p) ? "Needs TCuFlow update" : s?.state === "waiting" ? (s.code ? `Code ${s.code}: check it matches` : "Asking…") : s ? s.note : osLabel(p.info.os);
               return (
-                <li key={p.info.fingerprint} className="flex items-center gap-3 rounded-[20px] bg-raised p-3 pl-4 ring-1 ring-line">
+                <li key={p.info.fingerprint} className="flex items-center gap-3 rounded-xl bg-raised p-3 pl-4 ring-1 ring-line">
                   <Face seed={p.info.fingerprint} size={36} mood={mood} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold">{p.info.alias}</p>
@@ -279,7 +279,7 @@ function ControlCard({ device, computer, control, fresh, onSetup, onChange }: { 
   };
   if (s.running)
     return (
-      <div className="mt-6 rounded-[24px] bg-raised p-4 ring-1 ring-line">
+      <div className="mt-6 rounded-2xl bg-raised p-4 ring-1 ring-line">
         <p className="text-sm text-muted">
           <span className="font-semibold text-fg">{alias} can move into this phone.</span> Push its cursor past the side this phone sits on.
         </p>
@@ -305,7 +305,7 @@ function ControlCard({ device, computer, control, fresh, onSetup, onChange }: { 
       </div>
     );
   return (
-    <div className={"mt-6 rounded-[24px] bg-raised p-4 ring-1 transition-shadow " + (fresh ? "ring-2 ring-accent" : "ring-line")}>
+    <div className={"mt-6 rounded-2xl bg-raised p-4 ring-1 transition-shadow " + (fresh ? "ring-2 ring-accent" : "ring-line")}>
       <p className="font-semibold">{s.paired ? `${alias} can't move into this phone right now` : `${alias} can't move into this phone yet`}</p>
       <p className={"mt-1 text-sm leading-relaxed " + (control.error ? "text-danger" : "text-muted")}>
         {s.paired
@@ -355,7 +355,7 @@ function Settings({ device, control, update, onSetup, onAbout, onClose, onChange
       </header>
 
       <p className="mt-6 px-1 text-xs text-muted">Computers controlling this phone</p>
-      <div className="mt-2 flex items-center gap-3 rounded-[20px] bg-raised p-4 ring-1 ring-line">
+      <div className="mt-2 flex items-center gap-3 rounded-xl bg-raised p-4 ring-1 ring-line">
         <p className="flex-1 text-sm">
           {!s ? "Not available" : s.running ? "On: paired computers can move in" : s.paired ? (control.error ?? "Starting…") : "Not set up"}
         </p>
@@ -363,16 +363,16 @@ function Settings({ device, control, update, onSetup, onAbout, onClose, onChange
           {s?.paired ? "Set up again" : "Set up"}
         </button>
       </div>
-      <Battery control={control} className="mt-2 rounded-[20px] bg-raised p-4 ring-1 ring-line" />
+      <Battery control={control} className="mt-2 rounded-xl bg-raised p-4 ring-1 ring-line" />
 
       <p className="mt-6 px-1 text-xs text-muted">Received files</p>
-      <p className="mt-2 break-all rounded-[20px] bg-raised p-4 font-mono text-xs text-muted ring-1 ring-line">{device.received}</p>
+      <p className="mt-2 break-all rounded-xl bg-raised p-4 font-mono text-xs text-muted ring-1 ring-line">{device.received}</p>
 
       <p className="mt-6 px-1 text-xs text-muted">Paired</p>
       {device.paired.length === 0 ? (
         <p className="mt-2 px-1 text-sm text-faint">No computers yet.</p>
       ) : (
-        <ul className="mt-2 divide-y divide-line rounded-[20px] bg-raised ring-1 ring-line">
+        <ul className="mt-2 divide-y divide-line rounded-xl bg-raised ring-1 ring-line">
           {device.paired.map((d) => (
             <li key={d.fingerprint} className="flex items-center gap-3 p-3 pl-4">
               <Face seed={d.fingerprint} size={32} />
@@ -387,7 +387,7 @@ function Settings({ device, control, update, onSetup, onAbout, onClose, onChange
 
       <button
         onClick={onAbout}
-        className="mt-6 flex min-h-11 w-full items-center gap-3 rounded-[20px] bg-raised p-4 text-left ring-1 ring-line transition-colors hover:bg-white/[0.04] focus-visible:outline-2 focus-visible:outline-accent"
+        className="mt-6 flex min-h-11 w-full items-center gap-3 rounded-xl bg-raised p-4 text-left ring-1 ring-line transition-colors hover:bg-tint/[0.04] focus-visible:outline-2 focus-visible:outline-accent"
       >
         <span className="flex-1 text-sm font-medium">About TCuFlow</span>
         {update.available && <span aria-hidden className="h-2 w-2 rounded-full bg-accent" />}
@@ -570,7 +570,7 @@ function Touchpad({ peer, onClose }: { peer: Peer; onClose: () => void }) {
         onPointerMove={move}
         onPointerUp={up}
         onPointerCancel={up}
-        className="relative mt-3 grid flex-1 touch-none select-none place-items-center rounded-[28px] bg-raised ring-1 ring-line"
+        className="relative mt-3 grid flex-1 touch-none select-none place-items-center rounded-2xl bg-raised shadow-[0_12px_40px_rgb(0_0_0/0.25)]"
       >
         {status ? (
           <div className="px-8 text-center" role="status">
@@ -593,10 +593,10 @@ function Touchpad({ peer, onClose }: { peer: Peer; onClose: () => void }) {
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-3">
-        <button {...hold(1)} className="min-h-14 touch-none rounded-[20px] bg-raised text-sm text-muted ring-1 ring-line active:bg-white/10">
+        <button {...hold(1)} className="min-h-14 touch-none rounded-xl bg-raised text-sm text-muted ring-1 ring-line active:bg-tint/10">
           Left
         </button>
-        <button {...hold(2)} className="min-h-14 touch-none rounded-[20px] bg-raised text-sm text-muted ring-1 ring-line active:bg-white/10">
+        <button {...hold(2)} className="min-h-14 touch-none rounded-xl bg-raised text-sm text-muted ring-1 ring-line active:bg-tint/10">
           Right
         </button>
       </div>

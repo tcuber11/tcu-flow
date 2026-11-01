@@ -1,5 +1,5 @@
 {
   "app": {
-    "windows": [{ "label": "main", "title": "TCuFlow", "width": 860, "height": 700, "minWidth": 680, "minHeight": 560, "backgroundColor": "#05060c", "titleBarStyle": "Overlay", "hiddenTitle": true }]
+    "windows": [{ "label": "main", "title": "TCuFlow", "width": 860, "height": 700, "minWidth": 680, "minHeight": 560, "titleBarStyle": "Overlay", "hiddenTitle": true }]
   }
 }

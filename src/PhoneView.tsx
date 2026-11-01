@@ -1,3 +1,4 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 import { useEffect, useRef, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { BezelPortal } from "./BezelPortal";
@@ -66,14 +67,14 @@ export function PhoneView() {
       </div>
       <section className="relative flex h-full flex-col px-7 pt-10">
         <Face seed="sim-mobile" size={56} mood={progress ? "waiting" : "idle"} />
-        <h1 className="mt-5 font-display text-[28px] font-extrabold leading-none tracking-[-0.035em]">Simulated phone</h1>
+        <h1 className="mt-5 font-display text-[28px] font-bold leading-none tracking-[-0.02em]">Simulated phone</h1>
         <p className="mt-2 text-sm leading-relaxed text-muted">
           {items.length === 0 && !progress ? "Push the cursor or drop a file across the glowing edge." : "Received"}
         </p>
         {progress && (
           <div className="mt-5">
             <p className="truncate text-xs text-muted">{progress.name}</p>
-            <div className="mt-2 h-1 rounded-full bg-white/10">
+            <div className="mt-2 h-1 rounded-full bg-tint/10">
               <div className="h-full rounded-full bg-accent transition-[width] duration-150" style={{ width: `${progress.pct * 100}%` }} />
             </div>
           </div>

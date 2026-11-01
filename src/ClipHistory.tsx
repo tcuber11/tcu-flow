@@ -1,3 +1,4 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -30,8 +31,8 @@ export function ClipHistory() {
     );
 
   return (
-    <section aria-labelledby="clip-title" className="rounded-[24px] bg-raised p-5 ring-1 ring-line">
-      <h2 id="clip-title" className="font-display text-lg font-bold tracking-tight">Recent clipboard</h2>
+    <section aria-labelledby="clip-title" className="mt-5 rounded-2xl border border-line bg-raised p-5">
+      <h2 id="clip-title" className="text-[17px] font-semibold tracking-[-0.01em]">Recent clipboard</h2>
       {list.length === 0 ? (
         <p className="mt-2 text-sm text-muted">Things you copy show up here.</p>
       ) : (
@@ -39,7 +40,7 @@ export function ClipHistory() {
           {list.map((e) => (
             <li key={e.id}>
               <button
-                className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left ring-1 ring-line transition-colors hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-accent"
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left ring-1 ring-line transition-colors hover:bg-tint/5 focus-visible:outline-2 focus-visible:outline-accent"
                 onClick={() => restore(e.id)}
               >
                 {e.kind === "image" ? (
@@ -47,7 +48,7 @@ export function ClipHistory() {
                 ) : (
                   <span className="line-clamp-2 min-w-0 flex-1 text-sm break-words whitespace-pre-wrap">{e.preview}</span>
                 )}
-                <span aria-live="polite" className="ml-auto shrink-0 text-xs text-accent">
+                <span aria-live="polite" className="ml-auto shrink-0 text-xs text-accent-ink">
                   {copied === e.id ? "Copied" : ""}
                 </span>
               </button>

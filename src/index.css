@@ -1,23 +1,68 @@
+/* Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE. */
 @import "tailwindcss";
-@import "@fontsource-variable/bricolage-grotesque";
 
+/*
+ * TCuFlow's look: a system-settings utility. Light by default, dark by the OS or the user's choice
+ * (html[data-theme] = "light" | "dark"; absent = follow the OS). One accent, the system blue,
+ * replaced by the edge-glow colour the user picks.
+ */
 @theme {
-  /* chunky, friendly display face for headings; the OS face (SF / Segoe UI Variable) for everything else */
-  --font-display: "Bricolage Grotesque Variable", "Segoe UI Variable Display", system-ui, sans-serif;
-  --font-sans: system-ui, "Segoe UI Variable Text", -apple-system, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
 
-  /* one ink-tinted neutral family + one accent (the portal's cyan) */
-  --color-ink: #05060c;
-  --color-raised: #0c0e18;
-  --color-fg: #eceff7;
-  --color-muted: #8c94a8;
-  --color-faint: #737b8f; /* 4.5:1 on raised surfaces */
-  --color-line: rgb(236 239 247 / 0.08);
-  --color-accent: #4cc9ff;
-  --color-danger: #ff7a85;
+  --color-ink: #ffffff; /* window */
+  --color-raised: #ffffff; /* grouped panels */
+  --color-sunken: #f5f5f7; /* fields, wells */
+  --color-fg: #1d1d1f;
+  --color-muted: #6e6e73;
+  --color-faint: #737378; /* 4.6:1 on white */
+  --color-line: rgb(0 0 0 / 0.1);
+  --color-tint: #000000; /* base of translucent fills: bg-tint/5 */
+  --color-accent: #007aff;
+  --color-accent-ink: color-mix(in oklab, var(--color-accent) 78%, black); /* accent as text on light */
+  --color-on-accent: #ffffff;
+  --color-danger: #d70015;
+  --color-success: #248a3d;
+  --color-warning: #c45500;
 
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@layer base {
+  :root { color-scheme: light; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --color-ink: #1e1e20;
+      --color-raised: #28282b;
+      --color-sunken: #1a1a1c;
+      --color-fg: #f5f5f7;
+      --color-muted: #a1a1a6;
+      --color-faint: #98989d;
+      --color-line: rgb(255 255 255 / 0.1);
+      --color-tint: #ffffff;
+      --color-accent-ink: color-mix(in oklab, var(--color-accent) 78%, white);
+      --color-danger: #ff6961;
+      --color-success: #30d158;
+      --color-warning: #ffb340;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --color-ink: #1e1e20;
+    --color-raised: #28282b;
+    --color-sunken: #1a1a1c;
+    --color-fg: #f5f5f7;
+    --color-muted: #a1a1a6;
+    --color-faint: #98989d;
+    --color-line: rgb(255 255 255 / 0.1);
+    --color-tint: #ffffff;
+    --color-accent-ink: color-mix(in oklab, var(--color-accent) 78%, white);
+    --color-danger: #ff6961;
+    --color-success: #30d158;
+    --color-warning: #ffb340;
+  }
 }
 
 html, body, #root { height: 100%; margin: 0; }
@@ -28,20 +73,23 @@ body {
   background: var(--color-ink);
   color: var(--color-fg);
   font-family: var(--font-sans);
+  font-size: 14px;
   -webkit-font-smoothing: antialiased;
   user-select: none; /* desktop app, not a document */
   cursor: default; /* no text I-beam over labels */
   overscroll-behavior: none;
 }
 img, a, svg { -webkit-user-drag: none; }
+::selection { background: color-mix(in oklab, var(--color-accent) 28%, transparent); }
+input { caret-color: var(--color-accent); }
 /* overlay needs a see-through page */
 body.transparent { background: transparent; }
 
-/* quiet scrollbar that matches the ink surface */
-::-webkit-scrollbar { width: 10px; }
+/* quiet scrollbar on the window surface */
+::-webkit-scrollbar { width: 12px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgb(236 239 247 / 0.12); border-radius: 999px; border: 3px solid var(--color-ink); }
-::-webkit-scrollbar-thumb:hover { background: rgb(236 239 247 / 0.22); }
+::-webkit-scrollbar-thumb { background: color-mix(in oklab, var(--color-tint) 18%, transparent); border-radius: 999px; border: 3px solid var(--color-ink); }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in oklab, var(--color-tint) 30%, transparent); }
 ::-webkit-scrollbar-button { display: none; }
 
 /* range: thin track filled up to the thumb (--fill), white knob, like a system slider */
@@ -54,7 +102,7 @@ body.transparent { background: transparent; }
 .tf-range::-webkit-slider-runnable-track {
   height: 4px;
   border-radius: 999px;
-  background: linear-gradient(to right, var(--color-accent) var(--fill, 50%), rgb(236 239 247 / 0.1) var(--fill, 50%));
+  background: linear-gradient(to right, var(--color-accent) var(--fill, 50%), color-mix(in oklab, var(--color-tint) 12%, transparent) var(--fill, 50%));
 }
 .tf-range::-webkit-slider-thumb {
   appearance: none;
@@ -63,11 +111,27 @@ body.transparent { background: transparent; }
   margin-top: -7px;
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 1px 4px rgb(0 0 0 / 0.5);
-  transition: transform 0.2s var(--ease-spring);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.3), 0 0 0 0.5px rgb(0 0 0 / 0.12);
+  transition: transform 0.2s var(--ease-out-expo);
 }
 .tf-range:active::-webkit-slider-thumb { transform: scale(1.15); }
 .tf-range:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 4px; border-radius: 999px; }
+
+/* device avatar: a tinted disc in the device's own hue (--h), its glyph in a deeper shade */
+.avatar {
+  background: oklch(0.95 0.045 var(--h));
+  color: oklch(0.62 0.15 var(--h));
+}
+:root[data-theme="dark"] .avatar {
+  background: oklch(0.36 0.09 var(--h));
+  color: oklch(0.88 0.11 var(--h));
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .avatar {
+    background: oklch(0.36 0.09 var(--h));
+    color: oklch(0.88 0.11 var(--h));
+  }
+}
 
 h1, h2, h3 { text-wrap: balance; }
 p { text-wrap: pretty; }
@@ -76,30 +140,21 @@ p { text-wrap: pretty; }
 
 /* staggered entrance: give children style="--i: n" */
 @keyframes rise {
-  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  from { opacity: 0; transform: translateY(6px); }
 }
-.rise { animation: rise 0.6s var(--ease-out-soft) both; animation-delay: calc(var(--i, 0) * 60ms); }
+.rise { animation: rise 0.45s var(--ease-out-soft) both; animation-delay: calc(var(--i, 0) * 40ms); }
 
-/* mascot: an occasional blink, eyes darting while waiting (svg user units), a hover while searching */
-@keyframes blink {
-  0%, 94%, 100% { transform: scaleY(1); }
-  97% { transform: scaleY(0.1); }
-}
-@keyframes glance {
-  0%, 30% { translate: -3px 0; }
-  50%, 80% { translate: 3px 0; }
-  100% { translate: -3px 0; }
-}
-@keyframes hop {
-  0%, 100% { translate: 0 0; }
-  50% { translate: 0 -6%; }
+/* discovery: radio waves breathe while the network is being searched */
+@keyframes listen {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
 }
 @keyframes ripple {
   from { transform: scale(0.9); opacity: 0.5; }
   to { transform: scale(1.9); opacity: 0; }
 }
 @keyframes sheet-in {
-  from { opacity: 0; transform: translateY(16px) scale(0.96); }
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
 }
 @keyframes fade-in {
   from { opacity: 0; }

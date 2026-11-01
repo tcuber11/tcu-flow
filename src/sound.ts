@@ -1,3 +1,4 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 const KEY = "tcuflow.sound";
 let audio: AudioContext | undefined;
 

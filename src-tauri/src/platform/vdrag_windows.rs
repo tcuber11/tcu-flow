@@ -1,3 +1,4 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 //! Windows streamed drag: an OLE data object of virtual files (`CFSTR_FILEDESCRIPTORW`, folders first, plus
 //! one `CFSTR_FILECONTENTS` IStream per file) whose reads wait for bytes still being received. It is
 //! async-capable, so Explorer copies on its own thread after the drop instead of inside `DoDragDrop`.

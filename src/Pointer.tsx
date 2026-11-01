@@ -1,3 +1,4 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { CursorPrefs } from "./Pairing";
@@ -10,11 +11,11 @@ export function Pointer({ initial, mac }: { initial: CursorPrefs; mac: boolean }
     setP(next);
     invoke("set_cursor_prefs", { prefs: next });
   };
-  const kbd = "rounded-md bg-white/10 px-1.5 py-0.5 font-sans text-xs text-fg";
+  const kbd = "rounded-md bg-tint/10 px-1.5 py-0.5 font-sans text-xs text-fg";
 
   return (
-    <section aria-labelledby="pointer-title" className="rise mt-6 rounded-[28px] bg-raised p-7 ring-1 ring-line" style={{ "--i": 4 } as React.CSSProperties}>
-      <h2 id="pointer-title" className="font-display text-2xl font-bold tracking-[-0.025em]">
+    <section aria-labelledby="pointer-title" className="rise mt-5 rounded-2xl border border-line bg-raised p-5" style={{ "--i": 4 } as React.CSSProperties}>
+      <h2 id="pointer-title" className="text-[17px] font-semibold tracking-[-0.01em]">
         How it feels over there
       </h2>
 
@@ -65,9 +66,9 @@ export function Pointer({ initial, mac }: { initial: CursorPrefs; mac: boolean }
           className="group flex items-center gap-3 text-left focus-visible:outline-none"
         >
           <span
-            className={`relative h-6 w-10 shrink-0 rounded-full transition-colors duration-200 group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-accent ${p.swapCtrlCmd ? "bg-accent" : "bg-white/15"}`}
+            className={`relative h-6 w-10 shrink-0 rounded-full transition-colors duration-200 group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-accent ${p.swapCtrlCmd ? "bg-accent" : "bg-tint/15"}`}
           >
-            <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-fg transition-[left] duration-200 ease-[var(--ease-spring)] ${p.swapCtrlCmd ? "left-[18px]" : "left-0.5"}`} />
+            <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-fg transition-[left] duration-200 ease-[var(--ease-out-expo)] ${p.swapCtrlCmd ? "left-[18px]" : "left-0.5"}`} />
           </span>
           <span id="swap-text" className="text-fg">
             {mac ? "⌘ acts as Ctrl on a PC" : "Ctrl acts as ⌘ on a Mac"}

@@ -1,3 +1,4 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -10,12 +11,15 @@ import { tickOnPress } from "./sound";
 import { useEdge, usePortalState } from "./calibration";
 import { type Look, applyAccent, loadLook } from "./look";
 import { listen } from "@tauri-apps/api/event";
+import { type Theme, applyTheme, loadTheme } from "./theme";
 import "./index.css";
 
 const label = getCurrentWindow().label;
 const isPhone = /Android|iPhone|iPad/i.test(navigator.userAgent);
 applyAccent(loadLook().color);
 listen<Look>("look", (e) => applyAccent(e.payload.color));
+applyTheme(loadTheme());
+listen<Theme>("theme", (e) => applyTheme(e.payload));
 
 // a native app has no "Back / Reload / Print / Inspect" menu or browser shortcuts (dev builds keep them for debugging)
 const BROWSER_KEYS: Record<string, true> = { r: true, f: true, g: true, p: true, s: true, u: true, j: true, h: true, o: true, n: true, "+": true, "-": true, "=": true, "0": true };

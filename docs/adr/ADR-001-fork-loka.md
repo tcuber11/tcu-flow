@@ -25,11 +25,12 @@ Fork [LOKA](https://github.com/fanrsd/LOKA) 0.9.5 (Apache-2.0, Aufa Nirsad) as t
 | TRD | Stack is Tauri/Rust; transport is QUIC over TLS 1.3 (TRD: TCP + TLS 1.3); discovery is a LocalSend-style JSON announce on UDP multicast, not mDNS/DNS-SD |
 | BSD | Settings are LOKA's JSON settings file, not the SQLite schema; the private key is a plain file `identity.key` in the app data dir, not Keychain/DPAPI (PRD §8 security requirement) |
 | IPD | Repository tree and Phase 1–4 tasks largely done by the import; phases become verification and gap-closing |
-| DBD | LOKA's visual design (Oka mascot, glow edge) replaces the DBD token palette until restyled |
+| DBD | Restyled to a system-settings look with light/dark (DESIGN.md); Oka mascot replaced by device avatars |
 
-## Follow-ups (not done)
+## Follow-ups
 
-1. Decide which PRD rules still apply (rich clipboard, private keys outside Keychain/DPAPI, SQLite) and update the six documents.
-2. Generate a TCuFlow updater signing key and replace LOKA's public key in `tauri.conf.json`.
-3. Optional: rename internal identifiers (Tauri plugin `loka`, Android package `dev.loka.app`, CSS classes, storage keys).
-4. Verify on a real Mac + Windows pair before claiming any feature works.
+1. ~~Decide which PRD rules still apply.~~ Clipboard keeps pictures and files (owner, 2 Nov 2026); the six documents were updated to the implementation (v2.0).
+2. ~~Generate a TCuFlow updater signing key.~~ Done; public key in `tauri.conf.json`, private key in `~/.tauri/tcuflow.key` (never committed).
+3. ~~Rename internal identifiers.~~ Done: Tauri plugin `tcuflow`, Android `dev.tcuflow.app` / `TcuflowPlugin`, storage keys, log and temp names. The LOKA credit stays as the license requires.
+4. Verify on a real Mac + Windows pair before claiming any feature works (open).
+5. Close the security gaps listed in TRD §11 (open).

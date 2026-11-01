@@ -7,8 +7,8 @@ import { quietButton, type Sharing as SharingPrefs } from "./Pairing";
 export function Toggle({ on, onChange, label, hint, disabled }: { on: boolean; onChange: (on: boolean) => void; label: string; hint?: string; disabled?: boolean }) {
   return (
     <button role="switch" aria-checked={on} disabled={disabled} onClick={() => onChange(!on)} className="group flex items-start gap-3 text-left focus-visible:outline-none disabled:opacity-50">
-      <span className={`relative mt-0.5 h-6 w-10 shrink-0 rounded-full transition-colors duration-200 group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-accent ${on ? "bg-accent" : "bg-white/15"}`}>
-        <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-fg transition-[left] duration-200 ease-[var(--ease-spring)] ${on ? "left-[18px]" : "left-0.5"}`} />
+      <span className={`relative mt-0.5 h-6 w-10 shrink-0 rounded-full transition-colors duration-200 group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-accent ${on ? "bg-accent" : "bg-tint/15"}`}>
+        <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-fg transition-[left] duration-200 ease-[var(--ease-out-expo)] ${on ? "left-[18px]" : "left-0.5"}`} />
       </span>
       <span>
         <span className="block text-sm text-fg">{label}</span>
@@ -24,11 +24,11 @@ const folderName = (p: string) => p.split(/[\\/]/).filter(Boolean).pop() ?? p;
  *  sharing (out of MVP scope; the backend refuses those services too). */
 export function Sharing({ received, mac, onChange }: { initial: SharingPrefs; received: string; mac: boolean; onChange: () => void }) {
   const pick = async () => (await open({ directory: true })) as string | null;
-  const kbd = "rounded-md bg-white/10 px-1.5 py-0.5 font-sans text-xs text-fg";
+  const kbd = "rounded-md bg-tint/10 px-1.5 py-0.5 font-sans text-xs text-fg";
 
   return (
-    <section aria-labelledby="sharing-title" className="rise mt-6 rounded-[28px] bg-raised p-7 ring-1 ring-line" style={{ "--i": 6 } as React.CSSProperties}>
-      <h2 id="sharing-title" className="font-display text-2xl font-bold tracking-[-0.025em]">
+    <section aria-labelledby="sharing-title" className="rise mt-5 rounded-2xl border border-line bg-raised p-5" style={{ "--i": 6 } as React.CSSProperties}>
+      <h2 id="sharing-title" className="text-[17px] font-semibold tracking-[-0.01em]">
         Received files
       </h2>
       <p className="mt-1 text-sm text-muted">Only from paired devices, over their encrypted link.</p>

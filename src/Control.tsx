@@ -123,7 +123,7 @@ export function Wizard({ computer, onClose }: { computer: string; onClose: () =>
             <p className="text-sm font-semibold">Step {index + 1} of 3</p>
             <div className="ml-auto flex w-28 gap-1" aria-hidden>
               {steps.map((_, i) => (
-                <span key={i} className={"h-1 flex-1 rounded-full " + (i <= index ? "bg-accent" : "bg-white/10")} />
+                <span key={i} className={"h-1 flex-1 rounded-full " + (i <= index ? "bg-accent" : "bg-tint/10")} />
               ))}
             </div>
           </>
@@ -276,7 +276,7 @@ function Body({ title, text, face, children }: { title: string; text: string; fa
           <Face seed="phone" size={56} look="left" mood="happy" />
         </div>
       )}
-      <h1 className="font-display text-[30px] font-extrabold leading-[1.05] tracking-[-0.035em]">{title}</h1>
+      <h1 className="font-display text-[30px] font-bold leading-[1.05] tracking-[-0.02em]">{title}</h1>
       {text && <p className="mt-3 max-w-[34ch] leading-relaxed text-muted">{text}</p>}
       <div className={"flex w-full flex-1 flex-col " + (face ? "" : "")}>{children}</div>
     </section>
@@ -286,7 +286,7 @@ function Body({ title, text, face, children }: { title: string; text: string; fa
 function Waiting({ children }: { children: React.ReactNode }) {
   return (
     <p role="status" className="mt-6 flex items-center gap-3 rounded-2xl bg-raised p-4 text-sm text-muted ring-1 ring-line">
-      <span aria-hidden className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-white/20 border-t-accent" />
+      <span aria-hidden className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-tint/20 border-t-accent" />
       {children}
     </p>
   );

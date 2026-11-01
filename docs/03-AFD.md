@@ -1,228 +1,106 @@
 # 03 — Application Flow Documentation (AFD)
 
-**Product:** TCuFlow  
-**Version:** 1.0  
-**Status:** Baseline interaction specification
+**Product:** TCuFlow
+**Version:** 2.0
+**Status:** As built on the LOKA fork (see [ADR-001](adr/ADR-001-fork-loka.md))
 
 ## 1. Purpose
 
-This document defines the main user journeys, screen transitions, session states and expected behavior. It describes what the user experiences rather than the implementation details.
+The user journeys, screens and states as the app implements them. Visual details live in [DESIGN.md](../DESIGN.md).
 
 ## 2. Navigation model
 
-### macOS Controller
-- Dashboard
-- Devices
-- Display Arrangement
-- Keyboard & Mouse
-- Clipboard
-- File Transfer
-- Transfer History
-- Settings
-- Help / Diagnostics
+One window (the same on macOS and Windows) plus the tray menu.
 
-### Windows Agent
-- Tray status
-- Connection request / pairing approval
-- Active session status
-- Clipboard sharing status
-- Incoming transfer approval / destination
-- Settings
-- Diagnostics
+**Main window, top to bottom**
+- Header: this computer's avatar and name, Appearance (System / Light / Dark), About.
+- Linked computers: title, linked-count pill, one-line guidance.
+- Discovery panel: listening line, security code while pairing, Nearby computers list, Add by IP.
+- Where your devices sit: screens map, device placement, glow colour and style.
+- How it feels over there: pointer speed, edge delay, Ctrl/⌘ swap (when a linked device is selected).
+- Test connection / Troubleshoot (selected device).
+- Received files: destination folder.
+- Recent clipboard; transfer toasts.
 
-## 3. First-run onboarding
+**Tray menu:** Control a placed device, Disconnect, Start with computer, About, Quit.
 
-### Preconditions
-- TCuFlow is installed on both computers.
-- Both computers are on the same trusted LAN.
-- The user is logged in to the normal desktop session.
+**About:** version, updates, permissions (Accessibility / Windows Firewall), diagnostics, links (including the LOKA credit).
 
-### Flow
-1. Launch TCuFlow on Mac.
-2. Show welcome screen and explain local-network-only behavior.
-3. Explain that input forwarding and clipboard sharing are opt-in.
-4. Check required macOS permissions.
-5. If permission is missing, show why it is needed and link to the relevant System Settings location where possible.
-6. Launch TCuFlow Agent on Windows.
-7. Discover Windows agent automatically.
-8. User selects the Windows device.
-9. Begin secure pairing.
-10. User approves on Windows and confirms on Mac.
-11. Save trusted-device metadata.
-12. Show connection success.
-13. Ask user to configure physical screen arrangement.
-14. Show dashboard with sharing controls disabled until user explicitly enables them.
+## 3. First run
 
-### Error paths
-- No peer found: show manual IP option and network troubleshooting.
-- Permission denied: explain unavailable features; do not pretend they work.
-- Pairing rejected: return to device list and do not save trust.
-- Pairing timeout: expire the request and allow retry.
-- Unsupported protocol: show version mismatch and upgrade guidance.
+1. Install and open TCuFlow on both computers (same network).
+2. macOS asks for **Accessibility** (and **Local Network** on macOS 15+); Windows Firewall asks to allow TCuFlow (Private network).
+3. Each computer lists the other under **Nearby computers** within a few seconds.
+4. If nothing appears: **Add by IP** with the address shown under "This computer's address" on the other computer.
 
-## 4. Device discovery and pairing flow
+## 4. Linking (pairing)
 
-1. Open Devices screen.
-2. Show discovered devices with name, OS, app version and network status.
-3. User selects a device.
-4. Show identity details and pairing code/confirmation.
-5. Windows displays a request naming the Mac.
-6. User approves or rejects on Windows.
-7. Mac confirms the same pairing attempt.
-8. Exchange/validate peer identity.
-9. Save trust metadata.
-10. Show `Paired` state.
+1. On computer A, press **Link** on computer B's row (or drag B onto a screen edge in the map).
+2. A's Discovery panel shows **Security code** as six boxes once both sides have exchanged nonces; B's row shows a **Waiting** pill.
+3. On B, A appears at the top of Nearby computers with an **Incoming** pill, the same six-box code, and **Accept** / **Reject** (Reject has default focus).
+4. The user compares the codes and accepts on B.
+5. Both rows switch to **Linked**; the header pill counts linked computers.
+6. Reject, no answer (timeout) or an unreachable device shows **Declined**, **No answer** or **Couldn't reach it** on A's row with **Try again**.
 
-Pairing must never automatically enable remote input or clipboard synchronization.
+Linking never starts with the computer or shares anything on its own; it only allows the two to reach each other.
 
-## 5. Connection flow
+## 5. Placing a device
 
-1. User selects a paired device.
-2. Mac starts an authenticated connection.
-3. Both endpoints negotiate protocol version and capabilities.
-4. Session becomes `Connected`.
-5. Dashboard shows latency estimate and supported capabilities where available.
-6. Input sharing and clipboard sharing remain governed by explicit toggles.
+1. In **Where your devices sit**, drag a linked device to the screen edge it sits beside on the desk (any of four edges, any monitor), or click it to place it on the first free edge.
+2. Slide its box along the edge so the glow matches where the other computer physically is; set size, glow colour, opacity, thickness, and when the glow shows.
+3. The other computer places this one on its matching edge automatically.
+4. **Take off** removes the placement.
 
-If authentication fails, terminate the connection and show a security-oriented error. Do not downgrade to plaintext.
+## 6. Using the other computer
 
-## 6. Display arrangement flow
+1. Push the cursor into the glowing stretch of the edge: the cursor appears on the other computer; keyboard input goes there.
+2. A status toast shows "Using ⟨device⟩ · Ctrl Alt Esc to return".
+3. Return: push the cursor out of the other computer's opposite edge, press **Ctrl+Alt+Esc**, or double-tap **Ctrl**.
+4. Link loss (sleep, Wi-Fi, crash): the cursor comes home within about 3 seconds and nothing stays pressed.
+5. **Scroll Lock** (F14 on a Mac) locks the pointer to the screen it is on.
+6. If crossing fails, the toast names the reason (for example, Accessibility not granted on the other side) and disappears after 8 seconds.
 
-1. Open Display Arrangement.
-2. Show Mac and Windows display tiles.
-3. User drags the Windows tile to the left/right of Mac (MVP default).
-4. User selects the active display on each computer if necessary.
-5. Show a simple preview of the boundary where pointer transition occurs.
-6. User saves arrangement.
-7. Run a guided test: move pointer to the selected edge.
-8. If transition fails, show troubleshooting and provide a reset-to-local action.
+## 7. Clipboard
 
-The UI must not imply that the Windows laptop is a physical external display or that screen pixels are being extended. TCuFlow shares input, not video.
+- Copy on one computer, move the cursor over, paste on the other: text, pictures (including screenshots) and copied files, in both directions.
+- Secrets marked by password managers stay home; nothing is stored on disk.
+- **Recent clipboard** lists the last 12 copies for re-copying.
+- There is no on/off toggle yet (PRD FR-014 gap).
 
-## 7. Remote-control flow
+## 8. File transfer
 
-### Start
-1. User confirms the paired device is connected.
-2. User enables `Keyboard & Mouse Sharing`.
-3. Dashboard shows an obvious active-control indicator and the target device.
-4. User moves pointer to configured edge.
-5. Pointer transition occurs.
-6. Windows receives supported input events.
-7. Mac shows a subtle state indicator that control is on Windows.
+- Drop files or folders on the glowing edge, drag them across it, use **Send files…** on a device's context menu, Explorer **Send to → TCuFlow**, or Finder **Open With → TCuFlow**.
+- Files land in `Downloads/TCuFlow` (or the folder chosen under **Received files**) without a confirmation on the receiving side; names never overwrite existing files.
+- Both sides show progress, speed and time left; either side can cancel; the receiver can open the folder.
+- **Ctrl+Alt+V** pastes the files that arrived last into the app in front.
 
-### Return
-1. User moves pointer to the configured return edge, or invokes emergency shortcut.
-2. Remote forwarding stops.
-3. Local Mac control is restored.
-4. Dashboard updates active target to Mac.
+## 9. Unlinking
 
-### Disconnect / failure
-- On network loss, stop remote forwarding immediately.
-- Release tracked remote key/button states where possible.
-- Restore local input without waiting for reconnect.
-- Show a non-blocking notification.
-- Reconnect only after authentication succeeds.
-- Do not automatically re-enter remote-control mode without an explicit safe policy and user-visible indication.
+- **Unlink** on a linked device's row (or its context menu) removes trust and placement on this computer.
+- An offline linked device stays in the list as **Offline** with **Wake up** (Wake-on-LAN, when known) and **Forget**.
 
-## 8. Clipboard flow
+## 10. Device states
 
-### Enable
-1. User opens Clipboard settings.
-2. User enables `Share plain-text clipboard`.
-3. UI explains that copied text can be sent to the paired device.
-4. A visible status indicator appears.
+| State | Shown as |
+|---|---|
+| Not linked | Row with **Link** |
+| Asking | **Waiting** pill, code in the Discovery panel |
+| Incoming | **Incoming** pill, code boxes, Accept / Reject |
+| Linked | **Linked** pill (or "Linked · place it"), Select / Unlink |
+| Needs setup | Pill plus the fix (for example "allow Accessibility on the Mac") |
+| Needs update | Different protocol version |
+| Offline | Linked but not on the network |
 
-### Copy Mac -> Windows
-1. User copies text on Mac.
-2. Clipboard service detects a new local text value.
-3. If sharing is enabled and a valid session exists, send the update with origin and sequence metadata.
-4. Windows validates and applies the text.
-5. Windows marks the update as peer-originated to prevent echo.
-6. User pastes on Windows.
+## 11. Accessibility
 
-### Copy Windows -> Mac
-Same flow in reverse.
+- Every action is a real button reachable by keyboard; trust decisions default focus to the safe choice.
+- Status is always words plus icon, never colour alone.
+- The security code is read out digit by digit to screen readers.
+- Reduced-motion settings stop entrance and listening animations.
+- Light and dark themes both meet text contrast targets.
 
-### Disable
-- User disables sharing.
-- Stop future clipboard transmissions immediately.
-- Do not clear either device's clipboard automatically.
-- Do not persist clipboard content.
+## 12. Open UX questions
 
-## 9. File transfer flow
-
-### Send
-1. User opens File Transfer.
-2. User selects destination device.
-3. User chooses files through native file picker.
-4. App displays file names, total size and destination.
-5. User confirms send.
-6. Receiver asks for destination/approval according to configured policy.
-7. Transfer begins.
-8. UI displays per-file and total progress.
-9. User may cancel.
-10. Receiver validates size and checksum.
-11. Completed files appear in selected destination.
-12. Transfer history records metadata only.
-
-### Failure
-- Connection interrupted: mark transfer as interrupted and offer retry. Resume is P1 unless implemented and tested.
-- Insufficient storage: show error and do not leave a misleading completed item.
-- File exists: ask before overwrite.
-- Invalid file/path: reject safely and explain.
-- Checksum mismatch: do not finalize file; offer retry.
-
-## 10. Device revocation flow
-
-1. User opens Devices.
-2. Selects paired device.
-3. Chooses `Forget / Revoke Device`.
-4. Confirmation explains that active sessions will end.
-5. User confirms.
-6. End session and remove trust relationship.
-7. Remove locally stored credential reference securely.
-8. Device returns to discoverable/unpaired state.
-
-## 11. Screen states
-
-### Dashboard states
-- `No devices`: onboarding and discover action.
-- `Device discovered`: pair action.
-- `Paired, disconnected`: connect action.
-- `Connected`: enable sharing controls.
-- `Remote control active`: prominent target indicator and emergency action.
-- `Recovering`: local control restored; reconnect status shown.
-- `Permission required`: affected capability disabled with guidance.
-- `Error`: concise reason and next action.
-
-### Transfer states
-- `Queued`
-- `Awaiting approval`
-- `Transferring`
-- `Verifying`
-- `Completed`
-- `Cancelled`
-- `Interrupted`
-- `Failed`
-
-## 12. Accessibility and interaction requirements
-
-- All primary actions accessible by keyboard.
-- Status is communicated with text/icon, not color alone.
-- Provide readable contrast and scalable text.
-- Avoid flashing or distracting transition effects.
-- Confirmation dialogs must identify the device and action.
-- Emergency recovery must be easy to discover and operate.
-
-## 13. Flow diagrams
-
-See:
-- `diagrams/app-flow.mmd`
-- `diagrams/session-sequence.mmd`
-
-## 14. Open UX questions
-
-- Should Windows require approval for every incoming file, or can a trusted-device setting remember the destination?
-- Should clipboard sharing be disabled by default on every new session? Recommended: yes until user enables it.
-- What should the default emergency shortcut be? Must be configurable and conflict-checked.
-- Should the agent show a persistent tray indicator whenever remote control is active? Recommended: yes.
+- Clipboard on/off toggle (FR-014) and where it lives.
+- Whether incoming files should ask before landing for unknown file types.
+- A visible indicator on the driven computer that it is being controlled.

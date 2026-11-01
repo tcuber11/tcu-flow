@@ -1,3 +1,4 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 //! Event log for support: one line per decision or failure, UTC (so two devices' logs line up), in
 //! `app_data_dir/logs/tcuflow.log`, rotated at 1 MiB to `tcuflow.1.log`; its tail goes into `diagnostics`.
 

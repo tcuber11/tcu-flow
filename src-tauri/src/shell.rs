@@ -1,3 +1,4 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 //! Remote terminal: the paired device's default shell (in its home directory) in a PTY, over the pinned
 //! TLS link. Pairing plus the owner's opt-in is the auth; there are no passwords.
 //!

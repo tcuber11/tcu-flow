@@ -1,3 +1,4 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 //! A file drag carried across the edge with the cursor. The files travel as a transfer batch while the
 //! button stays held, announced first by a manifest (names + sizes). On this side a native drag starts under
 //! the cursor once the held button (Drag frame / return) and the manifest are both here, in either order:

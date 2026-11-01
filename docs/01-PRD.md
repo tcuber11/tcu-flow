@@ -1,8 +1,8 @@
 # 01 — Product Requirements Document (PRD)
 
 **Product:** TCuFlow  
-**Version:** 1.0  
-**Status:** Baseline  
+**Version:** 2.0  
+**Status:** Updated for the LOKA-based implementation (ADR-001)  
 **Owner:** Product  
 **Date:** 2 November 2026
 
@@ -10,7 +10,7 @@
 
 TCuFlow is a local-network desktop application intended to make a macOS computer and a Windows computer feel like one extended workstation. The user operates both computers using the Mac's keyboard and pointing device. When the pointer crosses a configured edge of the Mac display, control moves to Windows; crossing the return edge restores control to Mac.
 
-The product also provides bidirectional plain-text clipboard sharing and explicit file transfer. The initial release targets a one-Mac-to-one-Windows setup.
+The product also shares the clipboard (text, pictures and copied files) in both directions and transfers files by dropping or dragging them across the edge. The primary setup is one Mac and one Windows PC; technically every TCuFlow install can drive and be driven by any paired device.
 
 ## 2. Problem statement
 
@@ -33,7 +33,7 @@ TCuFlow should feel like a natural extension of the user's workstation, not a re
 ### Product goals
 1. Provide reliable pointer transition between Mac and Windows.
 2. Allow Mac keyboard and pointing-device input to operate Windows during an active session.
-3. Synchronize plain-text clipboard in both directions.
+3. Synchronize the clipboard (text, pictures, copied files) in both directions.
 4. Transfer files in both directions with integrity validation.
 5. Operate on a trusted LAN without a cloud dependency.
 6. Fail safely when permissions or network connectivity are unavailable.
@@ -43,8 +43,8 @@ TCuFlow should feel like a natural extension of the user's workstation, not a re
 - Pointer transition works in both directions for the configured display arrangement.
 - Keyboard, click and scroll input work on Windows during an active session.
 - Emergency recovery always restores local Mac control.
-- Plain-text clipboard works bidirectionally without an infinite synchronization loop.
-- A file can be transferred in either direction and verified by checksum.
+- Clipboard text, pictures and copied files work bidirectionally without an infinite synchronization loop.
+- A file can be transferred in either direction and arrives intact.
 - The application reports permission and connection problems clearly.
 - Core flows pass a real-hardware test matrix documented in IPD.
 
@@ -71,8 +71,7 @@ A person who owns and uses both a Mac and a Windows laptop at the same desk and 
 ## 6. Product scope
 
 ### MVP — Must have (P0)
-- macOS controller application.
-- Windows agent application.
+- One desktop app for macOS and Windows; either computer can drive the other.
 - LAN device discovery with manual IP fallback.
 - Explicit secure pairing and device trust.
 - Authenticated encrypted session.
@@ -82,33 +81,34 @@ A person who owns and uses both a Mac and a Windows laptop at the same desk and 
 - Keyboard forwarding.
 - Pointer movement, left/right click and vertical/horizontal scroll where supported.
 - Emergency shortcut and local-control recovery.
-- Bidirectional plain-text clipboard sharing with loop prevention and user toggle.
-- Explicit bidirectional file transfer.
+- Bidirectional clipboard sharing (text up to 1 MiB, pictures up to 10 MB, copied files up to 1 GiB) with loop prevention; secrets marked by password managers stay home.
+- Bidirectional file transfer: drop on the edge, drag across the edge, Send to / Open With, or Send files….
 - Transfer progress, cancellation and integrity verification.
 - Permission onboarding and clear error states.
-- Local configuration and transfer history.
+- Local configuration; light and dark appearance.
 
 ### Later — Should have (P1)
-- Folder transfer.
+- ~~Folder transfer.~~ Done (inherited from LOKA).
 - Transfer retry and resumability.
 - More display arrangement options (top/bottom).
 - Multiple displays per computer.
 - Transfer history filtering and clear-history controls.
-- Optional drag-and-drop workflow if platform APIs support a reliable implementation.
+- ~~Drag-and-drop workflow.~~ Done: files dragged across the edge.
 - Windows-first controller mode, subject to architecture review.
 
 ### Future — Could have (P2)
 - Multiple Windows agents or multiple controllers.
 - Remote screen preview or remote desktop (separate product decision).
 - Internet relay / remote access (requires separate threat model).
-- Rich clipboard, images and file clipboard integration.
+- ~~Images and file clipboard integration.~~ Done in MVP. Rich text remains future.
 - Linux support.
 
 ### Explicitly out of scope for MVP
 - Screen streaming or remote desktop.
 - Remote login or unattended public-internet access.
 - Cloud account and cloud synchronization.
-- Clipboard image/rich-text synchronization.
+- Clipboard rich-text synchronization (formatting); pictures and files are in scope.
+- Remote terminal, folder-as-drive, sound, microphone and notification sharing (present in LOKA, refused in TCuFlow).
 - Arbitrary remote shell or command execution.
 - Keystroke recording, keylogging, or input analytics.
 - Silent device pairing or hidden input forwarding.
@@ -128,16 +128,16 @@ A person who owns and uses both a Mac and a Windows laptop at the same desk and 
 | FR-009 | Forward keyboard input during active remote control | P0 |
 | FR-010 | Forward supported click and scroll events | P0 |
 | FR-011 | Restore local input on return transition, disconnect or emergency shortcut | P0 |
-| FR-012 | Synchronize plain-text clipboard in both directions | P0 |
+| FR-012 | Synchronize clipboard text, pictures and copied files in both directions | P0 |
 | FR-013 | Prevent clipboard echo/loop and duplicate updates | P0 |
-| FR-014 | Enable/disable clipboard sharing | P0 |
+| FR-014 | Enable/disable clipboard sharing | P0 — **gap:** no toggle yet; clipboard follows the cursor when it crosses |
 | FR-015 | Transfer selected files in both directions | P0 |
 | FR-016 | Show progress, speed, completion and failure states | P0 |
-| FR-017 | Validate received content using SHA-256 | P0 |
+| FR-017 | Validate received content using SHA-256 | P0 — **gap:** transport (QUIC/TLS) integrity only |
 | FR-018 | Cancel an active transfer | P0 |
 | FR-019 | Recover safely after temporary network loss | P0 |
 | FR-020 | Store settings and trusted-device metadata locally | P0 |
-| FR-021 | Transfer folders | P1 |
+| FR-021 | Transfer folders | Done |
 | FR-022 | Resume interrupted transfers | P1 |
 | FR-023 | Support multiple displays and advanced layouts | P1 |
 | FR-024 | Support multiple peer devices | P2 |
@@ -147,7 +147,7 @@ A person who owns and uses both a Mac and a Windows laptop at the same desk and 
 ### Security and privacy
 - TLS 1.3 or a reviewed equivalent secure transport configuration.
 - Strong peer authentication; discovery must never imply trust.
-- Store private keys and secrets in OS credential stores (macOS Keychain; Windows DPAPI/Credential Manager).
+- Store private keys and secrets in OS credential stores (macOS Keychain; Windows DPAPI/Credential Manager). **Gap:** the identity key is currently a file in the app data directory.
 - Do not log typed content, clipboard contents, file contents or secrets.
 - Make remote-control state visible.
 - Provide immediate local emergency recovery.
@@ -182,7 +182,7 @@ A person who owns and uses both a Mac and a Windows laptop at the same desk and 
 4. As a user, I want my Mac keyboard to operate Windows while the pointer is there.
 5. As a user, I want scrolling and clicking to work on Windows from my Mac trackpad/mouse.
 6. As a user, I want an emergency shortcut so I can regain control if the peer or network fails.
-7. As a user, I want to copy text on one computer and paste it on the other.
+7. As a user, I want to copy text, a screenshot or files on one computer and paste them on the other.
 8. As a user, I want to disable clipboard sharing when handling private information.
 9. As a user, I want to select files and send them to the other computer with visible progress.
 10. As a user, I want failed transfers to report the reason and allow retry.
@@ -204,8 +204,8 @@ MVP is accepted only when:
 - Pointer crosses the configured edge and returns correctly.
 - Keyboard, click and scroll are forwarded as specified.
 - Disconnect and emergency shortcut restore local Mac input.
-- Clipboard text works in both directions without repeated echo.
-- Files transfer in both directions and pass SHA-256 verification.
+- Clipboard text, pictures and files work in both directions without repeated echo.
+- Files transfer in both directions intact (SHA-256 verification still open, FR-017).
 - Permissions can be denied and later granted without reinstalling.
 - The app runs on LAN without internet after installation.
 - No input or clipboard content is written to logs.
@@ -220,15 +220,16 @@ MVP is accepted only when:
 - Wi-Fi quality may make latency inconsistent; Ethernet is preferred for performance testing.
 - The initial product supports one Mac controller and one Windows agent only.
 
-## 13. Open decisions to validate before implementation
+## 13. Decisions
 
-- Minimum supported macOS version.
-- Minimum supported Windows 10/11 build.
-- Whether MVP supports left/right only or also top/bottom transitions.
-- Whether the Windows agent runs as a tray application, startup app, or both.
-- Default file receive directory and overwrite policy.
-- Exact emergency shortcut and conflict handling.
-- Whether file transfer uses a separate TCP port or multiplexed connection.
-- Whether pairing uses short-lived code plus certificate exchange or an alternative reviewed handshake.
-
-Do not silently invent answers to these open decisions. Record proposed defaults and obtain approval before locking them.
+| Question | Decision |
+|---|---|
+| Minimum supported macOS | Tauri 2's default minimum; only the current release (macOS 27) has been built so far |
+| Minimum supported Windows | Windows 10 and 11 (QUIC/TLS is implemented in Rust, not SChannel) |
+| Left/right only or also top/bottom | All four edges, per monitor |
+| Windows agent: tray, startup, or both | Tray app; "Start with computer" off until the user turns it on |
+| Default receive directory and overwrite policy | `Downloads/TCuFlow`; never overwrite (`name (2).ext`) |
+| Emergency shortcut | Ctrl+Alt+Esc or double tap of Ctrl; Scroll Lock/F14 locks the pointer |
+| Separate file port or multiplexed | Separate QUIC endpoints for KVM (53421) and transfers (53420) |
+| Pairing handshake | Pinned self-signed certificates plus a commit–reveal 6-digit code on both screens |
+| Clipboard scope | Text, pictures and copied files (owner decision, 2 November 2026) |

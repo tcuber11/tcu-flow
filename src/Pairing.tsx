@@ -4,6 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { Face } from "./Face";
 import type { Portal } from "./calibration";
+import { CheckIcon, CloseIcon, RetryIcon } from "./icons";
 
 /** `proto`: wire version (`kvm::PROTOCOL`); devices with another one can't pair or connect. `aspectRatio`: its screen's width / height.
  *  `controllable`: whether it can be driven right now (false: an Android phone not set up, a Linux without input access; absent on older TCuFlow = yes).
@@ -57,13 +58,77 @@ export const stateReason = (state: DeviceState, alias: string, os = "") =>
         ? `${alias} isn't on the network: turn it on and open TCuFlow there`
         : null;
 
-/** Pill naming a blocked state (danger) or offline (muted); `dot` for cramped spots, labelled for screen readers and on hover. */
+export type Tone = "accent" | "warning" | "danger" | "success" | "neutral";
+const TONE: Record<Tone, string> = {
+  accent: "bg-accent/12 text-accent-ink",
+  warning: "bg-warning/12 text-warning",
+  danger: "bg-danger/12 text-danger",
+  success: "bg-success/12 text-success",
+  neutral: "bg-tint/[0.06] text-muted",
+};
+
+/** Status pill: tinted fill, text in the same hue, optional leading icon. Never colour alone: it always has words. */
+export function Badge({ tone, icon, children }: { tone: Tone; icon?: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${TONE[tone]}`}>
+      {icon}
+      {children}
+    </span>
+  );
+}
+
+const STATE_TONE: Record<DeviceState, Tone> = { ready: "success", setup: "warning", update: "danger", offline: "neutral" };
+
+/** Pill naming a blocked state or offline; `dot` for cramped spots, labelled for screen readers and on hover. */
 export function StateBadge({ state, title, dot }: { state: DeviceState; title?: string | null; dot?: boolean }) {
   if (state === "ready") return null;
   const off = state === "offline";
   if (dot)
-    return <span role="img" aria-label={STATE_LABEL[state]} title={title ?? STATE_LABEL[state]} className={`block h-2.5 w-2.5 rounded-full ring-2 ring-raised ${off ? "bg-muted" : "bg-danger"}`} />;
-  return <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold ${off ? "bg-white/10 text-muted" : "bg-danger/15 text-danger"}`}>{STATE_LABEL[state]}</span>;
+    return <span role="img" aria-label={STATE_LABEL[state]} title={title ?? STATE_LABEL[state]} className={`block h-2.5 w-2.5 rounded-full ring-2 ring-raised ${off ? "bg-muted" : state === "setup" ? "bg-warning" : "bg-danger"}`} />;
+  return <Badge tone={STATE_TONE[state]}>{STATE_LABEL[state]}</Badge>;
+}
+
+/** A 6-digit pairing code, one box per digit, read out as separate digits. */
+export function CodeBoxes({ code, size = "lg" }: { code: string; size?: "lg" | "sm" }) {
+  const digits = code.replace(/\s/g, "").split("");
+  if (size === "sm")
+    return (
+      <span aria-label={`Security code ${digits.join(" ")}`} className="rounded-full border border-line bg-raised px-3 py-1 text-sm font-semibold tabular-nums tracking-[0.08em] text-fg">
+        {digits.join("")}
+      </span>
+    );
+  return (
+    <div role="img" aria-label={`Security code ${digits.join(" ")}`} className="flex gap-2">
+      {digits.map((d, i) => (
+        <span key={i} className="grid h-14 w-11 place-items-center rounded-xl border border-line bg-raised text-[28px] font-semibold tabular-nums text-fg" style={{ animation: `rise 0.4s ${i * 35}ms var(--ease-out-soft) both` }}>
+          {d}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+export type PairRequest = { id: number; peer: Peer; code: string };
+
+/** The pairing request addressed to this window, if one is open, and the answer to it. */
+export function usePairRequest() {
+  const [req, setReq] = useState<PairRequest | null>(null);
+  useEffect(() => {
+    const win = getCurrentWebviewWindow(); // the simulated phone's prompts are its own
+    const open = win.listen<PairRequest>("pair-request", (e) => setReq(e.payload));
+    // the backend times requests out; drop it with them
+    const closed = win.listen<number>("pair-request-closed", (e) => setReq((r) => (r?.id === e.payload ? null : r)));
+    return () => {
+      open.then((f) => f());
+      closed.then((f) => f());
+    };
+  }, []);
+  const answer = (accept: boolean) => {
+    if (!req) return;
+    invoke("answer_pair", { id: req.id, accept });
+    setReq(null);
+  };
+  return { req, answer };
 }
 
 /** The selected device's state spelled out: badge, reason + fix, and Wake up when it's offline and wakeable. */
@@ -71,11 +136,11 @@ export function StateNote({ state, alias, os, onWake }: { state: DeviceState; al
   const reason = stateReason(state, alias, os);
   if (!reason) return null;
   return (
-    <div role="status" className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-[20px] bg-white/[0.04] p-4 text-sm leading-relaxed">
+    <div role="status" className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-line bg-raised p-4 text-sm leading-relaxed">
       <StateBadge state={state} />
       <p className="min-w-0 flex-1 text-muted">{reason}.</p>
       {state === "offline" && onWake && (
-        <button onClick={onWake} className={quietButton + " min-h-11 ring-1 ring-line"}>
+        <button onClick={onWake} className={quietButton}>
           Wake up
         </button>
       )}
@@ -101,7 +166,7 @@ export function ConnectionCheck({ fingerprint }: { fingerprint: string }) {
   };
   return (
     <div className="min-w-0">
-      <button onClick={run} disabled={busy} className={quietButton + " min-h-11 ring-1 ring-line disabled:opacity-50"}>
+      <button onClick={run} disabled={busy} className={quietButton}>
         {busy ? "Testing…" : "Test connection"}
       </button>
       <div role="status" className="px-1 text-xs leading-relaxed text-muted">
@@ -121,7 +186,7 @@ export function ConnectionCheck({ fingerprint }: { fingerprint: string }) {
 
 /** `troubleshoot`: one step of it; `fixed` = was wrong, put right on this computer. */
 type Step = { title: string; result: "ok" | "fixed" | "failed"; detail: string };
-const MARK = { ok: "✓", fixed: "↻", failed: "✕" } as const;
+const MARK = { ok: <CheckIcon size={13} />, fixed: <RetryIcon size={13} />, failed: <CloseIcon size={13} /> } as const;
 
 /** "Troubleshoot" for a paired device: checks every reason the cursor might not cross, fixes what it can here,
  *  then crosses for real through the portal and back. */
@@ -137,7 +202,7 @@ export function Troubleshoot({ fingerprint, alias }: { fingerprint: string; alia
   };
   return (
     <div className="min-w-0">
-      <button onClick={run} disabled={busy} className={quietButton + " min-h-11 ring-1 ring-line disabled:opacity-50"}>
+      <button onClick={run} disabled={busy} className={quietButton}>
         {busy ? "Checking…" : "Troubleshoot"}
       </button>
       <div role="status" className="px-1 text-xs leading-relaxed text-muted">
@@ -145,10 +210,12 @@ export function Troubleshoot({ fingerprint, alias }: { fingerprint: string; alia
         {steps && (
           <ul className="mt-2 space-y-1">
             {steps.map((s, i) => (
-              <li key={i} className={s.result === "failed" ? "text-danger" : s.result === "fixed" ? "text-fg" : ""}>
-                <span aria-hidden="true">{MARK[s.result]} </span>
+              <li key={i} className={`flex gap-1.5 ${s.result === "failed" ? "text-danger" : s.result === "fixed" ? "text-fg" : ""}`}>
+                <span aria-hidden="true" className="mt-px shrink-0">{MARK[s.result]}</span>
                 <span className="sr-only">{s.result}: </span>
-                {s.title}: {s.detail}
+                <span>
+                  {s.title}: {s.detail}
+                </span>
               </li>
             ))}
           </ul>
@@ -158,68 +225,52 @@ export function Troubleshoot({ fingerprint, alias }: { fingerprint: string; alia
   );
 }
 
-/** Primary action: a white pill, like the rest of the system. */
+/** Primary action: system-blue filled button. */
 export const primaryButton =
-  "rounded-full bg-fg px-5 py-2.5 text-sm font-semibold text-ink transition-[transform,background-color] duration-200 ease-out hover:bg-white active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-50";
+  "inline-flex min-h-8 items-center justify-center gap-1.5 rounded-lg bg-accent px-4 py-1.5 text-sm font-medium text-on-accent transition-[filter,transform] duration-150 ease-out hover:brightness-110 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-50";
+/** Secondary action: neutral filled button (Reject, Change…, Test connection). */
 export const quietButton =
-  "rounded-full px-4 py-2.5 text-sm font-medium text-muted transition-[color,background-color,transform] duration-200 hover:bg-white/5 hover:text-fg active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-accent";
+  "inline-flex min-h-8 items-center justify-center gap-1.5 rounded-lg bg-tint/[0.07] px-4 py-1.5 text-sm font-medium text-fg transition-[background-color,transform] duration-150 hover:bg-tint/[0.11] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-50";
+/** Text action in the accent (Refresh, Wake up). */
+export const linkButton =
+  "inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 text-sm font-medium text-accent-ink transition-colors hover:bg-accent/10 focus-visible:outline-2 focus-visible:outline-accent disabled:opacity-50";
 
-/** Accept/decline sheet for an incoming pairing request addressed to this window. */
+/** Accept/decline sheet for an incoming pairing request (phone views; the desktop shows it inline in its device list). */
 export function PairPrompt({ selfSeed }: { selfSeed: string }) {
-  const [req, setReq] = useState<{ id: number; peer: Peer; code: string } | null>(null);
-
-  useEffect(() => {
-    const win = getCurrentWebviewWindow(); // the simulated phone's prompts are its own
-    const open = win.listen<{ id: number; peer: Peer; code: string }>("pair-request", (e) => setReq(e.payload));
-    // the backend times requests out; close the sheet with it
-    const closed = win.listen<number>("pair-request-closed", (e) => setReq((r) => (r?.id === e.payload ? null : r)));
-    return () => {
-      open.then((f) => f());
-      closed.then((f) => f());
-    };
-  }, []);
-
+  const { req, answer } = usePairRequest();
   if (!req) return null;
-  const answer = (accept: boolean) => {
-    invoke("answer_pair", { id: req.id, accept });
-    setReq(null);
-  };
   const { alias, fingerprint, os } = req.peer.info;
 
   return (
-    <div className="fixed inset-0 z-10 grid place-items-center bg-ink/70 p-5 backdrop-blur-md" style={{ animation: "fade-in 0.2s ease-out" }}>
+    <div className="fixed inset-0 z-10 grid place-items-center bg-black/35 p-5" style={{ animation: "fade-in 0.2s ease-out" }}>
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="pair-title"
         aria-describedby="pair-body"
-        className="w-full max-w-sm rounded-[28px] bg-raised p-7 text-center ring-1 ring-line"
-        style={{ animation: "sheet-in 0.45s var(--ease-spring)" }}
+        className="w-full max-w-sm rounded-2xl bg-raised p-6 text-center shadow-[0_12px_40px_rgb(0_0_0/0.25)]"
+        style={{ animation: "sheet-in 0.35s var(--ease-out-soft)" }}
       >
-        {/* the two devices look at each other */}
         <div className="flex items-center justify-center gap-3">
-          <Face seed={fingerprint} size={64} look="right" />
-          <span aria-hidden className="flex gap-1">
-            {[0, 1, 2].map((i) => (
-              <span key={i} className="h-1 w-1 rounded-full bg-accent" style={{ opacity: 0.35 + i * 0.25 }} />
-            ))}
-          </span>
-          <Face seed={selfSeed} size={64} look="left" />
+          <Face seed={fingerprint} size={52} />
+          <Face seed={selfSeed} size={52} />
         </div>
-        <h2 id="pair-title" className="mt-6 font-display text-[26px] font-bold leading-tight tracking-[-0.025em]">
-          Pair with {alias}?
+        <h2 id="pair-title" className="mt-5 text-xl font-semibold tracking-[-0.015em]">
+          Link with {alias}?
         </h2>
-        <p id="pair-body" className="mx-auto mt-2 max-w-[30ch] text-sm leading-relaxed text-muted">
-          {alias} ({osLabel(os)}, {req.peer.addr}) will be able to use this device's mouse and keyboard and send it files. Pair only if it shows the same code:
+        <p id="pair-body" className="mx-auto mt-2 max-w-[32ch] text-sm leading-relaxed text-muted">
+          {alias} ({osLabel(os)}, {req.peer.addr}) will be able to use this device's mouse and keyboard and send it files. Accept only if it shows the same code.
         </p>
-        <p className="mt-4 font-display text-[34px] font-bold tabular-nums tracking-[0.06em] text-fg">{req.code}</p>
-        <div className="mt-7 flex flex-col gap-1">
-          <button onClick={() => answer(true)} className={primaryButton}>
-            Pair
-          </button>
+        <div className="mt-5 flex justify-center">
+          <CodeBoxes code={req.code} />
+        </div>
+        <div className="mt-6 flex justify-center gap-2">
           {/* default focus on the safe choice: a stray Enter must not hand over control */}
-          <button autoFocus onClick={() => answer(false)} className={quietButton}>
-            Not now
+          <button autoFocus onClick={() => answer(false)} className={quietButton + " min-w-24"}>
+            Reject
+          </button>
+          <button onClick={() => answer(true)} className={primaryButton + " min-w-24"}>
+            Accept
           </button>
         </div>
       </div>

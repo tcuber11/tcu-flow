@@ -1,3 +1,4 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 //! Shared folder: the owner serves WebDAV for one folder over a paired `Service::Files` stream; the
 //! viewer exposes it on `127.0.0.1:PORT` (one service stream per local connection) and mounts it as a
 //! network drive. Wire format = plain HTTP/1.1 WebDAV inside the TLS stream.

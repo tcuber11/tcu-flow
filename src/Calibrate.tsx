@@ -1,8 +1,10 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { availableMonitors } from "@tauri-apps/api/window";
 import { type Edge, type Portal, type Rect, fit, sameRect, slot } from "./calibration";
 import { Face } from "./Face";
+import { DisplayIcon } from "./icons";
 import { type Look, MOTIONS, SWATCHES, loadLook, saveLook } from "./look";
 import { STATE_LABEL, StateBadge, deviceState, stateReason, type Device, type Peer } from "./Pairing";
 
@@ -192,8 +194,8 @@ export function Calibrate({ device, peers, selected, onSelect, onPair, onChange 
   const selAlias = placed.find((i) => i.fingerprint === sel)?.alias;
 
   return (
-    <section aria-labelledby="cal-title" className="rise mt-12 rounded-[28px] bg-raised p-7 ring-1 ring-line" style={{ "--i": 3 } as React.CSSProperties}>
-      <h2 id="cal-title" className="font-display text-2xl font-bold tracking-[-0.025em]">
+    <section aria-labelledby="cal-title" className="rise mt-5 rounded-2xl border border-line bg-raised p-5" style={{ "--i": 3 } as React.CSSProperties}>
+      <h2 id="cal-title" className="text-[17px] font-semibold tracking-[-0.01em]">
         Where your devices sit
       </h2>
       <p className="mt-1.5 max-w-[60ch] text-sm leading-relaxed text-muted">
@@ -205,10 +207,14 @@ export function Calibrate({ device, peers, selected, onSelect, onPair, onChange 
           <div
             key={i}
             aria-hidden
-            className="absolute grid place-items-center rounded-[14px] bg-white/[0.05] font-display text-sm font-semibold text-faint ring-1 ring-white/20"
+            className="absolute flex flex-col items-center justify-center gap-1.5 rounded-xl border border-line bg-sunken text-muted"
             style={{ left: mx(m.x) + 3, top: my(m.y) + 3, width: m.w * k - 6, height: m.h * k - 6 }}
           >
-            {i + 1}
+            <DisplayIcon size={22} />
+            <span className="max-w-[90%] truncate text-xs font-medium">
+              {device.info.alias}
+              {screens.length > 1 && ` · ${i + 1}`}
+            </span>
           </div>
         ))}
 
@@ -245,7 +251,7 @@ export function Calibrate({ device, peers, selected, onSelect, onPair, onChange 
                 aria-pressed={f === sel}
                 aria-label={`${item.alias}, ${p.edge} edge of screen ${screen}.${setup} Arrow keys slide it along, Delete takes it off.`}
                 title={reason ?? undefined}
-                className={`absolute flex cursor-grab flex-col items-center justify-center gap-1 overflow-hidden rounded-[12px] bg-white/[0.04] ring-1 transition-[background-color,box-shadow] duration-200 hover:bg-white/[0.08] focus-visible:outline-2 focus-visible:outline-accent active:cursor-grabbing ${f === sel ? "ring-accent" : "ring-line"}`}
+                className={`absolute flex cursor-grab flex-col items-center justify-center gap-1 overflow-hidden rounded-[12px] bg-tint/[0.04] ring-1 transition-[background-color,box-shadow] duration-200 hover:bg-tint/[0.08] focus-visible:outline-2 focus-visible:outline-accent active:cursor-grabbing ${f === sel ? "ring-accent" : "ring-line"}`}
                 style={tile}
               >
                 <Face seed={f} size={Math.max(16, Math.min(40, Math.min(tile.width, tile.height) * 0.55))} mood={reason ? "sad" : f === sel ? "happy" : "idle"} />
@@ -267,7 +273,7 @@ export function Calibrate({ device, peers, selected, onSelect, onPair, onChange 
               return (
                 <div aria-hidden className="pointer-events-none">
                   <div className="absolute rounded-full bg-accent" style={bar} />
-                  <div className="absolute grid place-items-center rounded-[12px] border border-dashed border-accent bg-white/[0.06]" style={tile}>
+                  <div className="absolute grid place-items-center rounded-[12px] border border-dashed border-accent bg-tint/[0.06]" style={tile}>
                     <Face seed={drag.item.fingerprint} size={Math.max(16, Math.min(40, Math.min(tile.width, tile.height) * 0.55))} mood="happy" />
                   </div>
                 </div>
@@ -280,7 +286,7 @@ export function Calibrate({ device, peers, selected, onSelect, onPair, onChange 
           ))}
       </div>
 
-      <div ref={tray} className="mt-6 rounded-[20px] border border-dashed border-line px-4 py-3">
+      <div ref={tray} className="mt-6 rounded-xl border border-dashed border-line px-4 py-3">
         <p className="text-xs text-muted">
           {waiting.length ? "Not placed yet: drag one next to a screen, or click it." : "Drag a device here to take it off your screens."}
         </p>
@@ -297,7 +303,7 @@ export function Calibrate({ device, peers, selected, onSelect, onPair, onChange 
                     else setNote("Every edge is taken: take a device off first.");
                   }}
                   aria-label={item.peer ? `${item.alias}, not paired. Pair it and place it next to your screens.` : `${item.alias}. Place it next to your screens.`}
-                  className={`flex w-24 cursor-grab flex-col items-center gap-1 rounded-[18px] p-2 transition-[background-color,opacity] duration-200 hover:bg-white/[0.05] focus-visible:outline-2 focus-visible:outline-accent active:cursor-grabbing ${drag?.item.fingerprint === item.fingerprint && drag.moved ? "opacity-30" : ""}`}
+                  className={`flex w-24 cursor-grab flex-col items-center gap-1 rounded-[18px] p-2 transition-[background-color,opacity] duration-200 hover:bg-tint/[0.05] focus-visible:outline-2 focus-visible:outline-accent active:cursor-grabbing ${drag?.item.fingerprint === item.fingerprint && drag.moved ? "opacity-30" : ""}`}
                 >
                   <Face seed={item.fingerprint} size={40} />
                   <span className="w-full truncate text-center text-xs font-semibold">{item.alias}</span>
@@ -330,7 +336,7 @@ export function Calibrate({ device, peers, selected, onSelect, onPair, onChange 
                     if (to) apply(sel, to, true);
                     else setNote(`No room left on the ${e} edge.`);
                   }}
-                  className={`rounded-full px-3.5 py-1.5 font-medium capitalize transition-[background-color,color,transform] duration-200 active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-accent ${selPortal.edge === e ? "bg-fg text-ink" : "bg-white/[0.05] text-muted hover:text-fg"}`}
+                  className={`rounded-full px-3.5 py-1.5 font-medium capitalize transition-[background-color,color,transform] duration-200 active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-accent ${selPortal.edge === e ? "bg-fg text-ink" : "bg-tint/[0.05] text-muted hover:text-fg"}`}
                 >
                   {e}
                 </button>
@@ -369,7 +375,7 @@ export function Calibrate({ device, peers, selected, onSelect, onPair, onChange 
               aria-checked={look.color === c}
               aria-label={name}
               onClick={() => restyle({ color: c })}
-              className={`h-7 w-7 rounded-full transition-[transform,box-shadow] duration-200 ease-[var(--ease-spring)] hover:scale-110 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg ${look.color === c ? "ring-2 ring-fg ring-offset-[3px] ring-offset-raised" : ""}`}
+              className={`h-7 w-7 rounded-full transition-[transform,box-shadow] duration-200 ease-[var(--ease-out-expo)] hover:scale-110 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg ${look.color === c ? "ring-2 ring-fg ring-offset-[3px] ring-offset-raised" : ""}`}
               style={{ background: c, filter: `drop-shadow(0 0 6px ${c}99)` }}
             />
           ))}
@@ -429,7 +435,7 @@ export function Calibrate({ device, peers, selected, onSelect, onPair, onChange 
               role="radio"
               aria-checked={look.autoHide === hide}
               onClick={() => restyle({ autoHide: hide })}
-              className={`rounded-full px-3.5 py-1.5 font-medium transition-[background-color,color,transform] duration-200 active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-accent ${look.autoHide === hide ? "bg-fg text-ink" : "bg-white/[0.05] text-muted hover:text-fg"}`}
+              className={`rounded-full px-3.5 py-1.5 font-medium transition-[background-color,color,transform] duration-200 active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-accent ${look.autoHide === hide ? "bg-fg text-ink" : "bg-tint/[0.05] text-muted hover:text-fg"}`}
             >
               {name}
             </button>
@@ -444,7 +450,7 @@ export function Calibrate({ device, peers, selected, onSelect, onPair, onChange 
               role="radio"
               aria-checked={look.motion === m}
               onClick={() => restyle({ motion: m })}
-              className={`rounded-full px-3.5 py-1.5 font-medium capitalize transition-[background-color,color,transform] duration-200 active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-accent ${look.motion === m ? "bg-fg text-ink" : "bg-white/[0.05] text-muted hover:text-fg"}`}
+              className={`rounded-full px-3.5 py-1.5 font-medium capitalize transition-[background-color,color,transform] duration-200 active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-accent ${look.motion === m ? "bg-fg text-ink" : "bg-tint/[0.05] text-muted hover:text-fg"}`}
             >
               {m}
             </button>

@@ -1,25 +1,16 @@
 # Claude Code — TCuFlow Project Kickoff
 
-You are the senior engineer and technical lead for TCuFlow.
+You are the senior engineer and technical lead for TCuFlow, a Tauri 2 (Rust + React) fork of LOKA.
 
-Before writing implementation code:
-1. Read `docs/README.md`.
-2. Read all six documents:
-   - `docs/01-PRD.md`
-   - `docs/02-TRD.md`
-   - `docs/03-AFD.md`
-   - `docs/04-DBD.md`
-   - `docs/05-BSD.md`
-   - `docs/06-IPD.md`
-3. Inspect the actual development environment and available hardware.
-4. Identify conflicts, ambiguities, unsupported assumptions and OS limitations.
-5. Produce a concise implementation-readiness report.
-6. Propose Architecture Decision Records for unresolved choices.
-7. Do not implement beyond Phase 0 until the user reviews the report.
+Before changing code:
+1. Read `docs/README.md`, then the six documents and `docs/adr/`.
+2. Read `PRODUCT.md` and `DESIGN.md` before any UI work.
+3. Build and test: `npm run build`, `cargo test --manifest-path src-tauri/Cargo.toml`.
+4. Pick work from `docs/06-IPD.md` section 4.
 
 ## Non-negotiable constraints
 
-- Build native macOS and Windows applications.
+- One Tauri app for macOS and Windows (ADR-001).
 - No cloud dependency for MVP.
 - Do not fake input, clipboard or transfer features with UI simulations.
 - Do not bypass OS permission or security controls.
@@ -30,17 +21,8 @@ Before writing implementation code:
 - Do not claim a feature works until verified on real hardware.
 - Keep all six documents updated when approved decisions change.
 
-## Required first response
+## Keep
 
-Return:
-1. Environment inventory.
-2. Available OSes and hardware.
-3. Toolchain versions.
-4. Dependency recommendations.
-5. Platform permission and API constraints.
-6. Critical risks.
-7. Open decisions with recommended defaults.
-8. Phase 0 task plan.
-9. Proposed repository tree.
-
-Do not begin Phase 1 or later without explicit user approval.
+- The LOKA credit in About, NOTICE, README and the per-file "Modified for TCuFlow" headers (Apache-2.0 §4).
+- ALPN `tcuflow/1` and TCuFlow's own ports, so it never pairs with LOKA.
+- The service gate in `allow_service` refusing terminal, folder, sound, mic and notification sharing.

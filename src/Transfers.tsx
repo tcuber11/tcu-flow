@@ -77,7 +77,7 @@ export function Transfers() {
               .filter(Boolean)
               .join(" · ");
         return (
-          <li key={x.key} className="rounded-2xl border border-white/10 bg-ink/95 p-3.5 shadow-2xl backdrop-blur">
+          <li key={x.key} className="rounded-xl bg-raised p-3.5 shadow-[0_8px_28px_rgb(0_0_0/0.18)]">
             <div className="flex items-center gap-2">
               <p className="min-w-0 flex-1 truncate text-sm font-semibold" title={x.name}>{x.name}</p>
               {x.status === "active" ? (
@@ -96,7 +96,7 @@ export function Transfers() {
               aria-valuemin={0}
               aria-valuemax={100}
               aria-valuenow={Math.floor(pct * 100)}
-              className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10"
+              className="mt-2 h-1.5 overflow-hidden rounded-full bg-tint/10"
             >
               <div
                 className={`h-full rounded-full transition-[width] duration-150 ${x.status === "failed" ? "bg-danger" : "bg-accent"}`}
@@ -106,7 +106,7 @@ export function Transfers() {
             <div className="mt-1.5 flex items-center gap-2">
               <p aria-live={x.status === "active" ? "off" : "polite"} className={`min-w-0 flex-1 truncate text-xs ${x.status === "failed" && x.error !== "cancelled" ? "text-danger" : "text-muted"}`}>{status}</p>
               {x.path && (
-                <button className="text-xs font-medium text-accent hover:underline focus-visible:outline-2 focus-visible:outline-accent" onClick={() => invoke("reveal", { path: x.path })}>
+                <button className="text-xs font-medium text-accent-ink hover:underline focus-visible:outline-2 focus-visible:outline-accent" onClick={() => invoke("reveal", { path: x.path })}>
                   Show in folder
                 </button>
               )}

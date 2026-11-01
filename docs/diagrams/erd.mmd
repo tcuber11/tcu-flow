@@ -1,75 +1,35 @@
-erDiagram
-    DEVICES ||--o| TRUSTED_DEVICE_CREDENTIALS : has
-    DEVICES ||--o{ DEVICE_LAYOUTS : participates
-    DEVICES ||--o{ TRANSFER_RECORDS : peer
-    TRANSFER_RECORDS ||--|{ TRANSFER_ITEMS : contains
-
-    DEVICES {
-        text device_id PK
-        text display_name
-        text platform
-        text app_version
-        int protocol_version
-        text last_known_address
-        text last_seen_at
-        int is_paired
-        text created_at
-        text updated_at
+classDiagram
+    class Settings {
+        PairedDevice[] paired
+        Map~fingerprint, Portal~ portals
+        IpAddr[] hosts
+        CursorPrefs cursor
+        Sharing sharing (ignored)
+        Path? received
+        Map~fingerprint, mac~ macs
+        bool start_with_computer
     }
-
-    TRUSTED_DEVICE_CREDENTIALS {
-        text device_id PK,FK
-        text credential_ref
-        text identity_fingerprint
-        text paired_at
-        text last_verified_at
-        text revoked_at
+    class PairedDevice {
+        string fingerprint
+        string alias
     }
-
-    DEVICE_LAYOUTS {
-        text layout_id PK
-        text local_device_id
-        text remote_device_id FK
-        text local_display_id
-        text remote_display_id
-        text relative_position
-        int is_default
-        text created_at
-        text updated_at
+    class Portal {
+        Edge edge
+        Rect monitor
+        float start
+        float end
+        float reach
     }
-
-    TRANSFER_RECORDS {
-        text transfer_id PK
-        text peer_device_id FK
-        text direction
-        text status
-        int total_bytes
-        int transferred_bytes
-        text started_at
-        text completed_at
-        text error_code
-        text created_at
+    class CursorPrefs {
+        float speed
+        int edgeDelayMs
+        bool swapCtrlCmd
     }
-
-    TRANSFER_ITEMS {
-        text item_id PK
-        text transfer_id FK
-        text display_name
-        text relative_path
-        int size_bytes
-        text sha256
-        text status
-        text created_at
+    class Identity {
+        identity.crt (public)
+        identity.key (private)
     }
-
-    APP_SETTINGS {
-        text key PK
-        text value_json
-        text updated_at
-    }
-
-    SCHEMA_MIGRATIONS {
-        int version PK
-        text name
-        text applied_at
-    }
+    Settings "1" o-- "*" PairedDevice
+    Settings "1" o-- "*" Portal
+    Settings "1" *-- "1" CursorPrefs
+    PairedDevice .. Portal : same fingerprint

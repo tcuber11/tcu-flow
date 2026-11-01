@@ -138,19 +138,19 @@ export function About({ update, seed, os, onClose, onUpdate, downloadUrl, extra 
   };
 
   return (
-    <div className="fixed inset-x-0 bottom-0 top-(--titlebar) z-20 flex items-center justify-center bg-ink/70 p-5 backdrop-blur-md" style={{ animation: "fade-in 0.2s ease-out" }} onClick={onClose}>
+    <div className="fixed inset-x-0 bottom-0 top-(--titlebar) z-20 flex items-center justify-center bg-black/35 p-5" style={{ animation: "fade-in 0.2s ease-out" }} onClick={onClose}>
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="about-title"
         onClick={(e) => e.stopPropagation()}
-        className="flex max-h-full w-full max-w-md flex-col rounded-[28px] bg-raised ring-1 ring-line"
-        style={{ animation: "sheet-in 0.45s var(--ease-spring)" }}
+        className="flex max-h-full w-full max-w-md flex-col rounded-2xl bg-raised shadow-[0_12px_40px_rgb(0_0_0/0.25)]"
+        style={{ animation: "sheet-in 0.45s var(--ease-out-expo)" }}
       >
         <header className="flex items-center gap-4 px-7 pt-7">
           <Face seed={seed} size={52} mood={update.available ? "waiting" : "happy"} />
           <div className="min-w-0 flex-1">
-            <h2 id="about-title" className="font-display text-[26px] font-bold leading-tight tracking-[-0.025em]">
+            <h2 id="about-title" className="text-xl font-semibold leading-tight tracking-[-0.015em]">
               TCuFlow
             </h2>
             <p className="text-sm text-muted">Version {update.current ?? "…"}</p>
@@ -161,13 +161,13 @@ export function About({ update, seed, os, onClose, onUpdate, downloadUrl, extra 
         </header>
 
         <div className="mt-5 overflow-y-auto px-7 pb-7">
-          <section aria-live="polite" className="rounded-[20px] bg-white/[0.04] p-4">
+          <section aria-live="polite" className="rounded-xl bg-tint/[0.04] p-4">
             {update.checking ? (
               <p className="text-sm text-muted">Checking for updates…</p>
             ) : update.available || update.installable ? (
               <div className="flex items-center gap-3">
                 <p className="flex-1 text-sm">
-                  <span className="font-semibold text-accent">{update.available?.name ?? `TCuFlow ${update.installable!.version}`}</span> is available.
+                  <span className="font-semibold text-accent-ink">{update.available?.name ?? `TCuFlow ${update.installable!.version}`}</span> is available.
                 </p>
                 {update.installable ? (
                   <button onClick={onUpdate} className={primaryButton}>
@@ -202,7 +202,7 @@ export function About({ update, seed, os, onClose, onUpdate, downloadUrl, extra 
               <h3 className="text-xs font-medium text-faint">{fix.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-muted">{fix.text}</p>
               <div className="mt-3 flex items-center gap-3">
-                <button onClick={allow} disabled={fixed === "busy" || fixed === "done"} className={quietButton + " ring-1 ring-line"}>
+                <button onClick={allow} disabled={fixed === "busy" || fixed === "done"} className={quietButton}>
                   {fix.button}
                 </button>
                 <span role="status" className={`text-xs ${fixed === "done" ? "text-fg" : "text-danger"}`}>
@@ -216,7 +216,7 @@ export function About({ update, seed, os, onClose, onUpdate, downloadUrl, extra 
             <h3 className="text-xs font-medium text-faint">Troubleshooting</h3>
             <p className="mt-2 text-sm leading-relaxed text-muted">Something not working? Copy a report from this device and the paired ones nearby (versions, network, screens, recent events; no keys) and paste it into your problem report.</p>
             <div className="mt-3 flex items-center gap-3">
-              <button onClick={copy} disabled={copied.endsWith("…")} className={quietButton + " min-h-11 ring-1 ring-line"}>
+              <button onClick={copy} disabled={copied.endsWith("…")} className={quietButton}>
                 Copy diagnostics
               </button>
               <span role="status" className={`text-xs ${copied === "Copied" || copied.endsWith("…") ? "text-fg" : "text-danger"}`}>
@@ -284,6 +284,6 @@ export function Notes({ text }: { text: string }) {
 const inline = (t: string) =>
   t.split(/(\*\*[^*]+\*\*|`[^`]+`)/).map((part, i) =>
     part.startsWith("**") ? <strong key={i} className="font-semibold text-fg">{part.slice(2, -2)}</strong>
-    : part.startsWith("`") ? <code key={i} className="rounded bg-white/10 px-1 text-xs">{part.slice(1, -1)}</code>
+    : part.startsWith("`") ? <code key={i} className="rounded bg-tint/10 px-1 text-xs">{part.slice(1, -1)}</code>
     : part.replace(/\*([^*]+)\*/g, "$1"),
   );
