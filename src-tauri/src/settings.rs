@@ -51,8 +51,8 @@ pub struct Settings {
     pub received: Option<PathBuf>,
     /// Paired devices' hardware addresses as they announced them, to wake them up (Wake-on-LAN).
     pub macs: HashMap<String, String>,
-    /// The user turned "Start with computer" off (desktop; on by default).
-    pub manual_start: bool,
+    /// The user turned "Start with computer" on (desktop; off by default in TCuFlow).
+    pub start_with_computer: bool,
     #[serde(skip)]
     path: PathBuf,
 }

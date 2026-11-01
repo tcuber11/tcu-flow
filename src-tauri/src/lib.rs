@@ -201,7 +201,7 @@ fn report(app: &AppHandle) -> String {
     if let Some(c) = app.state::<Arc<dyn SpatialPlatformEngine>>().cursor() {
         let _ = writeln!(r, "Cursor: {:.0}, {:.0}", c.x, c.y);
     }
-    let _ = writeln!(r, "Start with computer: {}", yes(!s.settings.manual_start));
+    let _ = writeln!(r, "Start with computer: {}", yes(s.settings.start_with_computer));
     if let Some((e, at)) = &*LAST_CROSSING.lock().unwrap() {
         let _ = writeln!(r, "Last crossing error ({} s ago): {e}", at.elapsed().as_secs());
     }
@@ -1219,7 +1219,7 @@ pub fn run() {
             let settings = Settings::load(&data);
             #[cfg(desktop)]
             {
-                set_autostart(&handle, !settings.manual_start);
+                set_autostart(&handle, settings.start_with_computer);
                 if autostarted {
                     if let Some(w) = app.get_webview_window(MAIN_WINDOW) {
                         let _ = w.hide();
@@ -1593,9 +1593,9 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
                 let on = {
                     let state = app.state::<AppState>();
                     let mut s = state.lock().unwrap();
-                    s.settings.manual_start = !s.settings.manual_start;
+                    s.settings.start_with_computer = !s.settings.start_with_computer;
                     s.settings.save();
-                    !s.settings.manual_start
+                    s.settings.start_with_computer
                 };
                 set_autostart(app, on);
                 refresh_tray(app);
@@ -1651,14 +1651,14 @@ fn tray_menu(app: &AppHandle) -> tauri::Result<tauri::menu::Menu<tauri::Wry>> {
     // so the tray can't be reached and Ctrl+Alt+Esc is the way out
     menu.append(&MenuItem::with_id(app, "disconnect", "Disconnect", busy, None::<&str>)?)?;
     menu.append(&PredefinedMenuItem::separator(app)?)?;
-    let autostart = !app.state::<AppState>().lock().unwrap().settings.manual_start;
+    let autostart = app.state::<AppState>().lock().unwrap().settings.start_with_computer;
     menu.append(&tauri::menu::CheckMenuItem::with_id(app, "autostart", "Start with computer", true, autostart, None::<&str>)?)?;
     menu.append(&MenuItem::with_id(app, "about", "About TCuFlow", true, None::<&str>)?)?;
     menu.append(&MenuItem::with_id(app, "quit", "Quit TCuFlow", true, None::<&str>)?)?;
     Ok(menu)
 }
 
-/// TCuFlow starts (hidden, in the tray) when the user logs in: on unless they turned it off in the tray.
+/// TCuFlow starts (hidden, in the tray) when the user logs in: off until they turn it on in the tray.
 #[cfg(desktop)]
 fn set_autostart(app: &AppHandle, on: bool) {
     use tauri_plugin_autostart::ManagerExt;
