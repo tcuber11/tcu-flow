@@ -21,7 +21,7 @@ function flattenLayers(css: string): string {
 }
 
 const oldWebKit: Plugin = {
-  name: "loka-old-webkit",
+  name: "tcuflow-old-webkit",
   apply: "build",
   generateBundle(_, bundle) {
     for (const a of Object.values(bundle)) if (a.type === "asset" && a.fileName.endsWith(".css")) a.source = flattenLayers(String(a.source));

@@ -205,9 +205,9 @@ mod tests {
         s.write_all(&size_bytes(100, 30)).await.unwrap();
         // the PTY echoes what was typed, so the marker must only appear once the shell has expanded it
         #[cfg(windows)]
-        let (cmd, marker) = ("echo LOKA_%OS%\r", "LOKA_Windows_NT");
+        let (cmd, marker) = ("echo TCUFLOW_%OS%\r", "TCUFLOW_Windows_NT");
         #[cfg(not(windows))]
-        let (cmd, marker) = ("echo LOKA_$((6*7))\r", "LOKA_42");
+        let (cmd, marker) = ("echo TCUFLOW_$((6*7))\r", "TCUFLOW_42");
         let mut seen = Vec::new();
         // ConPTY asks for the cursor position first and waits; xterm.js answers that by itself
         #[cfg(windows)]

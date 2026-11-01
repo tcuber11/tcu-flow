@@ -1,4 +1,4 @@
-package dev.loka.app
+package dev.tcuflow.app
 
 import android.content.Context
 import android.os.Build
@@ -27,7 +27,7 @@ import java.security.spec.PKCS8EncodedKeySpec
 import java.util.Date
 import java.util.Random
 
-/** LOKA's own ADB client identity (RSA key + self-signed certificate in filesDir), the one Wireless debugging pairs with. */
+/** TCuFlow's own ADB client identity (RSA key + self-signed certificate in filesDir), the one Wireless debugging pairs with. */
 class AdbManager private constructor(context: Context) : AbsAdbConnectionManager() {
   private val key: PrivateKey
   private val cert: Certificate
@@ -42,7 +42,7 @@ class AdbManager private constructor(context: Context) : AbsAdbConnectionManager
     } else {
       val pair = KeyPairGenerator.getInstance("RSA").apply { initialize(2048) }.generateKeyPair()
       key = pair.private
-      val name = X500Name("CN=LOKA")
+      val name = X500Name("CN=TCuFlow")
       val from = Date()
       val until = Date(from.time + 100L * 365 * 86_400_000) // adbd doesn't check expiry; one key for the app's life
       val info = X509CertInfo().apply {
@@ -65,7 +65,7 @@ class AdbManager private constructor(context: Context) : AbsAdbConnectionManager
 
   override fun getPrivateKey() = key
   override fun getCertificate() = cert
-  override fun getDeviceName() = "LOKA"
+  override fun getDeviceName() = "TCuFlow"
 
   companion object {
     @Volatile private var instance: AdbManager? = null

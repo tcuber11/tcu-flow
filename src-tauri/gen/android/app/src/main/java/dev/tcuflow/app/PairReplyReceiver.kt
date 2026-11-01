@@ -1,15 +1,15 @@
-package dev.loka.app
+package dev.tcuflow.app
 
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import androidx.core.app.RemoteInput
 
-/** The pairing code typed into LOKA's notification while Settings shows it. */
+/** The pairing code typed into TCuFlow's notification while Settings shows it. */
 class PairReplyReceiver : BroadcastReceiver() {
   override fun onReceive(context: Context, intent: Intent) {
     val code = RemoteInput.getResultsFromIntent(intent)?.getCharSequence(KEY)?.toString() ?: return
-    LokaPlugin.instance?.pair(code)
+    TcuflowPlugin.instance?.pair(code)
   }
 
   companion object {

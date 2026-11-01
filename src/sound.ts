@@ -1,4 +1,4 @@
-const KEY = "loka.sound";
+const KEY = "tcuflow.sound";
 let audio: AudioContext | undefined;
 
 export const soundOn = () => localStorage.getItem(KEY) !== "off";

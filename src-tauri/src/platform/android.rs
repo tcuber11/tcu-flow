@@ -100,7 +100,7 @@ fn jni_clipboard(text: Option<&str>) -> Option<Option<String>> {
     r.ok()
 }
 
-/// Draws (`Some`) or hides (`None`) the computer's cursor over every app (LokaPlugin `cursor`).
+/// Draws (`Some`) or hides (`None`) the computer's cursor over every app (TcuflowPlugin `cursor`).
 pub type CursorOverlay = Box<dyn Fn(Option<(f64, f64)>) + Send + Sync>;
 
 /// Set once the engine listens (the port is only known then).

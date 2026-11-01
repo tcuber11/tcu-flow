@@ -304,7 +304,7 @@ mod tests {
 
     #[test]
     fn stream_read_waits_for_arriving_bytes_and_ends_at_the_size() {
-        let path = std::env::temp_dir().join(format!("loka-vdrag-{}", uuid::Uuid::new_v4()));
+        let path = std::env::temp_dir().join(format!("tcuflow-vdrag-{}", uuid::Uuid::new_v4()));
         let batch = uuid::Uuid::new_v4().as_u128() as u64;
         transfer::announce(batch);
         let file = Promised { name: "a.bin".into(), path: path.clone(), size: 6 };

@@ -390,7 +390,7 @@ mod tests {
 
     #[test]
     fn identity_survives_restart() {
-        let dir = std::env::temp_dir().join(format!("loka-id-{}", uuid::Uuid::new_v4()));
+        let dir = std::env::temp_dir().join(format!("tcuflow-id-{}", uuid::Uuid::new_v4()));
         let first = Identity::load_or_create(&dir).fingerprint();
         assert_eq!(Identity::load_or_create(&dir).fingerprint(), first);
         assert_eq!(first.len(), 64);

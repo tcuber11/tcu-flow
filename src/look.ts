@@ -6,7 +6,7 @@ export type Motion = "ripple" | "pulse" | "calm";
  *  autoHide: invisible until the cursor nears the portal (or crosses, drops, transfers) */
 export type Look = { color: string; motion: Motion; opacity: number; width: number; autoHide: boolean };
 
-const KEY = "loka.look";
+const KEY = "tcuflow.look";
 // all >= 7:1 on the raised surface, so the accent stays readable as text
 export const SWATCHES: Record<string, string> = { Cyan: "#4cc9ff", Mint: "#5ef0b0", Lime: "#c3f24a", Amber: "#ffb547", Pink: "#ff6fae", Violet: "#a98bff" };
 export const MOTIONS: Motion[] = ["ripple", "pulse", "calm"];

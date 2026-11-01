@@ -324,7 +324,7 @@ function ControlCard({ device, computer, control, fresh, onSetup, onChange }: { 
 function Battery({ control, className = "mt-3 border-t border-line pt-3" }: { control: Control; className?: string }) {
   if (!control.status || control.status.batteryExempt) return null;
   // back from Android's dialog, useControl's visibilitychange refresh picks up the answer
-  const allow = () => invoke("plugin:loka|exemptBattery").then(control.refresh, () => {});
+  const allow = () => invoke("plugin:tcuflow|exemptBattery").then(control.refresh, () => {});
   return (
     <div className={"flex items-center gap-3 " + className}>
       <p className="flex-1 text-sm text-muted">Android may close TCuFlow in the background</p>

@@ -229,7 +229,7 @@ mod tests {
 
     #[test]
     fn growing_file_reads_as_it_arrives_and_ends_at_its_size() {
-        let path = std::env::temp_dir().join(format!("loka-growing-{}", uuid::Uuid::new_v4()));
+        let path = std::env::temp_dir().join(format!("tcuflow-growing-{}", uuid::Uuid::new_v4()));
         let batch = uuid::Uuid::new_v4().as_u128() as u64;
         transfer::announce(batch);
         let mut g = Growing::new(batch, &Promised { name: "g".into(), path: path.clone(), size: 4 });

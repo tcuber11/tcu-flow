@@ -123,7 +123,7 @@ mod tests {
 
     #[tokio::test]
     async fn files_round_trip_and_stay_inside_the_shared_folder() {
-        let base = std::env::temp_dir().join(format!("loka-share-{}", uuid::Uuid::new_v4()));
+        let base = std::env::temp_dir().join(format!("tcuflow-share-{}", uuid::Uuid::new_v4()));
         let root = base.join("root");
         std::fs::create_dir_all(&root).unwrap();
         let body = b"hello \x00\xff shared folder";

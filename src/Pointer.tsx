@@ -30,7 +30,7 @@ export function Pointer({ initial, mac }: { initial: CursorPrefs; mac: boolean }
             value={p.speed}
             onChange={(e) => change({ speed: +e.target.value })}
             aria-valuetext={`${p.speed.toFixed(2)} times`}
-            className="loka-range flex-1"
+            className="tf-range flex-1"
             style={{ "--fill": `${((p.speed - 0.5) / 1.5) * 100}%` } as React.CSSProperties}
           />
           <span className="w-12 text-right tabular-nums text-muted">{p.speed.toFixed(2)}×</span>
@@ -48,7 +48,7 @@ export function Pointer({ initial, mac }: { initial: CursorPrefs; mac: boolean }
             onChange={(e) => change({ edgeDelayMs: +e.target.value })}
             aria-valuetext={p.edgeDelayMs ? `${p.edgeDelayMs} milliseconds` : "off"}
             aria-describedby="delay-hint"
-            className="loka-range flex-1"
+            className="tf-range flex-1"
             style={{ "--fill": `${(p.edgeDelayMs / 600) * 100}%` } as React.CSSProperties}
           />
           <span className="w-12 text-right tabular-nums text-muted">{p.edgeDelayMs ? `${p.edgeDelayMs} ms` : "Off"}</span>

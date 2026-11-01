@@ -1,5 +1,5 @@
 //! Event log for support: one line per decision or failure, UTC (so two devices' logs line up), in
-//! `app_data_dir/logs/loka.log`, rotated at 1 MiB to `loka.1.log`; its tail goes into `diagnostics`.
+//! `app_data_dir/logs/tcuflow.log`, rotated at 1 MiB to `tcuflow.1.log`; its tail goes into `diagnostics`.
 
 use std::{
     fs::{File, OpenOptions},
@@ -28,7 +28,7 @@ macro_rules! journal {
 pub fn init(dir: &Path) {
     let dir = dir.join("logs");
     let _ = std::fs::create_dir_all(&dir);
-    let path = dir.join("loka.log");
+    let path = dir.join("tcuflow.log");
     if let Ok(file) = OpenOptions::new().create(true).append(true).open(&path) {
         let len = file.metadata().map_or(0, |m| m.len());
         *lock() = Some(Log { file, path, len });
@@ -50,7 +50,7 @@ pub fn write(line: &str) {
     let mut g = lock();
     let Some(log) = g.as_mut() else { return };
     if log.len + line.len() as u64 > MAX {
-        let _ = std::fs::rename(&log.path, log.path.with_file_name("loka.1.log"));
+        let _ = std::fs::rename(&log.path, log.path.with_file_name("tcuflow.1.log"));
         match OpenOptions::new().create(true).append(true).open(&log.path) {
             Ok(f) => (log.file, log.len) = (f, 0),
             Err(_) => return,
@@ -64,7 +64,7 @@ pub fn write(line: &str) {
 /// The last `n` lines of the log (across the rotation).
 pub fn tail(n: usize) -> String {
     let Some(path) = lock().as_ref().map(|l| l.path.clone()) else { return "(no log)".into() };
-    let text = [path.with_file_name("loka.1.log"), path].iter().filter_map(|p| std::fs::read_to_string(p).ok()).collect::<String>();
+    let text = [path.with_file_name("tcuflow.1.log"), path].iter().filter_map(|p| std::fs::read_to_string(p).ok()).collect::<String>();
     let lines: Vec<&str> = text.lines().collect();
     lines[lines.len().saturating_sub(n)..].join("\n")
 }

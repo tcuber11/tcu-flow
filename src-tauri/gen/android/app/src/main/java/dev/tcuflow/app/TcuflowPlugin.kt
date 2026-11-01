@@ -1,4 +1,4 @@
-package dev.loka.app
+package dev.tcuflow.app
 
 import android.Manifest
 import android.app.Activity
@@ -43,13 +43,13 @@ import org.conscrypt.Conscrypt
 @InvokeArg class CursorArgs { var x: Double = 0.0; var y: Double = 0.0; var show: Boolean = false }
 
 /**
- * Android side of "let computers control this phone": Wireless debugging pairing with LOKA's own ADB client,
- * starting [Injector] as the shell user, the cursor overlay, and keeping LOKA reachable ([ReachableService]).
+ * Android side of "let computers control this phone": Wireless debugging pairing with TCuFlow's own ADB client,
+ * starting [Injector] as the shell user, the cursor overlay, and keeping TCuFlow reachable ([ReachableService]).
  */
 @TauriPlugin
-class LokaPlugin(private val activity: Activity) : Plugin(activity) {
+class TcuflowPlugin(private val activity: Activity) : Plugin(activity) {
   private val ctx: Context = activity.applicationContext
-  private val prefs by lazy { ctx.getSharedPreferences("loka", Context.MODE_PRIVATE) }
+  private val prefs by lazy { ctx.getSharedPreferences("tcuflow", Context.MODE_PRIVATE) }
   private val main = Handler(Looper.getMainLooper())
   @Volatile private var injector: AdbStream? = null
   private var pairingPort = 0
@@ -82,7 +82,7 @@ class LokaPlugin(private val activity: Activity) : Plugin(activity) {
     })
   }
 
-  /** Asks to leave LOKA out of battery optimization (the system dialog), else opens that settings list. */
+  /** Asks to leave TCuFlow out of battery optimization (the system dialog), else opens that settings list. */
   @Command
   fun exemptBattery(invoke: Invoke) {
     try {
@@ -169,7 +169,7 @@ class LokaPlugin(private val activity: Activity) : Plugin(activity) {
         mdns?.stop()
         result.put("ok", true)
       } catch (e: Throwable) {
-        android.util.Log.w("LOKA", "pairing failed", e)
+        android.util.Log.w("TCuFlow", "pairing failed", e)
         result.put("ok", false)
         result.put("error", e.message ?: "pairing failed")
       }
@@ -178,7 +178,7 @@ class LokaPlugin(private val activity: Activity) : Plugin(activity) {
     }.start()
   }
 
-  /** Connect to our own adbd, grant what LOKA needs, and start [Injector] dialing back to 127.0.0.1:`port`. */
+  /** Connect to our own adbd, grant what TCuFlow needs, and start [Injector] dialing back to 127.0.0.1:`port`. */
   @Command
   fun start(invoke: Invoke) {
     val args = invoke.parseArgs(StartArgs::class.java)
@@ -197,7 +197,7 @@ class LokaPlugin(private val activity: Activity) : Plugin(activity) {
 
   private fun launch(args: StartArgs) {
     val adb = AdbManager.get(ctx)
-    // after a restart or a Wi-Fi change Android turns Wireless debugging off; LOKA may turn it back on
+    // after a restart or a Wi-Fi change Android turns Wireless debugging off; TCuFlow may turn it back on
     if (!global("adb_wifi_enabled") && ctx.checkSelfPermission(Manifest.permission.WRITE_SECURE_SETTINGS) == PackageManager.PERMISSION_GRANTED) {
       Settings.Global.putInt(ctx.contentResolver, "adb_wifi_enabled", 1)
       Thread.sleep(1500)
@@ -225,7 +225,7 @@ class LokaPlugin(private val activity: Activity) : Plugin(activity) {
           prefs.edit().putBoolean("paired", false).apply()
           break
         } catch (e: Exception) {
-          android.util.Log.w("LOKA", "injector restart failed", e)
+          android.util.Log.w("TCuFlow", "injector restart failed", e)
         }
       }
     }.start()
@@ -286,7 +286,7 @@ class LokaPlugin(private val activity: Activity) : Plugin(activity) {
   }
 
   companion object {
-    @Volatile var instance: LokaPlugin? = null
+    @Volatile var instance: TcuflowPlugin? = null
     const val PAIR_CHANNEL = "pairing"
     const val PAIR_NOTIFICATION = 2
     const val ARROW_W = 48

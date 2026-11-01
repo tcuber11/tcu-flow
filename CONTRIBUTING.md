@@ -1,10 +1,10 @@
-# Contributing to LOKA
+# Contributing to TCuFlow
 
 Thanks for helping. Bug reports, fixes and small features are all welcome.
 
 ## Before you start
 
-- **Bugs:** open an issue with your OS, LOKA version (About), the role of each computer (Main/Client) and what you did.
+- **Bugs:** open an issue with your OS, TCuFlow version (About), the role of each computer (Main/Client) and what you did.
 - **Bigger changes:** open an issue first so we can agree on the approach before you spend time on it.
 - Windows and macOS are the targets. Android is planned later; iOS is out of scope (no public API to inject input).
 

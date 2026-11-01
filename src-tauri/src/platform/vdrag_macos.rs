@@ -43,7 +43,7 @@ impl Promise {
 
 define_class!(
     #[unsafe(super(NSObject))]
-    #[name = "LokaFilePromise"]
+    #[name = "TcuflowFilePromise"]
     #[ivars = Promise]
     struct PromiseDelegate;
 
@@ -85,7 +85,7 @@ impl PromiseDelegate {
 define_class!(
     #[unsafe(super(NSObject))]
     #[thread_kind = MainThreadOnly]
-    #[name = "LokaDragSource"]
+    #[name = "TcuflowDragSource"]
     struct DragSource;
 
     unsafe impl NSObjectProtocol for DragSource {}

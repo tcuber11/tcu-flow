@@ -113,7 +113,7 @@ mod tests {
 
     #[test]
     fn pairings_and_portals_survive_reload_and_go_together() {
-        let dir = std::env::temp_dir().join(format!("loka-settings-{}", uuid::Uuid::new_v4()));
+        let dir = std::env::temp_dir().join(format!("tcuflow-settings-{}", uuid::Uuid::new_v4()));
         let mut s = Settings::load(&dir);
         s.pair(PairedDevice { fingerprint: "a".into(), alias: "Laptop".into() });
         s.pair(PairedDevice { fingerprint: "a".into(), alias: "Laptop renamed".into() });

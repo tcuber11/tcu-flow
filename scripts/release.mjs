@@ -1,6 +1,6 @@
 // Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 // node scripts/release.mjs v0.9.0
-// After the installers are on the GitHub release (as today, plus the Mac's LOKA_universal.app.tar.gz from Codemagic):
+// After the installers are on the GitHub release (as today, plus the Mac's TCuFlow_universal.app.tar.gz from Codemagic):
 // downloads them, signs each with the updater key, and uploads latest.json, which the in-app updater reads from
 // releases/latest/download/latest.json. Key: TAURI_SIGNING_PRIVATE_KEY(_PASSWORD), else ~/.tauri/tcuflow.key(.password).
 import { execFileSync } from "node:child_process";
@@ -30,7 +30,7 @@ const TARGETS = [
   [".app.tar.gz", ["darwin-aarch64-app", "darwin-x86_64-app", "darwin-aarch64", "darwin-x86_64"]],
 ];
 const gh = (...args) => execFileSync("gh", [...args, "-R", REPO], { encoding: "utf8", stdio: ["ignore", "pipe", "inherit"] });
-const dir = mkdtempSync(join(tmpdir(), "loka-release-"));
+const dir = mkdtempSync(join(tmpdir(), "tcuflow-release-"));
 try {
   const release = JSON.parse(gh("release", "view", tag, "--json", "body,publishedAt"));
   gh("release", "download", tag, "-D", dir, ...TARGETS.flatMap(([suffix]) => ["-p", `*${suffix}`]));

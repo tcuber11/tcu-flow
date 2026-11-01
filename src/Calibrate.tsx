@@ -354,7 +354,7 @@ export function Calibrate({ device, peers, selected, onSelect, onPair, onChange 
                 const to = slot(screens, selPortal.monitor, selPortal.edge, others(sel), (selPortal.start + selPortal.end) / 2, +e.target.value);
                 if (to) apply(sel, to, false);
               }}
-              className="loka-range"
+              className="tf-range"
               style={{ "--fill": `${((selPortal.end - selPortal.start - 0.05) / 0.95) * 100}%` } as React.CSSProperties}
             />
           </>
@@ -398,7 +398,7 @@ export function Calibrate({ device, peers, selected, onSelect, onPair, onChange 
             value={look.opacity}
             onChange={(e) => restyle({ opacity: +e.target.value })}
             aria-valuetext={`${Math.round(look.opacity * 100)}%`}
-            className="loka-range flex-1"
+            className="tf-range flex-1"
             style={{ "--fill": `${((look.opacity - 0.1) / 0.9) * 100}%` } as React.CSSProperties}
           />
           <span className="w-10 text-right tabular-nums text-muted">{Math.round(look.opacity * 100)}%</span>
@@ -415,7 +415,7 @@ export function Calibrate({ device, peers, selected, onSelect, onPair, onChange 
             value={look.width}
             onChange={(e) => restyle({ width: +e.target.value })}
             aria-valuetext={`${look.width.toFixed(1)}×`}
-            className="loka-range flex-1"
+            className="tf-range flex-1"
             style={{ "--fill": `${((look.width - 0.5) / 1.5) * 100}%` } as React.CSSProperties}
           />
           <span className="w-10 text-right tabular-nums text-muted">{look.width.toFixed(1)}×</span>

@@ -75,7 +75,7 @@ impl LinuxEngine {
         });
         let state = Arc::new(Mutex::new(State { pos: (HEADLESS.w / 2.0, HEADLESS.h / 2.0), screens: vec![HEADLESS], ..Default::default() }));
         let (s, xc) = (state.clone(), x.clone());
-        let _ = std::thread::Builder::new().name("loka-input".into()).spawn(move || read(s, xc));
+        let _ = std::thread::Builder::new().name("tcuflow-input".into()).spawn(move || read(s, xc));
         Self { state, x, wayland: std::env::var_os("WAYLAND_DISPLAY").is_some(), virt: Mutex::new(None) }
     }
 
@@ -588,8 +588,8 @@ pub fn allow_input() -> Result<(), String> {
     const SCRIPT: &str = r#"set -e
 u="$1"
 modprobe uinput 2>/dev/null || true
-echo uinput > /etc/modules-load.d/loka.conf
-echo 'KERNEL=="uinput", GROUP="input", MODE="0660", OPTIONS+="static_node=uinput"' > /etc/udev/rules.d/60-loka.rules
+echo uinput > /etc/modules-load.d/tcuflow.conf
+echo 'KERNEL=="uinput", GROUP="input", MODE="0660", OPTIONS+="static_node=uinput"' > /etc/udev/rules.d/60-tcuflow.rules
 getent group input >/dev/null || groupadd -r input
 usermod -aG input "$u"
 udevadm control --reload-rules 2>/dev/null || true

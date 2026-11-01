@@ -1,4 +1,4 @@
-package dev.loka.app
+package dev.tcuflow.app
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -14,7 +14,7 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 
 /**
- * Keeps LOKA running while another app is in front (computers find it, drive it, send it files) and holds
+ * Keeps TCuFlow running while another app is in front (computers find it, drive it, send it files) and holds
  * the Wi-Fi multicast lock: without it most phones drop discovery's multicast packets.
  */
 class ReachableService : Service() {
@@ -29,13 +29,13 @@ class ReachableService : Service() {
     val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
     val n: Notification = NotificationCompat.Builder(this, CHANNEL)
       .setSmallIcon(R.mipmap.ic_launcher)
-      .setContentTitle("LOKA is on")
+      .setContentTitle("TCuFlow is on")
       .setContentText("Your computers can find this phone")
       .setContentIntent(open)
       .setOngoing(true)
       .build()
     if (Build.VERSION.SDK_INT >= 29) startForeground(1, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE) else startForeground(1, n)
-    multicast = applicationContext.getSystemService(WifiManager::class.java).createMulticastLock("loka").apply { setReferenceCounted(false); acquire() }
+    multicast = applicationContext.getSystemService(WifiManager::class.java).createMulticastLock("tcuflow").apply { setReferenceCounted(false); acquire() }
   }
 
   override fun onDestroy() {

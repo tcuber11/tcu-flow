@@ -15,7 +15,7 @@ import { Pointer } from "./Pointer";
 import { Sharing } from "./Sharing";
 import { Transfers } from "./Transfers";
 
-const SELECTED_KEY = "loka.selected";
+const SELECTED_KEY = "tcuflow.selected";
 
 export function Home() {
   const [device, setDevice] = useState<Device | null>(null);

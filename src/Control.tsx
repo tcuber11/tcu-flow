@@ -4,18 +4,18 @@ import { addPluginListener, invoke } from "@tauri-apps/api/core";
 import { Face } from "./Face";
 import { primaryButton, quietButton } from "./Pairing";
 
-/** What LokaPlugin.kt reports about Wireless debugging and the injector. `batteryExempt`: Android won't stop TCuFlow in the background. */
+/** What TcuflowPlugin.kt reports about Wireless debugging and the injector. `batteryExempt`: Android won't stop TCuFlow in the background. */
 export type ControlStatus = { sdk: number; maker: string; devOptions: boolean; wirelessDebugging: boolean; paired: boolean; running: boolean; batteryExempt: boolean };
 
-const status = () => invoke<ControlStatus>("plugin:loka|status");
-const openSettings = (page: "about" | "developer" | "wireless" | "security") => invoke("plugin:loka|openSettings", { page });
+const status = () => invoke<ControlStatus>("plugin:tcuflow|status");
+const openSettings = (page: "about" | "developer" | "wireless" | "security") => invoke("plugin:tcuflow|openSettings", { page });
 
 /** Start the injector (it dials back to Rust with the ticket). Rejects with a readable reason (a string). */
 export async function startControl() {
   const ticket = await invoke<[number, string] | null>("injector_ticket");
   if (!ticket) throw "TCuFlow isn't ready yet";
   // Kotlin rejections arrive as objects
-  await invoke("plugin:loka|start", { port: ticket[0], token: ticket[1] }).catch((e) => {
+  await invoke("plugin:tcuflow|start", { port: ticket[0], token: ticket[1] }).catch((e) => {
     throw typeof e === "string" ? e : (e?.message ?? JSON.stringify(e));
   });
 }
@@ -34,7 +34,7 @@ export function useControl(): Control {
       const now = await status().catch(() => null);
       if (now?.paired && !now.running) startControl().then(refresh, (e) => setError(String(e)));
     });
-    const un = addPluginListener("loka", "injector", () => refresh());
+    const un = addPluginListener("tcuflow", "injector", () => refresh());
     const back = () => document.visibilityState === "visible" && refresh();
     document.addEventListener("visibilitychange", back);
     return () => {
@@ -78,7 +78,7 @@ export function Wizard({ computer, onClose }: { computer: string; onClose: () =>
     refresh();
     // coming back from Settings: check again
     const tick = setInterval(() => document.visibilityState === "visible" && refresh(), 1000);
-    const un = addPluginListener<{ ok: boolean; error?: string }>("loka", "pair", (r) => {
+    const un = addPluginListener<{ ok: boolean; error?: string }>("tcuflow", "pair", (r) => {
       setBusy(false);
       if (r.ok) refresh();
       else setCodeError(/code|auth|spake|password/i.test(r.error ?? "") ? "That code didn't work. Android shows a new code each time the window opens: use the newest one." : (r.error ?? "Pairing failed"));
@@ -106,7 +106,7 @@ export function Wizard({ computer, onClose }: { computer: string; onClose: () =>
     if (!/^\d{6}$/.test(code)) return setCodeError("Enter all 6 digits.");
     setCodeError("");
     setBusy(true);
-    invoke("plugin:loka|pairCode", { code });
+    invoke("plugin:tcuflow|pairCode", { code });
   };
 
   const xiaomi = s ? XIAOMI.test(s.maker) : false;
@@ -220,7 +220,7 @@ export function Wizard({ computer, onClose }: { computer: string; onClose: () =>
           </form>
           <Primary
             onClick={async () => {
-              await invoke("plugin:loka|askCode");
+              await invoke("plugin:tcuflow|askCode");
               openSettings("wireless");
             }}
           >

@@ -1,4 +1,4 @@
-package dev.loka.app
+package dev.tcuflow.app
 
 import android.content.ClipData
 import android.os.IBinder
@@ -15,8 +15,8 @@ import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 
 /**
- * Started by LOKA over its own ADB connection as the shell user:
- * `CLASSPATH=<apk> app_process / dev.loka.app.Injector <port> <token>`.
+ * Started by TCuFlow over its own ADB connection as the shell user:
+ * `CLASSPATH=<apk> app_process / dev.tcuflow.app.Injector <port> <token>`.
  * Connects back to the app on 127.0.0.1:<port>, proves itself with <token>, then turns 9-byte frames
  * (tag, i32, i32 little-endian) into input events: 1 move to (x, y), 2 button (b, down), 3 wheel (dx, dy),
  * 4 key (set-1 scancode, down), 5 wake the screen. 6 type text and 7 set the clipboard are followed by `a`
@@ -69,7 +69,7 @@ object Injector {
             // a newer clip than the one a paste would put back
             restore?.cancel(false)
             saved = null
-            setClip(ClipData.newPlainText("LOKA", it))
+            setClip(ClipData.newPlainText("TCuFlow", it))
           }
         }
         8 -> {
@@ -96,7 +96,7 @@ object Injector {
     synchronized(this) {
       // the user's own clip comes back once the app had time to paste ours
       if (saved == null) saved = getClip() ?: ClipData.newPlainText("", "")
-      setClip(ClipData.newPlainText("LOKA", text))
+      setClip(ClipData.newPlainText("TCuFlow", text))
       restore?.cancel(false)
       restore = later.schedule(Runnable { synchronized(this) { saved?.let { setClip(it) }; saved = null } }, 500, TimeUnit.MILLISECONDS)
     }
@@ -128,7 +128,7 @@ object Injector {
     }
     m.invoke(clipboard, *args.toTypedArray())
   } catch (e: Exception) {
-    System.err.println("LOKA clipboard $name: $e")
+    System.err.println("TCuFlow clipboard $name: $e")
     null
   }
 

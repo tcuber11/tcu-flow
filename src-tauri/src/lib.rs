@@ -525,7 +525,7 @@ fn touch(event: platform::Touch) {
     platform::touch(event);
 }
 
-/// Port and token `Injector.kt` dials back with (LokaPlugin `start`).
+/// Port and token `Injector.kt` dials back with (TcuflowPlugin `start`).
 #[cfg(target_os = "android")]
 #[tauri::command]
 fn injector_ticket() -> Option<(u16, String)> {
@@ -1100,12 +1100,12 @@ pub fn run() {
         }
     }
     let mut builder = tauri::Builder::default();
-    // Android side of being driven: Wireless debugging, the injector, the cursor overlay (LokaPlugin.kt)
+    // Android side of being driven: Wireless debugging, the injector, the cursor overlay (TcuflowPlugin.kt)
     builder = builder.plugin(
-        tauri::plugin::Builder::<tauri::Wry>::new("loka")
+        tauri::plugin::Builder::<tauri::Wry>::new("tcuflow")
             .setup(|app, api| {
                 #[cfg(target_os = "android")]
-                app.manage(api.register_android_plugin("dev.loka.app", "LokaPlugin")?);
+                app.manage(api.register_android_plugin("dev.tcuflow.app", "TcuflowPlugin")?);
                 let _ = (app, api);
                 Ok(())
             })
@@ -1566,7 +1566,7 @@ fn carry_out(app: &AppHandle, step: carry::Step) {
 }
 
 #[cfg(desktop)]
-const TRAY: &str = "loka";
+const TRAY: &str = "tcuflow";
 
 #[cfg(desktop)]
 fn setup_tray(app: &tauri::App) -> tauri::Result<()> {

@@ -435,8 +435,8 @@ mod tests {
 
     #[tokio::test]
     async fn file_and_text_roundtrip_with_safe_names() {
-        let dir = std::env::temp_dir().join(format!("loka-test-{}", uuid::Uuid::new_v4()));
-        let src = std::env::temp_dir().join(format!("loka-src-{}.bin", uuid::Uuid::new_v4()));
+        let dir = std::env::temp_dir().join(format!("tcuflow-test-{}", uuid::Uuid::new_v4()));
+        let src = std::env::temp_dir().join(format!("tcuflow-src-{}.bin", uuid::Uuid::new_v4()));
         let data: Vec<u8> = (0..CHUNK * 2 + 17).map(|i| i as u8).collect();
         std::fs::write(&src, &data).unwrap();
 
@@ -464,7 +464,7 @@ mod tests {
             s.write_all(b"hi").await.unwrap();
             s.shutdown().await.unwrap();
         }
-        send_text(&me, to, &fp, Kind::Url, "https://loka.dev").await.unwrap();
+        send_text(&me, to, &fp, Kind::Url, "https://example.com").await.unwrap();
         // an unpaired device's file never lands
         let _ = send_text(&stranger, to, &fp, Kind::Text, "spam").await;
         tokio::time::sleep(std::time::Duration::from_millis(300)).await;
@@ -478,11 +478,11 @@ mod tests {
         assert_eq!(std::fs::read(dir.join("Photos").join("2024").join("a.jpg")).unwrap(), b"hi"); // folder drops keep their tree
         assert!(!dir.join(format!("{stem} (2).bin")).exists());
         assert!(events.lock().unwrap().iter().any(|e| matches!(e, TransferEvent::Failed { outgoing: false, .. })));
-        assert!(events.lock().unwrap().iter().any(|e| matches!(e, TransferEvent::Text { kind: Kind::Url, text } if text == "https://loka.dev")));
+        assert!(events.lock().unwrap().iter().any(|e| matches!(e, TransferEvent::Text { kind: Kind::Url, text } if text == "https://example.com")));
         assert!(!events.lock().unwrap().iter().any(|e| matches!(e, TransferEvent::Text { text, .. } if text == "spam")));
 
         // a dropped folder expands to its files, named relative to the drop
-        let tree = std::env::temp_dir().join(format!("loka-tree-{}", uuid::Uuid::new_v4()));
+        let tree = std::env::temp_dir().join(format!("tcuflow-tree-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(tree.join("sub")).unwrap();
         std::fs::write(tree.join("sub").join("b.txt"), b"b").unwrap();
         let mut names: Vec<String> = expand(&[tree.clone(), src.clone()]).into_iter().map(|(_, n)| n).collect();
@@ -498,8 +498,8 @@ mod tests {
 
     #[tokio::test]
     async fn clipboard_files_land_together_and_pictures_pass_through() {
-        let dir = std::env::temp_dir().join(format!("loka-clip-{}", uuid::Uuid::new_v4()));
-        let src = std::env::temp_dir().join(format!("loka-clipsrc-{}", uuid::Uuid::new_v4()));
+        let dir = std::env::temp_dir().join(format!("tcuflow-clip-{}", uuid::Uuid::new_v4()));
+        let src = std::env::temp_dir().join(format!("tcuflow-clipsrc-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(src.join("Folder")).unwrap();
         std::fs::write(src.join("Folder").join("in.txt"), b"in").unwrap();
         std::fs::write(src.join("a.txt"), b"a").unwrap();
@@ -536,8 +536,8 @@ mod tests {
 
     #[tokio::test]
     async fn drag_manifest_comes_first_and_is_bounded() {
-        let dir = std::env::temp_dir().join(format!("loka-manifest-{}", uuid::Uuid::new_v4()));
-        let src = std::env::temp_dir().join(format!("loka-mansrc-{}", uuid::Uuid::new_v4()));
+        let dir = std::env::temp_dir().join(format!("tcuflow-manifest-{}", uuid::Uuid::new_v4()));
+        let src = std::env::temp_dir().join(format!("tcuflow-mansrc-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(src.join("Folder")).unwrap();
         std::fs::write(src.join("Folder").join("in.txt"), b"inside").unwrap();
         std::fs::write(src.join("a.txt"), b"a").unwrap();
