@@ -1,3 +1,4 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 use super::{Captured, CursorSample, Injected, InputEvent, SpatialPlatformEngine, Typed};
 use std::{
     mem::{size_of, zeroed},
@@ -37,7 +38,7 @@ use windows_sys::Win32::{
 };
 
 /// Marks events we inject so our own hooks let them through.
-const TAG: usize = 0x4C4F_4B41; // "LOKA"
+const TAG: usize = 0x4C4F_4B41; // "TCuFlow"
 
 /// Every injected key goes out one at a time from this thread. The Windows 11 Notepad (WinUI) reads the modifier
 /// state late: Shift sent in the same burst as its letter is lost, and fast VK_PACKETs garble (12-15 ms per event

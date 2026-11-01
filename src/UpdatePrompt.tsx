@@ -1,3 +1,4 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -7,12 +8,12 @@ import { primaryButton, quietButton } from "./Pairing";
 
 type Phase = { at: "ready" } | { at: "downloading"; done: number; total?: number } | { at: "installing" } | { at: "failed"; error: string };
 
-/** A newer LOKA: Oka hops in with what's new; installs in place where the updater can, else opens `downloadUrl`
+/** A newer TCuFlow: Oka hops in with what's new; installs in place where the updater can, else opens `downloadUrl`
  *  (default: the release page). */
 export function UpdatePrompt({ update, seed, downloadUrl, onClose }: { update: Update; seed: string; downloadUrl?: string; onClose: () => void }) {
   const [phase, setPhase] = useState<Phase>({ at: "ready" });
   const busy = phase.at === "downloading" || phase.at === "installing";
-  const version = update.installable?.version ?? update.available!.name.replace(/^LOKA\s*/i, "").replace(/^v/, "");
+  const version = update.installable?.version ?? update.available!.name.replace(/^TCuFlow\s*/i, "").replace(/^v/, "");
   const notes = update.available?.notes || update.installable?.notes || "";
 
   useEffect(() => {
@@ -29,10 +30,10 @@ export function UpdatePrompt({ update, seed, downloadUrl, onClose }: { update: U
 
   const install = () => {
     setPhase({ at: "downloading", done: 0 });
-    // resolves only on failure: success restarts LOKA (Windows: its installer closes and reopens it)
+    // resolves only on failure: success restarts TCuFlow (Windows: its installer closes and reopens it)
     invoke("install_update").catch((e) => setPhase({ at: "failed", error: String(e) }));
   };
-  const download = () => invoke("open_url", { url: downloadUrl ?? update.available?.url ?? "https://github.com/fanrsd/LOKA/releases/latest" });
+  const download = () => invoke("open_url", { url: downloadUrl ?? update.available?.url ?? "https://github.com/tcuber11/tcu-flow/releases/latest" });
   const pct = phase.at === "downloading" && phase.total ? Math.round((phase.done / phase.total) * 100) : null;
 
   return (
@@ -57,7 +58,7 @@ export function UpdatePrompt({ update, seed, downloadUrl, onClose }: { update: U
 
         <p className="mt-3 rounded-full bg-accent/15 px-2.5 py-0.5 text-xs font-semibold text-accent">New version</p>
         <h2 id="update-title" className="mt-2 font-display text-[28px] font-bold leading-tight tracking-[-0.025em]">
-          LOKA {version} is here
+          TCuFlow {version} is here
         </h2>
         {update.current && <p className="mt-1 text-sm text-muted">You have {update.current}.</p>}
 
@@ -80,7 +81,7 @@ export function UpdatePrompt({ update, seed, downloadUrl, onClose }: { update: U
                 />
               </div>
               <p className="mt-2 text-sm text-muted">
-                {phase.at === "installing" ? "Installing… LOKA restarts by itself" : pct === null ? "Downloading…" : `Downloading… ${pct}%`}
+                {phase.at === "installing" ? "Installing… TCuFlow restarts by itself" : pct === null ? "Downloading…" : `Downloading… ${pct}%`}
               </p>
             </>
           ) : phase.at === "failed" ? (
@@ -97,7 +98,7 @@ export function UpdatePrompt({ update, seed, downloadUrl, onClose }: { update: U
             </>
           ) : (
             <div className="flex justify-center gap-2">
-              {/* "Later" first and focused: a stray Enter never restarts LOKA mid-session */}
+              {/* "Later" first and focused: a stray Enter never restarts TCuFlow mid-session */}
               <button autoFocus onClick={onClose} className={quietButton}>
                 Later
               </button>

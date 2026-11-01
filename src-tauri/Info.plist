@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
   <key>NSLocalNetworkUsageDescription</key>
-  <string>LOKA finds your other computers on this network and shares the mouse, keyboard and files with them.</string>
+  <string>TCuFlow finds your other computers on this network and shares the mouse, keyboard and files with them.</string>
   <key>CFBundleDocumentTypes</key>
   <array>
     <dict>
@@ -21,8 +21,8 @@
     </dict>
   </array>
   <key>NSAudioCaptureUsageDescription</key>
-  <string>LOKA plays this Mac's sound on your other computer when you turn on sharing its sound.</string>
+  <string>TCuFlow plays this Mac's sound on your other computer when you turn on sharing its sound.</string>
   <key>NSMicrophoneUsageDescription</key>
-  <string>LOKA lets your other computer use this Mac's microphone when you turn on sharing its microphone.</string>
+  <string>TCuFlow lets your other computer use this Mac's microphone when you turn on sharing its microphone.</string>
 </dict>
 </plist>

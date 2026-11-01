@@ -1,3 +1,4 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 use super::{Captured, CursorSample, Gesture, Injected, InputEvent, SpatialPlatformEngine, Typed};
 use objc2_app_kit::{NSMainMenuWindowLevel, NSWindow, NSWindowCollectionBehavior};
 use std::{
@@ -116,7 +117,7 @@ extern "C" {
     fn CGEventSourceKeyState(state: i32, key: u16) -> bool;
     fn CGDisplayHideCursor(display: u32) -> i32;
     fn CGDisplayShowCursor(display: u32) -> i32;
-    // private, as Synergy/Barrier use them: hiding the cursor otherwise needs LOKA to be the active app
+    // private, as Synergy/Barrier use them: hiding the cursor otherwise needs TCuFlow to be the active app
     fn _CGSDefaultConnection() -> i32;
     fn CGSSetConnectionProperty(cid: i32, target: i32, key: *const c_void, value: *const c_void) -> i32;
 }
@@ -157,7 +158,7 @@ extern "C" {
 }
 
 /// Main (event tap) and Client (CGEventPost, silently dropped otherwise) both need Accessibility.
-/// Untrusted → macOS adds LOKA to the list and shows its "open System Settings" prompt.
+/// Untrusted → macOS adds TCuFlow to the list and shows its "open System Settings" prompt.
 fn ask_accessibility() {
     unsafe {
         let keys = [kAXTrustedCheckOptionPrompt];
@@ -252,13 +253,13 @@ fn release() {
     set_cursor_hidden(false);
 }
 
-/// Holds off App Nap for LOKA's lifetime: with every window hidden or minimized macOS would otherwise defer its
+/// Holds off App Nap for TCuFlow's lifetime: with every window hidden or minimized macOS would otherwise defer its
 /// timers and network (the tracker, discovery, sessions). The display and the system may still sleep when idle.
 pub fn keep_running() {
     use objc2_foundation::{NSActivityOptions, NSProcessInfo, NSString};
     let token = NSProcessInfo::processInfo().beginActivityWithOptions_reason(
         NSActivityOptions::UserInitiatedAllowingIdleSystemSleep | NSActivityOptions::LatencyCritical,
-        &NSString::from_str("LOKA shares this Mac's mouse and keyboard"),
+        &NSString::from_str("TCuFlow shares this Mac's mouse and keyboard"),
     );
     std::mem::forget(token); // ending the activity would let App Nap back in
 }
@@ -279,7 +280,7 @@ static INJECTION: Mutex<Injection> = Mutex::new(Injection { at: CGPoint { x: 0.0
 
 pub struct MacEngine;
 
-/// About → Allow: the system prompt (adds LOKA to the list), then the Accessibility pane itself; after an update
+/// About → Allow: the system prompt (adds TCuFlow to the list), then the Accessibility pane itself; after an update
 /// the ad-hoc signature changes and the old entry stops counting, so the pane is where it gets switched on again.
 pub fn allow_input() -> Result<(), String> {
     ask_accessibility();
@@ -361,8 +362,8 @@ impl SpatialPlatformEngine for MacEngine {
             Ok(())
         } else {
             *CAPTURE.lock().unwrap() = None;
-            // ad-hoc signing: an updated LOKA no longer matches its old Accessibility entry, though the switch still shows on
-            Err("LOKA can't take the mouse and keyboard: allow it in Privacy → Accessibility (after an update, remove LOKA there and add it again)".into())
+            // ad-hoc signing: an updated TCuFlow no longer matches its old Accessibility entry, though the switch still shows on
+            Err("TCuFlow can't take the mouse and keyboard: allow it in Privacy → Accessibility (after an update, remove TCuFlow there and add it again)".into())
         }
     }
 

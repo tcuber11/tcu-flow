@@ -1,3 +1,4 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 //! Payload transfer: one stream of a pinned QUIC connection (`secure`) per payload; a sender's
 //! `shutdown` returns once the receiver has every byte, and a dead peer fails it within seconds.
 //! `u32 LE header_len | JSON Header | size bytes`.
@@ -26,7 +27,7 @@ use tokio::{
     io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt},
 };
 
-pub const PORT: u16 = 53320;
+pub const PORT: u16 = 53420;
 const CHUNK: usize = 256 * 1024;
 const MAX_HEADER: u32 = 64 * 1024;
 const MAX_TEXT: u64 = 1024 * 1024;

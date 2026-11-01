@@ -1,7 +1,8 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 import { useEffect, useId } from "react";
 
 /**
- * Oka, LOKA's mascot: a chubby cursor arrow, the thing that actually travels between screens.
+ * Oka, TCuFlow's mascot: a chubby cursor arrow, the thing that actually travels between screens.
  * Every device gets its own Oka (hue from its fingerprint); the face carries state:
  *   idle      blinks now and then, eyes follow the pointer, small smile
  *   waiting   eyes dart side to side, "o" mouth (a pairing request is out)

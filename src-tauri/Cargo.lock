@@ -2482,52 +2482,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f9f8bd3e56ce4dfc153cf470fffbfa98c7620958b312ca5c3a4b8d5181fd13c6"
 
 [[package]]
-name = "loka"
-version = "0.9.5"
-dependencies = [
- "arboard",
- "base64 0.23.1",
- "block2",
- "cpal",
- "dav-server",
- "drag",
- "evdev",
- "hyper",
- "hyper-util",
- "if-addrs",
- "image",
- "jni 0.21.1",
- "libc",
- "mac_address",
- "ndk-context",
- "objc2",
- "objc2-app-kit",
- "objc2-foundation",
- "portable-pty",
- "quinn",
- "rcgen",
- "ring",
- "rustls",
- "serde",
- "serde_json",
- "socket2",
- "tauri",
- "tauri-build",
- "tauri-plugin-autostart",
- "tauri-plugin-dialog",
- "tauri-plugin-global-shortcut",
- "tauri-plugin-notification",
- "tauri-plugin-single-instance",
- "tauri-plugin-updater",
- "tokio",
- "uuid",
- "windows 0.62.2",
- "windows-core 0.62.2",
- "windows-sys 0.60.2",
- "x11rb",
-]
-
-[[package]]
 name = "lru"
 version = "0.16.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4949,6 +4903,52 @@ dependencies = [
  "thiserror 2.0.21",
  "windows 0.62.2",
  "windows-version",
+]
+
+[[package]]
+name = "tcuflow"
+version = "0.9.5"
+dependencies = [
+ "arboard",
+ "base64 0.23.1",
+ "block2",
+ "cpal",
+ "dav-server",
+ "drag",
+ "evdev",
+ "hyper",
+ "hyper-util",
+ "if-addrs",
+ "image",
+ "jni 0.21.1",
+ "libc",
+ "mac_address",
+ "ndk-context",
+ "objc2",
+ "objc2-app-kit",
+ "objc2-foundation",
+ "portable-pty",
+ "quinn",
+ "rcgen",
+ "ring",
+ "rustls",
+ "serde",
+ "serde_json",
+ "socket2",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-autostart",
+ "tauri-plugin-dialog",
+ "tauri-plugin-global-shortcut",
+ "tauri-plugin-notification",
+ "tauri-plugin-single-instance",
+ "tauri-plugin-updater",
+ "tokio",
+ "uuid",
+ "windows 0.62.2",
+ "windows-core 0.62.2",
+ "windows-sys 0.60.2",
+ "x11rb",
 ]
 
 [[package]]

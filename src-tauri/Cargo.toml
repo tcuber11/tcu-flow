@@ -1,12 +1,13 @@
+# Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 [package]
-name = "loka"
+name = "tcuflow"
 version = "0.9.5"
 edition = "2021"
 license = "Apache-2.0"
-repository = "https://github.com/fanrsd/LOKA"
+repository = "https://github.com/tcuber11/tcu-flow"
 
 [lib]
-name = "loka_lib"
+name = "tcuflow_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

@@ -1,4 +1,5 @@
-//! Android: received input goes to `Injector.kt`, which LOKA starts as the shell user over its own
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
+//! Android: received input goes to `Injector.kt`, which TCuFlow starts as the shell user over its own
 //! Wireless debugging link (apps can't inject input). It dials back to a localhost port and proves itself
 //! with a one-time token; frames are 9 bytes: tag, i32, i32 (LE); text frames (6 type, 7 set clipboard)
 //! carry `len` (the first i32) bytes of UTF-8 after them, and 8 (get clipboard) is answered with u32 LE
@@ -32,7 +33,7 @@ fn send(tag: u8, a: i32, b: i32, extra: &[u8]) -> bool {
 }
 
 /// Clipboard text: through the injector while it runs (the shell user may read it in the background, an
-/// app only while in front), else as this app (LOKA in front: the phone driving a computer).
+/// app only while in front), else as this app (TCuFlow in front: the phone driving a computer).
 pub fn clipboard_text() -> Option<String> {
     let mut slot = INJECTOR.lock().unwrap();
     let Some(s) = slot.as_mut() else {
@@ -75,7 +76,7 @@ fn jni_clipboard(text: Option<&str>) -> Option<Option<String>> {
         let name = env.new_string("clipboard")?;
         let cm = env.call_method(&context, "getSystemService", "(Ljava/lang/String;)Ljava/lang/Object;", &[(&name).into()])?.l()?;
         if let Some(text) = text {
-            let (label, text) = (env.new_string("LOKA")?, env.new_string(text)?);
+            let (label, text) = (env.new_string("TCuFlow")?, env.new_string(text)?);
             let sig = "(Ljava/lang/CharSequence;Ljava/lang/CharSequence;)Landroid/content/ClipData;";
             let clip = env.call_static_method("android/content/ClipData", "newPlainText", sig, &[(&label).into(), (&text).into()])?.l()?;
             env.call_method(&cm, "setPrimaryClip", "(Landroid/content/ClipData;)V", &[(&clip).into()])?;

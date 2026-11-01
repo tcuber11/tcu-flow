@@ -1,20 +1,21 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 // node scripts/release.mjs v0.9.0
 // After the installers are on the GitHub release (as today, plus the Mac's LOKA_universal.app.tar.gz from Codemagic):
 // downloads them, signs each with the updater key, and uploads latest.json, which the in-app updater reads from
-// releases/latest/download/latest.json. Key: TAURI_SIGNING_PRIVATE_KEY(_PASSWORD), else ~/.tauri/loka.key(.password).
+// releases/latest/download/latest.json. Key: TAURI_SIGNING_PRIVATE_KEY(_PASSWORD), else ~/.tauri/tcuflow.key(.password).
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, readdirSync, writeFileSync, existsSync, rmSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 
-const REPO = "fanrsd/LOKA";
+const REPO = "tcuber11/tcu-flow";
 const tag = process.argv[2];
 if (!/^v\d+\.\d+\.\d+$/.test(tag ?? "")) {
   console.error("usage: node scripts/release.mjs v0.9.0");
   process.exit(1);
 }
 
-const keyFile = join(homedir(), ".tauri", "loka.key");
+const keyFile = join(homedir(), ".tauri", "tcuflow.key");
 const key = process.env.TAURI_SIGNING_PRIVATE_KEY ?? readFileSync(keyFile, "utf8");
 const password = process.env.TAURI_SIGNING_PRIVATE_KEY_PASSWORD ?? (existsSync(`${keyFile}.password`) ? readFileSync(`${keyFile}.password`, "utf8") : "");
 

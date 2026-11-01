@@ -1,3 +1,4 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 //! Per-install state that must survive restarts: paired devices, their portals, preferences.
 //! The device's identity is its TLS certificate (`network::secure::Identity`), stored next to this file.
 
@@ -46,7 +47,7 @@ pub struct Settings {
     pub cursor: CursorPrefs,
     /// What paired devices may open on this one (all off until the user turns them on).
     pub sharing: Sharing,
-    /// Where received files go; `None` = Downloads/LOKA.
+    /// Where received files go; `None` = Downloads/TCuFlow.
     pub received: Option<PathBuf>,
     /// Paired devices' hardware addresses as they announced them, to wake them up (Wake-on-LAN).
     pub macs: HashMap<String, String>,

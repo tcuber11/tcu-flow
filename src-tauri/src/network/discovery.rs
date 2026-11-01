@@ -1,3 +1,4 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 //! LocalSend-style discovery: JSON announce on a 224.0.0.0/24 multicast group on every interface;
 //! peers answer an announce by unicast. Manually added hosts get the announce by unicast too,
 //! for networks that drop multicast (guest Wi-Fi, client isolation).
@@ -13,7 +14,7 @@ use std::{
 use tokio::{net::UdpSocket, sync::watch};
 
 pub const GROUP: Ipv4Addr = Ipv4Addr::new(224, 0, 0, 168);
-pub const PORT: u16 = 53318;
+pub const PORT: u16 = 53418;
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq)]
 #[serde(rename_all = "lowercase")]
@@ -73,7 +74,7 @@ const HEARTBEAT: Duration = Duration::from_secs(5);
 
 fn bind() -> io::Result<UdpSocket> {
     let s = Socket::new(Domain::IPV4, Type::DGRAM, Some(Protocol::UDP))?;
-    s.set_reuse_address(true)?; // several LOKA instances (simulator) on one host
+    s.set_reuse_address(true)?; // several TCuFlow instances (simulator) on one host
     #[cfg(unix)]
     s.set_reuse_port(true)?;
     s.bind(&SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, PORT).into())?;

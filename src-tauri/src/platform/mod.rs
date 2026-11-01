@@ -1,3 +1,4 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 //! OS abstraction for the Bezel Portal. All coordinates are global physical pixels,
 //! top-left origin of the primary display (same space as `tauri::Monitor`).
 
@@ -181,7 +182,7 @@ pub fn engine() -> Box<dyn SpatialPlatformEngine> {
     Box::new(TouchEngine)
 }
 
-/// LOKA works with its window minimized or in the tray: no App Nap (macOS) and no automatic power throttling
+/// TCuFlow works with its window minimized or in the tray: no App Nap (macOS) and no automatic power throttling
 /// (Windows 11 lowers minimized/hidden apps to low QoS and coarse timers), which would stall the 60 Hz tracker.
 pub fn keep_running() {
     #[cfg(target_os = "windows")]

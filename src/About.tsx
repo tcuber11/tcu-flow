@@ -1,12 +1,13 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 import { useEffect, useState, type ReactNode } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getVersion } from "@tauri-apps/api/app";
 import { Face } from "./Face";
 import { primaryButton, quietButton } from "./Pairing";
 
-const REPO = "fanrsd/LOKA";
+const REPO = "tcuber11/tcu-flow";
 const LINKS = [
-  ["Website", "https://loka.margingroup.id"],
+  ["Based on LOKA by Aufa Nirsad", "https://github.com/fanrsd/LOKA"],
   ["GitHub", `https://github.com/${REPO}`],
   ["Report a problem", `https://github.com/${REPO}/issues`],
   ["License", `https://github.com/${REPO}/blob/main/LICENSE`],
@@ -66,21 +67,21 @@ export function useUpdate(): Update {
 const FIX: Record<string, { title: string; text: string; button: string; command: string; failed: string }> = {
   windows: {
     title: "Network",
-    text: "Other computers can't find this one, or can't move over? Windows Firewall may be blocking LOKA on this network.",
+    text: "Other computers can't find this one, or can't move over? Windows Firewall may be blocking TCuFlow on this network.",
     button: "Allow through Windows Firewall",
     command: "allow_firewall",
     failed: "Windows Firewall was not changed",
   },
   linux: {
     title: "Mouse and keyboard",
-    text: "LOKA reads the mouse and keyboard and types for other devices below the desktop, so it works on X11, Wayland and the console. That needs your permission once.",
+    text: "TCuFlow reads the mouse and keyboard and types for other devices below the desktop, so it works on X11, Wayland and the console. That needs your permission once.",
     button: "Allow input access",
     command: "allow_input",
     failed: "Input access was not allowed",
   },
   macos: {
     title: "Mouse and keyboard",
-    text: "Other devices can only move the cursor and type here when LOKA is allowed under Accessibility. macOS forgets that after every LOKA update, so allow it again then.",
+    text: "Other devices can only move the cursor and type here when TCuFlow is allowed under Accessibility. macOS forgets that after every TCuFlow update, so allow it again then.",
     button: "Allow Accessibility",
     command: "allow_input",
     failed: "System Settings didn't open",
@@ -115,7 +116,7 @@ export function About({ update, seed, os, onClose, onUpdate, downloadUrl, extra 
     if (os !== "windows") return;
     invoke<string>("firewall_status").then((s) => {
       if (s === "allowed") setFixed("done");
-      if (s === "blocked") setFixed("A Windows Firewall rule blocks LOKA: allowing replaces it");
+      if (s === "blocked") setFixed("A Windows Firewall rule blocks TCuFlow: allowing replaces it");
     }, () => {});
   }, [os]);
 
@@ -131,7 +132,7 @@ export function About({ update, seed, os, onClose, onUpdate, downloadUrl, extra 
   const allow = () => {
     setFixed("busy");
     invoke(fix.command).then(
-      () => setFixed(os === "macos" ? "Turn LOKA on in the list, then come back here" : "done"),
+      () => setFixed(os === "macos" ? "Turn TCuFlow on in the list, then come back here" : "done"),
       (e) => setFixed(String(e) || fix.failed),
     );
   };
@@ -150,7 +151,7 @@ export function About({ update, seed, os, onClose, onUpdate, downloadUrl, extra 
           <Face seed={seed} size={52} mood={update.available ? "waiting" : "happy"} />
           <div className="min-w-0 flex-1">
             <h2 id="about-title" className="font-display text-[26px] font-bold leading-tight tracking-[-0.025em]">
-              LOKA
+              TCuFlow
             </h2>
             <p className="text-sm text-muted">Version {update.current ?? "…"}</p>
           </div>
@@ -166,7 +167,7 @@ export function About({ update, seed, os, onClose, onUpdate, downloadUrl, extra 
             ) : update.available || update.installable ? (
               <div className="flex items-center gap-3">
                 <p className="flex-1 text-sm">
-                  <span className="font-semibold text-accent">{update.available?.name ?? `LOKA ${update.installable!.version}`}</span> is available.
+                  <span className="font-semibold text-accent">{update.available?.name ?? `TCuFlow ${update.installable!.version}`}</span> is available.
                 </p>
                 {update.installable ? (
                   <button onClick={onUpdate} className={primaryButton}>
@@ -245,7 +246,7 @@ export function About({ update, seed, os, onClose, onUpdate, downloadUrl, extra 
             </section>
           )}
 
-          <nav aria-label="LOKA links" className="mt-7 flex flex-wrap gap-x-4 gap-y-2 text-xs">
+          <nav aria-label="TCuFlow links" className="mt-7 flex flex-wrap gap-x-4 gap-y-2 text-xs">
             {LINKS.map(([label, url]) => (
               <button key={url} onClick={() => invoke("open_url", { url })} className="text-faint underline-offset-2 hover:text-fg hover:underline focus-visible:outline-2 focus-visible:outline-accent">
                 {label}

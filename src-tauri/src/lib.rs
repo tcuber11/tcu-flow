@@ -1,3 +1,4 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 // the phone build has no capture, overlays or clipboard pictures yet: desktop-only paths stay unused there
 #![cfg_attr(mobile, allow(dead_code, unused))]
 #[macro_use]
@@ -49,7 +50,7 @@ const BAND: &str = "edge-overlay";
 const MAIN_WINDOW: &str = "main";
 
 /// Telemetry, transfer and kvm ports this device listens on. The Android emulator sits behind NAT on the
-/// same computer as a desktop LOKA, so it takes its own, forwarded with `adb emu redir add udp:N:N`.
+/// same computer as a desktop TCuFlow, so it takes its own, forwarded with `adb emu redir add udp:N:N`.
 static PORTS: std::sync::LazyLock<(u16, u16, u16)> = std::sync::LazyLock::new(|| {
     #[cfg(target_os = "android")]
     if std::process::Command::new("getprop").arg("ro.hardware").output().is_ok_and(|o| matches!(o.stdout.trim_ascii(), b"ranchu" | b"goldfish")) {
@@ -82,7 +83,7 @@ struct Shared {
     next_request: u64,
     /// files that arrived in the last burst, for Ctrl+Alt+V
     recent: Vec<PathBuf>,
-    /// files handed to LOKA by Send to / Open With, waiting for the user to pick a device
+    /// files handed to TCuFlow by Send to / Open With, waiting for the user to pick a device
     outbox: Vec<PathBuf>,
 }
 
@@ -105,7 +106,7 @@ fn explain(app: &AppHandle, fp: &str, e: &std::io::Error) -> String {
 }
 
 /// Keeps `controllable` in what discovery announces current: an Android's injector starts and dies with
-/// Wireless debugging, a Linux gets input access while LOKA runs. `on_change` runs when it flips.
+/// Wireless debugging, a Linux gets input access while TCuFlow runs. `on_change` runs when it flips.
 pub(crate) async fn watch_controllable(engine: Arc<dyn SpatialPlatformEngine>, me: watch::Sender<DeviceInfo>, on_change: impl Fn() + Send) {
     let mut tick = tokio::time::interval(Duration::from_secs(2));
     loop {
@@ -175,7 +176,7 @@ fn report(app: &AppHandle) -> String {
     let s = state.lock().unwrap();
     let yes = |b: bool| if b { "yes" } else { "no" };
     let rect = |r: &Rect| format!("{},{} {}×{}", r.x, r.y, r.w, r.h);
-    let mut r = format!("LOKA {} · {} {}\n", env!("CARGO_PKG_VERSION"), std::env::consts::OS, std::env::consts::ARCH);
+    let mut r = format!("TCuFlow {} · {} {}\n", env!("CARGO_PKG_VERSION"), std::env::consts::OS, std::env::consts::ARCH);
     let _ = writeln!(r, "This device: {} ({}…), controllable: {}", me.alias, &me.fingerprint[..me.fingerprint.len().min(12)], yes(me.controllable));
     let ips: Vec<String> = discovery::local_ipv4().iter().map(|ip| ip.to_string()).collect();
     let _ = writeln!(r, "IPs: {}", ips.join(", "));
@@ -223,7 +224,7 @@ async fn diagnostics(app: AppHandle) -> String {
     for (fp, alias) in others {
         match peer_report(&app, &fp).await {
             Ok(text) => r.push_str(&format!("\n===== {alias} =====\n{text}")),
-            Err(e) => r.push_str(&format!("\n===== {alias}: no report ({e}; LOKA before 0.9.4 doesn't send one) =====\n")),
+            Err(e) => r.push_str(&format!("\n===== {alias}: no report ({e}; TCuFlow before 0.9.4 doesn't send one) =====\n")),
         }
     }
     r
@@ -280,7 +281,7 @@ async fn troubleshoot(app: AppHandle, fingerprint: String) -> Vec<Step> {
         };
         step("On the network", "ok", format!("heard at {addr}"));
         if info.proto != kvm::PROTOCOL {
-            break 'checks step("Same LOKA protocol", "failed", format!("{alias} runs a LOKA that doesn't match this one: update both to the newest"));
+            break 'checks step("Same TCuFlow protocol", "failed", format!("{alias} runs a TCuFlow that doesn't match this one: update both to the newest"));
         }
         if !info.controllable {
             break 'checks step("Can be controlled", "failed", kvm::not_controllable(&alias, &os));
@@ -392,10 +393,10 @@ fn free_driven(app: &AppHandle, state: &AppState) -> Option<String> {
     Some(state.lock().unwrap().who(&fp).0)
 }
 
-/// Where received files go: the folder the user picked, or Downloads/LOKA.
+/// Where received files go: the folder the user picked, or Downloads/TCuFlow.
 pub(crate) fn received_dir(app: &AppHandle) -> PathBuf {
     let picked = app.state::<AppState>().lock().unwrap().settings.received.clone();
-    picked.unwrap_or_else(|| app.path().download_dir().or_else(|_| app.path().app_data_dir()).unwrap_or_default().join("LOKA"))
+    picked.unwrap_or_else(|| app.path().download_dir().or_else(|_| app.path().app_data_dir()).unwrap_or_default().join("TCuFlow"))
 }
 
 #[tauri::command]
@@ -407,7 +408,7 @@ fn set_sharing(app: AppHandle, state: State<AppState>, sharing: settings::Sharin
     let _ = app.emit("device", ());
 }
 
-/// `None`: back to Downloads/LOKA.
+/// `None`: back to Downloads/TCuFlow.
 #[tauri::command]
 fn set_received(app: AppHandle, state: State<AppState>, folder: Option<PathBuf>) {
     let mut s = state.lock().unwrap();
@@ -420,7 +421,7 @@ fn set_received(app: AppHandle, state: State<AppState>, folder: Option<PathBuf>)
 /// Wake-on-LAN: the magic packet (6×0xFF, then the MAC 16 times) to every local broadcast address.
 #[tauri::command]
 async fn wake(state: State<'_, AppState>, fingerprint: String) -> Result<(), String> {
-    let mac = state.lock().unwrap().settings.macs.get(&fingerprint).cloned().ok_or("LOKA hasn't learned that computer's network address yet: open LOKA on it once")?;
+    let mac = state.lock().unwrap().settings.macs.get(&fingerprint).cloned().ok_or("TCuFlow hasn't learned that computer's network address yet: open TCuFlow on it once")?;
     let bytes: Vec<u8> = mac.split([':', '-']).filter_map(|b| u8::from_str_radix(b, 16).ok()).collect();
     if bytes.len() != 6 {
         return Err("that computer announced an unusable network address".into());
@@ -475,7 +476,7 @@ fn take_outbox(state: State<AppState>) -> Vec<PathBuf> {
     std::mem::take(&mut state.lock().unwrap().outbox)
 }
 
-/// Files handed to LOKA from the file manager: ask the user where to send them.
+/// Files handed to TCuFlow from the file manager: ask the user where to send them.
 fn receive_outbox(app: &AppHandle, paths: Vec<PathBuf>) {
     let paths: Vec<PathBuf> = paths.into_iter().filter(|p| p.exists()).collect();
     if paths.is_empty() {
@@ -587,7 +588,7 @@ struct Device {
     info: DeviceInfo,
     paired: Vec<PairedDevice>,
     portals: HashMap<String, Portal>,
-    /// this computer's LAN addresses, to type into another LOKA's "Add by IP"
+    /// this computer's LAN addresses, to type into another TCuFlow's "Add by IP"
     ips: Vec<std::net::Ipv4Addr>,
     hosts: Vec<IpAddr>,
     cursor: CursorPrefs,
@@ -699,7 +700,7 @@ fn remove_host(state: State<AppState>, ip: IpAddr) {
     s.settings.save();
 }
 
-/// Windows: allow LOKA inbound on every network profile (one UAC prompt). The first-run firewall
+/// Windows: allow TCuFlow inbound on every network profile (one UAC prompt). The first-run firewall
 /// prompt often only allows Public or Private, and Windows marks new networks Public. Earlier inbound
 /// rules for this exe go first: a Block one (prompt cancelled) would win over the allow.
 #[tauri::command]
@@ -708,7 +709,7 @@ async fn allow_firewall() -> Result<(), String> {
     {
         let exe = std::env::current_exe().map_err(|e| e.to_string())?;
         let program = format!("dir=in program=\"{}\"", exe.display());
-        let args = format!("/c netsh advfirewall firewall delete rule name=all {program} & netsh advfirewall firewall add rule name=LOKA action=allow profile=any {program}");
+        let args = format!("/c netsh advfirewall firewall delete rule name=all {program} & netsh advfirewall firewall add rule name=TCuFlow action=allow profile=any {program}");
         // Start-Process throws when the UAC prompt is declined → exit 1
         let script = format!("$p = Start-Process cmd -Verb RunAs -Wait -PassThru -WindowStyle Hidden -ArgumentList '{}'; exit $p.ExitCode", args.replace('\'', "''"));
         let out = powershell(script).await?;
@@ -747,7 +748,7 @@ async fn powershell(script: String) -> Result<std::process::Output, String> {
         .map_err(|e| e.to_string())
 }
 
-/// Let LOKA send input: Linux `/dev/input` + uinput (one password prompt); macOS Accessibility (prompt + its pane).
+/// Let TCuFlow send input: Linux `/dev/input` + uinput (one password prompt); macOS Accessibility (prompt + its pane).
 #[tauri::command]
 async fn allow_input() -> Result<(), String> {
     #[cfg(any(target_os = "linux", target_os = "macos"))]
@@ -772,7 +773,7 @@ fn alias() -> String {
             None
         })
         .or_else(|| std::fs::read_to_string("/proc/sys/kernel/hostname").ok().map(|h| h.trim().to_string()).filter(|h| !h.is_empty()))
-        .unwrap_or_else(|| "LOKA".into())
+        .unwrap_or_else(|| "TCuFlow".into())
 }
 
 /// Open a web page in the default browser.
@@ -846,7 +847,7 @@ async fn set_portal(app: AppHandle, state: State<'_, AppState>, tls: State<'_, A
     Ok(match placed.unwrap_or_else(|_| Err(std::io::ErrorKind::TimedOut.into())) {
         Ok(true) => None,
         // phones before 0.9.3 refused every Place; newer ones always accept
-        Ok(false) if phone => Some(format!("{alias} runs an older LOKA: update it, or set its side on the phone")),
+        Ok(false) if phone => Some(format!("{alias} runs an older TCuFlow: update it, or set its side on the phone")),
         Ok(false) => Some(format!("{alias} has no free room on that side: place this computer on its screens there")),
         Err(e) => Some(explain(&app, &fingerprint, &e)),
     })
@@ -1048,18 +1049,18 @@ impl kvm::Sink for EngineSink {
     }
 }
 
-/// `loka --send <files…>` (Windows Send to): the files to send, if launched that way.
+/// `tcuflow --send <files…>` (Windows Send to): the files to send, if launched that way.
 fn send_args(args: &[String]) -> Vec<PathBuf> {
     args.iter().skip_while(|a| *a != "--send").skip(1).map(PathBuf::from).collect()
 }
 
-/// Windows: a "LOKA" entry in Explorer's Send to menu (a shortcut to `loka --send`), refreshed each start
+/// Windows: a "TCuFlow" entry in Explorer's Send to menu (a shortcut to `tcuflow --send`), refreshed each start
 /// so it follows the installed exe.
 #[cfg(target_os = "windows")]
 fn install_send_to() {
     use std::os::windows::process::CommandExt;
     let (Ok(exe), Ok(appdata)) = (std::env::current_exe(), std::env::var("APPDATA")) else { return };
-    let link = PathBuf::from(appdata).join(r"Microsoft\Windows\SendTo\LOKA.lnk");
+    let link = PathBuf::from(appdata).join(r"Microsoft\Windows\SendTo\TCuFlow.lnk");
     let q = |p: &std::path::Path| p.display().to_string().replace('\'', "''");
     let script = format!(
         "$s=(New-Object -ComObject WScript.Shell).CreateShortcut('{}');$s.TargetPath='{}';$s.Arguments='--send';$s.IconLocation='{},0';$s.Save()",
@@ -1078,7 +1079,7 @@ pub fn run() {
         let args: Vec<String> = std::env::args().collect();
         if args.iter().any(|a| a == "--allow-input") {
             match platform::allow_input() {
-                Ok(()) => println!("LOKA can use the mouse and keyboard now."),
+                Ok(()) => println!("TCuFlow can use the mouse and keyboard now."),
                 Err(e) => {
                     journal!("{e}");
                     std::process::exit(1);
@@ -1115,7 +1116,7 @@ pub fn run() {
         use tauri_plugin_global_shortcut::{Code, Modifiers, Shortcut, ShortcutState};
         let paste = Shortcut::new(Some(Modifiers::CONTROL | Modifiers::ALT), Code::KeyV);
         builder = builder
-            // one LOKA per computer; a second launch (Send to) hands its files to the running one
+            // one TCuFlow per computer; a second launch (Send to) hands its files to the running one
             .plugin(tauri_plugin_single_instance::init(|app, args, _| {
                 let files = send_args(&args);
                 if files.is_empty() {
@@ -1200,7 +1201,7 @@ pub fn run() {
             update::install_update,
             notify::set_mirroring
         ])
-        // closing the window keeps LOKA sharing from the tray; "Quit LOKA" there ends it
+        // closing the window keeps TCuFlow sharing from the tray; "Quit TCuFlow" there ends it
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 if window.label() == MAIN_WINDOW {
@@ -1214,7 +1215,7 @@ pub fn run() {
             let data = app.path().app_data_dir()?;
             journal::init(&data);
             let autostarted = std::env::args().any(|a| a == "--autostart");
-            journal!("LOKA {} starting on {} {}{}", env!("CARGO_PKG_VERSION"), std::env::consts::OS, std::env::consts::ARCH, if autostarted { ", with the computer" } else { "" });
+            journal!("TCuFlow {} starting on {} {}{}", env!("CARGO_PKG_VERSION"), std::env::consts::OS, std::env::consts::ARCH, if autostarted { ", with the computer" } else { "" });
             let settings = Settings::load(&data);
             #[cfg(desktop)]
             {
@@ -1310,15 +1311,15 @@ pub fn run() {
             Ok(())
         })
         .build(tauri::generate_context!())
-        .expect("error while building LOKA");
+        .expect("error while building TCuFlow");
     app.run(|app, e| {
-        // macOS: files dropped on the Dock icon or opened with LOKA from Finder
+        // macOS: files dropped on the Dock icon or opened with TCuFlow from Finder
         #[cfg(target_os = "macos")]
         if let tauri::RunEvent::Opened { urls } = &e {
             receive_outbox(app, urls.iter().filter_map(|u| u.to_file_path().ok()).collect());
         }
         if let tauri::RunEvent::Exit = e {
-            journal!("LOKA exiting");
+            journal!("TCuFlow exiting");
         }
         let _ = (app, e);
     });
@@ -1416,7 +1417,7 @@ fn spawn_transfer_server(app: &AppHandle, state: AppState, tls: Arc<Tls>) -> tau
                     if new_burst {
                         use tauri_plugin_notification::NotificationExt;
                         let (name, folder) = (transfer::file_name(path), transfer::file_name(&received_dir(&h)));
-                        let _ = h.notification().builder().title("LOKA").body(format!("{name} saved to {folder} · Ctrl+Alt+V pastes it")).show();
+                        let _ = h.notification().builder().title("TCuFlow").body(format!("{name} saved to {folder} · Ctrl+Alt+V pastes it")).show();
                     }
                     *last = Some(std::time::Instant::now());
                 }
@@ -1558,7 +1559,7 @@ fn carry_out(app: &AppHandle, step: carry::Step) {
             }
             use tauri_plugin_notification::NotificationExt;
             let folder = dir.file_name().map_or_else(|| dir.display().to_string(), |n| n.to_string_lossy().into_owned());
-            let _ = app.notification().builder().title("LOKA").body(format!("Let go before the drag could start: saved to {folder}")).show();
+            let _ = app.notification().builder().title("TCuFlow").body(format!("Let go before the drag could start: saved to {folder}")).show();
         }
         carry::Step::Wait => {}
     }
@@ -1571,7 +1572,7 @@ const TRAY: &str = "loka";
 fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
     use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
     let mut tray = TrayIconBuilder::with_id(TRAY)
-        .tooltip("LOKA")
+        .tooltip("TCuFlow")
         .menu(&tray_menu(app.handle())?)
         .show_menu_on_left_click(false)
         .on_menu_event(move |app, e| match e.id.as_ref() {
@@ -1628,7 +1629,7 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
 fn tray_menu(app: &AppHandle) -> tauri::Result<tauri::menu::Menu<tauri::Wry>> {
     use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
     let menu = Menu::new(app)?;
-    menu.append(&MenuItem::with_id(app, "open", "Open LOKA", true, None::<&str>)?)?;
+    menu.append(&MenuItem::with_id(app, "open", "Open TCuFlow", true, None::<&str>)?)?;
     menu.append(&PredefinedMenuItem::separator(app)?)?;
     let (devices, busy): (Vec<(String, String, bool)>, bool) = {
         let state = app.state::<AppState>();
@@ -1652,12 +1653,12 @@ fn tray_menu(app: &AppHandle) -> tauri::Result<tauri::menu::Menu<tauri::Wry>> {
     menu.append(&PredefinedMenuItem::separator(app)?)?;
     let autostart = !app.state::<AppState>().lock().unwrap().settings.manual_start;
     menu.append(&tauri::menu::CheckMenuItem::with_id(app, "autostart", "Start with computer", true, autostart, None::<&str>)?)?;
-    menu.append(&MenuItem::with_id(app, "about", "About LOKA", true, None::<&str>)?)?;
-    menu.append(&MenuItem::with_id(app, "quit", "Quit LOKA", true, None::<&str>)?)?;
+    menu.append(&MenuItem::with_id(app, "about", "About TCuFlow", true, None::<&str>)?)?;
+    menu.append(&MenuItem::with_id(app, "quit", "Quit TCuFlow", true, None::<&str>)?)?;
     Ok(menu)
 }
 
-/// LOKA starts (hidden, in the tray) when the user logs in: on unless they turned it off in the tray.
+/// TCuFlow starts (hidden, in the tray) when the user logs in: on unless they turned it off in the tray.
 #[cfg(desktop)]
 fn set_autostart(app: &AppHandle, on: bool) {
     use tauri_plugin_autostart::ManagerExt;
@@ -1799,7 +1800,7 @@ fn spawn_kvm_receiver(app: AppHandle, engine: Arc<dyn SpatialPlatformEngine>, st
                 }
                 {
                     use tauri_plugin_notification::NotificationExt;
-                    let _ = app.notification().builder().title("LOKA").body(format!("{} wants to pair · open LOKA to answer", from.info.alias)).show();
+                    let _ = app.notification().builder().title("TCuFlow").body(format!("{} wants to pair · open TCuFlow to answer", from.info.alias)).show();
                 }
                 let answer = ask_user(&app, &state, MAIN_WINDOW, &from, code).await;
                 if answer == kvm::PairAnswer::Accepted {
@@ -1851,16 +1852,17 @@ fn spawn_kvm_receiver(app: AppHandle, engine: Arc<dyn SpatialPlatformEngine>, st
             Some(EngineSink { engine: engine.clone(), screens, app: app.clone() })
         };
         let st = state.clone();
+        // TCuFlow: remote shell, shared folder, sound, mic and notification mirroring are out of MVP scope
+        // (PRD §6), so they are refused here regardless of saved settings; only diagnostics stays.
         let allow_service = move |service: kvm::Service, fp: &str| {
             let s = st.lock().unwrap();
-            let sh = &s.settings.sharing;
             s.settings.is_paired(fp)
                 && match service {
-                    kvm::Service::Shell => cfg!(desktop) && sh.terminal,
-                    kvm::Service::Files => cfg!(desktop) && sh.folder.is_some(),
-                    kvm::Service::Sound => cfg!(desktop) && sh.sound,
-                    kvm::Service::Notifications => sh.notifications,
-                    kvm::Service::Mic => cfg!(desktop) && sh.mic,
+                    kvm::Service::Shell
+                    | kvm::Service::Files
+                    | kvm::Service::Sound
+                    | kvm::Service::Notifications
+                    | kvm::Service::Mic => false,
                     kvm::Service::Diagnostics => true,
                 }
         };
@@ -2058,7 +2060,7 @@ fn crossing_failed(app: &AppHandle, error: String) {
         return;
     }
     journal!("couldn't cross: {error}");
-    let _ = app.notification().builder().title("LOKA couldn't move over").body(&error).show();
+    let _ = app.notification().builder().title("TCuFlow couldn't move over").body(&error).show();
     *last = Some((error, std::time::Instant::now()));
 }
 

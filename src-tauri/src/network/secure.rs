@@ -1,5 +1,6 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 //! Every link (input sessions, pairing, files, services) is a stream of a QUIC connection (TLS 1.3, ALPN
-//! `loka/2`) with a self-signed certificate per device. A device *is* its certificate: the fingerprint
+//! `tcuflow/1`) with a self-signed certificate per device. A device *is* its certificate: the fingerprint
 //! (SHA-256 of the certificate) is what discovery announces, what pairing stores, and what each side
 //! checks on every connection. Pairing shows a 6-digit code from both fingerprints and a nonce from each
 //! side (the requester's committed before it sees the other's), so a device in the middle can't grind
@@ -35,7 +36,7 @@ use tokio::{
     sync::mpsc,
 };
 
-const ALPN: &[u8] = b"loka/2";
+const ALPN: &[u8] = b"tcuflow/1";
 /// A peer that sent nothing (not even a keep-alive) for this long is gone.
 const IDLE: Duration = Duration::from_secs(3);
 const KEEP_ALIVE: Duration = Duration::from_secs(1);
@@ -117,7 +118,7 @@ impl Identity {
     }
 
     pub fn generate() -> Self {
-        let c = rcgen::generate_simple_self_signed(vec!["loka".into()]).expect("self-signed certificate");
+        let c = rcgen::generate_simple_self_signed(vec!["tcuflow".into()]).expect("self-signed certificate");
         Self { cert: c.cert.der().clone(), key: PrivatePkcs8KeyDer::from(c.key_pair.serialize_der()) }
     }
 
@@ -261,7 +262,7 @@ impl Tls {
         }
         // a host that never answers fails the handshake after IDLE
         let unreachable = io::ErrorKind::HostUnreachable;
-        let conn = self.endpoint()?.connect(to, "loka").map_err(|e| io::Error::new(unreachable, e))?.await.map_err(|e| io::Error::new(unreachable, e))?;
+        let conn = self.endpoint()?.connect(to, "tcuflow").map_err(|e| io::Error::new(unreachable, e))?.await.map_err(|e| io::Error::new(unreachable, e))?;
         let fp = peer_fp(&conn);
         if expect.is_some_and(|e| e != fp) {
             conn.close(0u32.into(), b"");

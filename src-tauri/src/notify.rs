@@ -1,3 +1,4 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 //! Notification mirroring: the owner streams the notifications other apps show on it, the viewer shows
 //! them again as its own native notifications.
 //!
@@ -101,7 +102,7 @@ fn watch(tx: mpsc::Sender<Note>) -> io::Result<()> {
         Management::{UserNotificationListener, UserNotificationListenerAccessStatus as Access},
         NotificationKinds, UserNotification,
     };
-    let denied = || io::Error::other("Allow notification access for LOKA in Settings › Privacy & security › Notifications");
+    let denied = || io::Error::other("Allow notification access for TCuFlow in Settings › Privacy & security › Notifications");
     let listener = UserNotificationListener::Current().map_err(|_| io::Error::other("Reading notifications needs a newer Windows"))?;
     let mut status = listener.GetAccessStatus().map_err(io::Error::other)?;
     if status == Access::Unspecified {
@@ -116,7 +117,7 @@ fn watch(tx: mpsc::Sender<Note>) -> io::Result<()> {
         let aumid = info.as_ref().and_then(|i| i.AppUserModelId().ok()).map(|s| s.to_string()).unwrap_or_default();
         // our own (and, in dev builds, the PowerShell id tauri-plugin-notification falls back to): mirroring
         // both ways would bounce them forever
-        if aumid.eq_ignore_ascii_case("dev.loka.app") || aumid.to_ascii_lowercase().ends_with("\\powershell.exe") {
+        if aumid.eq_ignore_ascii_case("dev.tcuflow.app") || aumid.to_ascii_lowercase().ends_with("\\powershell.exe") {
             return None;
         }
         let app = info.and_then(|i| i.DisplayInfo().ok()).and_then(|d| d.DisplayName().ok()).map(|s| s.to_string());
@@ -128,7 +129,7 @@ fn watch(tx: mpsc::Sender<Note>) -> io::Result<()> {
     // None until the first poll: what is already in Action Center is history, not news
     let mut seen: Option<HashSet<u32>> = None;
     while !tx.is_closed() {
-        // polling, not NotificationChanged: that event needs package identity, LOKA runs unpackaged
+        // polling, not NotificationChanged: that event needs package identity, TCuFlow runs unpackaged
         let list = listener.GetNotificationsAsync(NotificationKinds::Toast).and_then(|op| op.join()).map_err(io::Error::other)?;
         let mut now = HashSet::new();
         for n in &list {

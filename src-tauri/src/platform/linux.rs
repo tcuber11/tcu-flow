@@ -1,3 +1,4 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 //! Linux: input is read and written below the display server, so X11, Wayland and a text console behave
 //! the same. Mice, keyboards and touchpads come from /dev/input (grabbed with EVIOCGRAB while driving
 //! another device); input goes in through two uinput devices. Both need `allow_input` once.
@@ -27,7 +28,7 @@ use x11rb::{
 
 /// No display server (a server's text console): input goes to one screen of this size.
 pub const HEADLESS: Rect = Rect { x: 0.0, y: 0.0, w: 1920.0, h: 1080.0 };
-const ACCESS: &str = "LOKA can't use this computer's mouse and keyboard yet: open About → Allow input access (or run `sudo loka --allow-input`)";
+const ACCESS: &str = "TCuFlow can't use this computer's mouse and keyboard yet: open About → Allow input access (or run `sudo tcuflow --allow-input`)";
 const ABS_MAX: i32 = 65535;
 /// Touchpad while driving: pointer px per mm of finger travel, wheel units (120 = a notch) per mm of two-finger travel.
 const PAD_PX: f64 = 12.0;
@@ -215,7 +216,7 @@ impl Virtual {
         let buttons = || (0x110..=0x114).map(KeyCode::new);
         let abs = |c| UinputAbsSetup::new(c, AbsInfo::new(0, 0, ABS_MAX, 0, 0, 0));
         let pointer = VirtualDevice::builder()?
-            .name("LOKA pointer")
+            .name("TCuFlow pointer")
             .input_id(id())
             .with_keys(&buttons().collect::<AttributeSet<_>>())?
             .with_absolute_axis(&abs(AbsoluteAxisCode::ABS_X))?
@@ -232,7 +233,7 @@ impl Virtual {
         .into_iter()
         .collect();
         let keys = VirtualDevice::builder()?
-            .name("LOKA keyboard")
+            .name("TCuFlow keyboard")
             .input_id(id())
             .with_keys(&(1..=248).map(KeyCode::new).chain(buttons()).collect::<AttributeSet<_>>())?
             .with_relative_axes(&rel)?
@@ -279,7 +280,7 @@ struct Input {
 
 impl Input {
     fn new(dev: Device, path: PathBuf) -> Option<Self> {
-        if dev.name().is_some_and(|n| n.starts_with("LOKA ")) || dev.properties().contains(PropType::DIRECT) {
+        if dev.name().is_some_and(|n| n.starts_with("TCuFlow ")) || dev.properties().contains(PropType::DIRECT) {
             return None; // our own devices; touchscreens and tablets
         }
         let has = |k: KeyCode| dev.supported_keys().is_some_and(|s| s.contains(k));

@@ -1,4 +1,4 @@
-import { useState } from "react";
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { quietButton, type Sharing as SharingPrefs } from "./Pairing";
@@ -20,47 +20,18 @@ export function Toggle({ on, onChange, label, hint, disabled }: { on: boolean; o
 
 const folderName = (p: string) => p.split(/[\\/]/).filter(Boolean).pop() ?? p;
 
-/** What paired devices may open on this computer, and where received files go. Everything starts off. */
-export function Sharing({ initial, received, mac, onChange }: { initial: SharingPrefs; received: string; mac: boolean; onChange: () => void }) {
-  const [s, setS] = useState(initial);
-  const change = (patch: Partial<SharingPrefs>) => {
-    const next = { ...s, ...patch };
-    setS(next);
-    invoke("set_sharing", { sharing: next }).then(onChange);
-  };
+/** Where received files go. TCuFlow does not offer LOKA's folder, sound, mic, notification or terminal
+ *  sharing (out of MVP scope; the backend refuses those services too). */
+export function Sharing({ received, mac, onChange }: { initial: SharingPrefs; received: string; mac: boolean; onChange: () => void }) {
   const pick = async () => (await open({ directory: true })) as string | null;
   const kbd = "rounded-md bg-white/10 px-1.5 py-0.5 font-sans text-xs text-fg";
 
   return (
     <section aria-labelledby="sharing-title" className="rise mt-6 rounded-[28px] bg-raised p-7 ring-1 ring-line" style={{ "--i": 6 } as React.CSSProperties}>
       <h2 id="sharing-title" className="font-display text-2xl font-bold tracking-[-0.025em]">
-        This computer shares
+        Received files
       </h2>
-      <p className="mt-1 text-sm text-muted">Only with paired devices, over their encrypted link.</p>
-
-      <div className="mt-6 flex flex-col gap-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <Toggle
-            on={!!s.folder}
-            label="A folder"
-            hint={s.folder ? `${folderName(s.folder)} opens as a drive on the other computer` : "Opens as a drive on the other computer"}
-            onChange={async (on) => {
-              if (!on) return change({ folder: null });
-              const folder = await pick();
-              if (folder) change({ folder });
-            }}
-          />
-          {s.folder && (
-            <button className={quietButton} onClick={async () => { const folder = await pick(); if (folder) change({ folder }); }}>
-              Change…
-            </button>
-          )}
-        </div>
-        <Toggle on={s.sound} onChange={(sound) => change({ sound })} label="Its sound" hint="Paired devices can play what this computer plays" />
-        <Toggle on={s.mic} onChange={(mic) => change({ mic })} label="Its microphone" hint="Paired devices can use it as their mic" />
-        <Toggle on={s.notifications} onChange={(notifications) => change({ notifications })} label="Its notifications" hint="Shown on paired devices that ask for them" />
-        <Toggle on={s.terminal} onChange={(terminal) => change({ terminal })} label="A terminal" hint="Paired devices can run commands here as you. Turn on only for your own computers." />
-      </div>
+      <p className="mt-1 text-sm text-muted">Only from paired devices, over their encrypted link.</p>
 
       <div className="mt-7 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5 text-sm">
         <p className="min-w-0 text-muted">

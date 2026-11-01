@@ -1,3 +1,4 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -71,7 +72,7 @@ export function Transfers() {
         const rate = secs > 0.3 ? x.done / secs : 0;
         const status =
           x.status === "failed" ? (x.error === "cancelled" ? "Cancelled" : `Failed: ${x.error}`)
-          : x.status === "done" ? (x.outgoing ? `Sent · ${bytes(x.total)}` : "Saved to Downloads/LOKA")
+          : x.status === "done" ? (x.outgoing ? `Sent · ${bytes(x.total)}` : "Saved to Downloads/TCuFlow")
           : [`${x.outgoing ? "Sending" : "Receiving"} ${Math.floor(pct * 100)}%`, rate && `${bytes(rate)}/s`, rate && `${duration((x.total - x.done) / rate)} left`]
               .filter(Boolean)
               .join(" · ");

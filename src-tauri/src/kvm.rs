@@ -1,3 +1,4 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 //! Shared mouse & keyboard. Pushing the cursor into a portal hands input to the paired device behind it;
 //! pushing it out of that device's opposite edge (or Ctrl+Alt+Esc) hands it back. Any paired device can
 //! drive any other; links are streams of pinned QUIC connections (`network::secure`).
@@ -30,7 +31,7 @@ use tokio::{
     time::timeout,
 };
 
-pub const PORT: u16 = 53321;
+pub const PORT: u16 = 53421;
 /// Wire version, announced by discovery: devices with another one can't pair or connect.
 pub const PROTOCOL: u32 = 2;
 const FRAME: usize = 9;
@@ -147,7 +148,7 @@ impl Refusal {
         match self {
             Refusal::NotPaired => "the other device isn't paired with this one, pair them again",
             Refusal::NoScreen => "the other device has no screen to show the cursor on",
-            Refusal::NoInput => "the other device doesn't let LOKA use its mouse and keyboard yet: there, open About → Allow input access (or run `sudo loka --allow-input`)",
+            Refusal::NoInput => "the other device doesn't let TCuFlow use its mouse and keyboard yet: there, open About → Allow input access (or run `sudo tcuflow --allow-input`)",
         }
     }
 }
@@ -170,7 +171,7 @@ pub fn explain(e: &io::Error, alias: &str, os: &str, hint: &str) -> String {
         Some(Refusal::NoInput) => not_controllable(alias, os),
         None => match e.kind() {
             io::ErrorKind::HostUnreachable => format!("Can't reach {alias}: {hint}"),
-            io::ErrorKind::TimedOut => format!("{alias} stopped answering (Wi-Fi dropped, it went to sleep, or LOKA closed)"),
+            io::ErrorKind::TimedOut => format!("{alias} stopped answering (Wi-Fi dropped, it went to sleep, or TCuFlow closed)"),
             _ if e.to_string() == secure::WRONG_DEVICE => format!("{alias} has a new identity (reinstalled?): unpair and pair again"),
             _ => e.to_string(),
         },
@@ -180,22 +181,22 @@ pub fn explain(e: &io::Error, alias: &str, os: &str, hint: &str) -> String {
 /// Why device `alias` (OS `os`) can't be driven yet, and what to do there.
 pub fn not_controllable(alias: &str, os: &str) -> String {
     match os {
-        "android" => format!("{alias} isn't set up to be controlled yet: on the phone, open LOKA → Set up"),
-        "macos" => format!("{alias} doesn't let LOKA control it yet: on the Mac, open LOKA → About → Allow Accessibility (needed again after each LOKA update)"),
+        "android" => format!("{alias} isn't set up to be controlled yet: on the phone, open TCuFlow → Set up"),
+        "macos" => format!("{alias} doesn't let TCuFlow control it yet: on the Mac, open TCuFlow → About → Allow Accessibility (needed again after each TCuFlow update)"),
         _ => Refusal::NoInput.text().into(),
     }
 }
 
 /// The likely reason this device (OS `me`) can't reach `alias` (OS `os`), as one thing to do. `heard`:
-/// its discovery announcements still arrive, so LOKA runs there and something blocks the connection.
+/// its discovery announcements still arrive, so TCuFlow runs there and something blocks the connection.
 pub fn hint(me: &str, os: &str, alias: &str, heard: bool) -> String {
-    const MAC: &str = "System Settings → Privacy & Security → Local Network → turn LOKA on";
+    const MAC: &str = "System Settings → Privacy & Security → Local Network → turn TCuFlow on";
     match (me, os, heard) {
-        (_, "android", false) => "On the phone: keep LOKA open and allow it to run in the background (Settings → Battery)".into(),
+        (_, "android", false) => "On the phone: keep TCuFlow open and allow it to run in the background (Settings → Battery)".into(),
         ("macos", ..) => format!("On the Mac: {MAC}"),
         (_, "macos", _) => format!("On {alias}: {MAC}"),
-        (_, "windows", _) => format!("On {alias}: open LOKA → About → Allow through Windows Firewall"),
-        (_, _, false) => format!("Make sure LOKA is open on {alias} and both are on the same Wi-Fi"),
+        (_, "windows", _) => format!("On {alias}: open TCuFlow → About → Allow through Windows Firewall"),
+        (_, _, false) => format!("Make sure TCuFlow is open on {alias} and both are on the same Wi-Fi"),
         _ => "Both must be on the same network, and the router must let devices reach each other (guest Wi-Fi and AP isolation don't)".into(),
     }
 }
@@ -1309,7 +1310,7 @@ mod tests {
         let refused = |r: Refusal| io::Error::new(io::ErrorKind::PermissionDenied, r);
         assert_eq!(said(io::Error::new(io::ErrorKind::HostUnreachable, "timed out"), "android"), "Can't reach Phone: HINT");
         assert!(said(io::Error::new(io::ErrorKind::TimedOut, "timed out"), "android").starts_with("Phone stopped answering"));
-        assert!(said(refused(Refusal::NoInput), "android").contains("open LOKA → Set up"), "a phone without the injector");
+        assert!(said(refused(Refusal::NoInput), "android").contains("open TCuFlow → Set up"), "a phone without the injector");
         assert_eq!(said(refused(Refusal::NoInput), "linux"), Refusal::NoInput.text());
         assert!(said(refused(Refusal::NotPaired), "linux").contains("pair them again"));
         assert!(said(io::Error::new(io::ErrorKind::PermissionDenied, secure::WRONG_DEVICE), "macos").contains("new identity"));
@@ -1321,7 +1322,7 @@ mod tests {
         assert!(hint("windows", "macos", "Mac", true).starts_with("On Mac: System Settings"));
         assert!(hint("macos", "windows", "PC", true).starts_with("On the Mac"));
         assert!(hint("linux", "windows", "PC", true).contains("Windows Firewall"));
-        assert!(hint("windows", "linux", "Box", false).contains("LOKA is open on Box"));
+        assert!(hint("windows", "linux", "Box", false).contains("TCuFlow is open on Box"));
         assert!(hint("windows", "linux", "Box", true).contains("same network"));
     }
 

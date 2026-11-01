@@ -1,10 +1,11 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 //! 60 Hz spatial telemetry: fixed 12-byte little-endian UDP packets, built on the stack.
 
 use serde::Serialize;
 use std::{io, net::SocketAddr};
 use tokio::net::UdpSocket;
 
-pub const PORT: u16 = 53319;
+pub const PORT: u16 = 53419;
 pub const MAGIC: [u8; 2] = *b"LK";
 pub const PACKET_LEN: usize = 12;
 

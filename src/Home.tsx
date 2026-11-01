@@ -1,3 +1,4 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -11,7 +12,6 @@ import { ConnectionCheck, PairPrompt, StateBadge, StateNote, Troubleshoot, devic
 import { ClipHistory } from "./ClipHistory";
 import { Outbox } from "./Outbox";
 import { Pointer } from "./Pointer";
-import { Remote } from "./Remote";
 import { Sharing } from "./Sharing";
 import { Transfers } from "./Transfers";
 
@@ -21,7 +21,7 @@ export function Home() {
   const [device, setDevice] = useState<Device | null>(null);
   const [peers, setPeers] = useState<Peer[]>([]);
   const [about, setAbout] = useState(false);
-  // the update popup shows once per launch; "Later" keeps it away until LOKA starts again
+  // the update popup shows once per launch; "Later" keeps it away until TCuFlow starts again
   const [prompt, setPrompt] = useState(true);
   const update = useUpdate();
   const refreshDevice = () => invoke<Device>("get_device").then(setDevice);
@@ -58,7 +58,7 @@ export function Home() {
         </div>
         <button
           onClick={() => setAbout(true)}
-          aria-label={update.available ? `About LOKA, ${update.available.name} available` : "About LOKA"}
+          aria-label={update.available ? `About TCuFlow, ${update.available.name} available` : "About TCuFlow"}
           className={`${quietButton} relative`}
         >
           About
@@ -86,7 +86,7 @@ export function Home() {
 type PairAnswer = "accepted" | "declined" | "noAnswer" | "unknown";
 type PairState = { state: "waiting"; code?: string } | { state: Exclude<PairAnswer, "accepted"> } | { state: "error"; message: string };
 
-/** Every LOKA nearby. Any of them can be paired and placed around this computer's screens; any paired one can drive this one too. */
+/** Every TCuFlow nearby. Any of them can be paired and placed around this computer's screens; any paired one can drive this one too. */
 function Devices({ device, peers, onChange }: { device: Device; peers: Peer[]; onChange: () => void }) {
   const [selected, setSelected] = useState<string | null>(() => localStorage.getItem(SELECTED_KEY));
   const [pairing, setPairing] = useState<Record<string, PairState>>({});
@@ -176,7 +176,7 @@ function Devices({ device, peers, onChange }: { device: Device; peers: Peer[]; o
   };
   const peerMenu = (p: Peer): (MenuItemOptions | PredefinedMenuItemOptions | false)[] => {
     const f = p.info.fingerprint;
-    if (outdated(p)) return [{ text: "Needs a LOKA update", enabled: false }];
+    if (outdated(p)) return [{ text: "Needs a TCuFlow update", enabled: false }];
     if (!isPaired(f)) return [{ text: "Pair…", enabled: pairing[f]?.state !== "waiting", action: () => void pair(p) }];
     return [
       { text: stateOf(p) === "setup" ? `Control: finish setup on ${p.info.alias}` : "Control", enabled: placed(f) && stateOf(p) === "ready", action: () => void invoke("control", { fingerprint: f }) },
@@ -215,7 +215,7 @@ function Devices({ device, peers, onChange }: { device: Device; peers: Peer[]; o
               ? `${unseen.info.alias} can't see this computer on the network. Check both are on the same network, or add this computer by IP there.`
               : current
                 ? "Push your cursor off the glowing edge to move over. Push it back out the far side to come home. The other device can reach this one the same way."
-                : "Every computer running LOKA shows up here. Click one to pair, then place it around your screens."}
+                : "Every computer running TCuFlow shows up here. Click one to pair, then place it around your screens."}
         </p>
 
         {empty ? (
@@ -223,7 +223,7 @@ function Devices({ device, peers, onChange }: { device: Device; peers: Peer[]; o
             <Face seed={device.info.fingerprint} size={56} mood="searching" />
             <div>
               <p className="font-display text-lg font-semibold">Looking around your network…</p>
-              <p className="mt-1 text-sm text-muted">Open LOKA on the other computer.</p>
+              <p className="mt-1 text-sm text-muted">Open TCuFlow on the other computer.</p>
             </div>
           </div>
         ) : (
@@ -303,7 +303,6 @@ function Devices({ device, peers, onChange }: { device: Device; peers: Peer[]; o
       {current && selected && (
         <>
           <Pointer initial={device.cursor} mac={mac} />
-          <Remote key={selected} fingerprint={selected} alias={current.info.alias} mac={mac} />
         </>
       )}
       {selected && isPaired(selected) && (

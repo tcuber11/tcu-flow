@@ -1,3 +1,4 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 //! In-app updates (desktop): `latest.json` on the newest GitHub release lists a signed installer per platform
 //! and bundle type (`scripts/release.mjs` writes it); the updater checks the signature against the public key
 //! in `tauri.conf.json` before installing anything.
@@ -21,10 +22,10 @@ pub async fn check_update(app: AppHandle) -> Result<Option<Available>, String> {
 }
 
 /// Downloads (progress as `update` events `{done, total}`), verifies and installs, then restarts.
-/// Windows: the installer closes LOKA itself and starts the new one.
+/// Windows: the installer closes TCuFlow itself and starts the new one.
 #[tauri::command]
 pub async fn install_update(app: AppHandle) -> Result<(), String> {
-    let update = app.updater().map_err(|e| e.to_string())?.check().await.map_err(|e| e.to_string())?.ok_or("LOKA is up to date")?;
+    let update = app.updater().map_err(|e| e.to_string())?.check().await.map_err(|e| e.to_string())?.ok_or("TCuFlow is up to date")?;
     let mut done = 0u64;
     let a = app.clone();
     update

@@ -1,4 +1,5 @@
-//! `loka --headless`: a Linux computer without a desktop (a server on its text console) that another
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
+//! `tcuflow --headless`: a Linux computer without a desktop (a server on its text console) that another
 //! device's mouse and keyboard can drive. No window: pairing requests are answered in the terminal.
 
 use crate::{
@@ -26,7 +27,7 @@ fn data_dir() -> PathBuf {
         .map(PathBuf::from)
         .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".local/share")))
         .unwrap_or_else(|| PathBuf::from("."));
-    base.join("dev.loka.app")
+    base.join("dev.tcuflow.app")
 }
 
 struct Sink {
@@ -64,7 +65,7 @@ async fn serve() {
     let data = data_dir();
     let _ = std::fs::create_dir_all(&data);
     crate::journal::init(&data);
-    journal!("LOKA {} starting headless", env!("CARGO_PKG_VERSION"));
+    journal!("TCuFlow {} starting headless", env!("CARGO_PKG_VERSION"));
     let settings = Arc::new(Mutex::new(Settings::load(&data)));
     let tls = Arc::new(Tls::new(&Identity::load_or_create(&data)));
     let me = DeviceInfo {
@@ -81,11 +82,11 @@ async fn serve() {
         controllable: true, // corrected by `watch_controllable` right away
         text: true,
     };
-    println!("LOKA {} without a desktop, as \"{}\". Ctrl+C ends it.", env!("CARGO_PKG_VERSION"), me.alias);
-    println!("Pair from LOKA on another computer: pick \"{}\" there, then answer here.", me.alias);
+    println!("TCuFlow {} without a desktop, as \"{}\". Ctrl+C ends it.", env!("CARGO_PKG_VERSION"), me.alias);
+    println!("Pair from TCuFlow on another computer: pick \"{}\" there, then answer here.", me.alias);
     let engine: Arc<dyn SpatialPlatformEngine> = platform::engine().into();
     if !engine.can_inject() {
-        println!("LOKA can't type on this computer yet: run `sudo loka --allow-input` (or run this as root).");
+        println!("TCuFlow can't type on this computer yet: run `sudo tcuflow --allow-input` (or run this as root).");
     }
 
     let peers = Arc::new(Mutex::new(HashMap::<String, Peer>::new()));
@@ -128,7 +129,7 @@ async fn serve() {
                 Ok(Some(l)) if matches!(l.trim(), "y" | "Y" | "yes") => kvm::PairAnswer::Accepted,
                 Ok(Some(_)) => kvm::PairAnswer::Declined,
                 Ok(None) => {
-                    println!("No terminal to answer in: run `loka --headless` in one to pair.");
+                    println!("No terminal to answer in: run `tcuflow --headless` in one to pair.");
                     kvm::PairAnswer::Declined
                 }
                 Err(_) => kvm::PairAnswer::NoAnswer,
@@ -164,13 +165,13 @@ async fn serve() {
         tokio::spawn(async move {
             use tokio::io::AsyncWriteExt;
             let driven = DRIVER.lock().unwrap().as_ref().map_or("no".into(), |a| format!("by {a}"));
-            let text = format!("LOKA {} headless · {}\nBeing driven: {driven}\nLog (UTC):\n{}\n", env!("CARGO_PKG_VERSION"), std::env::consts::ARCH, crate::journal::tail(300));
+            let text = format!("TCuFlow {} headless · {}\nBeing driven: {driven}\nLog (UTC):\n{}\n", env!("CARGO_PKG_VERSION"), std::env::consts::ARCH, crate::journal::tail(300));
             if stream.write_all(text.as_bytes()).await.is_ok() {
                 let _ = stream.shutdown().await;
             }
         });
     };
     if let Err(e) = kvm::serve(tls, kvm::PORT, allow, ask, allow_service, on_service, on_place, make).await {
-        journal!("LOKA stopped: {e}");
+        journal!("TCuFlow stopped: {e}");
     }
 }

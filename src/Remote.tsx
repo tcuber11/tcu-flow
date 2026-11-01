@@ -1,3 +1,4 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { invoke } from "@tauri-apps/api/core";
@@ -65,7 +66,7 @@ export function Remote({ fingerprint, alias, mac }: { fingerprint: string; alias
       <h2 id="remote-title" className="font-display text-2xl font-bold tracking-[-0.025em]">
         From {alias}
       </h2>
-      <p className="mt-1 text-sm text-muted">Works when {alias} shares it (LOKA there → This computer shares).</p>
+      <p className="mt-1 text-sm text-muted">Works when {alias} shares it (TCuFlow there → This computer shares).</p>
 
       <div className="mt-6 flex flex-col gap-5">
         <Toggle on={sound} disabled={busy} onChange={toggle("set_listening", setSound)} label="Play its sound here" />

@@ -9,3 +9,21 @@ binary) must keep this NOTICE file and give visible credit to the original
 project, for example: "Based on LOKA by Aufa Nirsad
 (https://github.com/fanrsd/LOKA)". Modified files must carry a notice
 stating that they were changed (Apache License 2.0, section 4).
+
+----------------------------------------------------------------------------
+
+TCuFlow
+Copyright 2026 TCuFlow contributors
+https://github.com/tcuber11/tcu-flow
+
+TCuFlow is based on LOKA by Aufa Nirsad (https://github.com/fanrsd/LOKA),
+imported at upstream commit 8403987 (LOKA 0.9.5). TCuFlow changes:
+- renamed the product, binary, app identifier and update/release links to TCuFlow;
+- changed the QUIC ALPN (tcuflow/1) and ports (UDP 53418, TCP 53419-53421) so
+  TCuFlow and LOKA do not pair with or block each other;
+- refuses remote terminal, folder, sound, microphone and notification sharing,
+  and hides their controls.
+Source files changed by TCuFlow carry a "Modified for TCuFlow" header; files that
+have no header (package.json, tauri.conf.json, tauri.macos.conf.json,
+index.html, Info.plist) were
+changed only as listed above. The full history is in this repository's git log.

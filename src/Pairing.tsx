@@ -1,3 +1,4 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
@@ -5,8 +6,8 @@ import { Face } from "./Face";
 import type { Portal } from "./calibration";
 
 /** `proto`: wire version (`kvm::PROTOCOL`); devices with another one can't pair or connect. `aspectRatio`: its screen's width / height.
- *  `controllable`: whether it can be driven right now (false: an Android phone not set up, a Linux without input access; absent on older LOKA = yes).
- *  `text`: it takes typed text whatever its keyboard layout (absent on older LOKA). */
+ *  `controllable`: whether it can be driven right now (false: an Android phone not set up, a Linux without input access; absent on older TCuFlow = yes).
+ *  `text`: it takes typed text whatever its keyboard layout (absent on older TCuFlow). */
 export type DeviceInfo = { alias: string; deviceType: "desktop" | "mobile"; os: string; fingerprint: string; proto: number; aspectRatio: number; controllable?: boolean; text?: boolean };
 export type Peer = { info: DeviceInfo; addr: string };
 export type PairedDevice = { fingerprint: string; alias: string };
@@ -30,12 +31,12 @@ export const osLabel = (os: string) => OS_LABEL[os] ?? os;
 /** How to make a device drivable, per OS (`controllable: false`). */
 export const setupHow = (os: string) =>
   os === "android"
-    ? "On the phone: open LOKA → Set up"
+    ? "On the phone: open TCuFlow → Set up"
     : os === "linux"
-      ? "On it: About → Allow input access, or run sudo loka --allow-input"
+      ? "On it: About → Allow input access, or run sudo tcuflow --allow-input"
       : os === "macos"
-        ? "On the Mac: LOKA → About → Allow Accessibility (again after each LOKA update)"
-        : "Open LOKA there and follow its setup";
+        ? "On the Mac: TCuFlow → About → Allow Accessibility (again after each TCuFlow update)"
+        : "Open TCuFlow there and follow its setup";
 
 export type DeviceState = "ready" | "setup" | "offline" | "update";
 
@@ -51,9 +52,9 @@ export const stateReason = (state: DeviceState, alias: string, os = "") =>
   state === "setup"
     ? `${alias} isn't ready. ${setupHow(os)}`
     : state === "update"
-      ? `${alias} needs a LOKA update: install the newest LOKA on both devices`
+      ? `${alias} needs a TCuFlow update: install the newest TCuFlow on both devices`
       : state === "offline"
-        ? `${alias} isn't on the network: turn it on and open LOKA there`
+        ? `${alias} isn't on the network: turn it on and open TCuFlow there`
         : null;
 
 /** Pill naming a blocked state (danger) or offline (muted); `dot` for cramped spots, labelled for screen readers and on hover. */

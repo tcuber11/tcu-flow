@@ -1,3 +1,4 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -29,7 +30,7 @@ export function Mobile() {
   // once per launch, as on computers; phones can't update in place, so Download fetches the APK
   const [prompt, setPrompt] = useState(true);
   const update = useUpdate();
-  const apk = update.available && `https://github.com/fanrsd/LOKA/releases/download/${update.available.tag}/LOKA_${update.available.tag.slice(1)}_android.apk`;
+  const apk = update.available && `https://github.com/tcuber11/tcu-flow/releases/download/${update.available.tag}/TCuFlow_${update.available.tag.slice(1)}_android.apk`;
   const files = useRef<HTMLInputElement>(null);
   const sendTo = useRef("");
   const refreshDevice = () =>
@@ -162,7 +163,7 @@ export function Mobile() {
         <div className="mt-10 flex flex-col items-center text-center">
           <Face seed={device.info.fingerprint} size={72} mood="searching" />
           <p className="mt-6 font-semibold">Looking for computers</p>
-          <p className="mt-1 max-w-[30ch] text-sm leading-relaxed text-muted">Open LOKA on your computer, on the same Wi-Fi as this phone.</p>
+          <p className="mt-1 max-w-[30ch] text-sm leading-relaxed text-muted">Open TCuFlow on your computer, on the same Wi-Fi as this phone.</p>
         </div>
       )}
 
@@ -223,7 +224,7 @@ export function Mobile() {
             {nearby.map((p) => {
               const s = pairing[p.info.fingerprint];
               const mood: Mood = s?.state === "waiting" ? "waiting" : s ? "sad" : "idle";
-              const note = outdated(p) ? "Needs LOKA update" : s?.state === "waiting" ? (s.code ? `Code ${s.code}: check it matches` : "Asking…") : s ? s.note : osLabel(p.info.os);
+              const note = outdated(p) ? "Needs TCuFlow update" : s?.state === "waiting" ? (s.code ? `Code ${s.code}: check it matches` : "Asking…") : s ? s.note : osLabel(p.info.os);
               return (
                 <li key={p.info.fingerprint} className="flex items-center gap-3 rounded-[20px] bg-raised p-3 pl-4 ring-1 ring-line">
                   <Face seed={p.info.fingerprint} size={36} mood={mood} />
@@ -319,14 +320,14 @@ function ControlCard({ device, computer, control, fresh, onSetup, onChange }: { 
   );
 }
 
-/** Android's battery optimisation may stop LOKA in the background, and with it every way in. */
+/** Android's battery optimisation may stop TCuFlow in the background, and with it every way in. */
 function Battery({ control, className = "mt-3 border-t border-line pt-3" }: { control: Control; className?: string }) {
   if (!control.status || control.status.batteryExempt) return null;
   // back from Android's dialog, useControl's visibilitychange refresh picks up the answer
   const allow = () => invoke("plugin:loka|exemptBattery").then(control.refresh, () => {});
   return (
     <div className={"flex items-center gap-3 " + className}>
-      <p className="flex-1 text-sm text-muted">Android may close LOKA in the background</p>
+      <p className="flex-1 text-sm text-muted">Android may close TCuFlow in the background</p>
       <button onClick={allow} className={quietButton + " min-h-11 text-fg ring-1 ring-line"}>
         Allow
       </button>
@@ -388,7 +389,7 @@ function Settings({ device, control, update, onSetup, onAbout, onClose, onChange
         onClick={onAbout}
         className="mt-6 flex min-h-11 w-full items-center gap-3 rounded-[20px] bg-raised p-4 text-left ring-1 ring-line transition-colors hover:bg-white/[0.04] focus-visible:outline-2 focus-visible:outline-accent"
       >
-        <span className="flex-1 text-sm font-medium">About LOKA</span>
+        <span className="flex-1 text-sm font-medium">About TCuFlow</span>
         {update.available && <span aria-hidden className="h-2 w-2 rounded-full bg-accent" />}
         <span className="text-xs text-muted">{update.available ? `${update.available.name} available` : update.current ? `Version ${update.current}` : ""}</span>
       </button>

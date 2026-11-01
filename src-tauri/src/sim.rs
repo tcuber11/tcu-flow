@@ -1,3 +1,4 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 //! `--sim-mobile`: a phone window on the same host, reached through the real UDP/TLS stack on loopback.
 //! It is a device of its own: its own certificate (kept in the cache dir), so it pairs like any other.
 
@@ -50,7 +51,7 @@ pub fn start(app: &AppHandle, state: &AppState) -> tauri::Result<()> {
         return Ok(());
     }
     WebviewWindowBuilder::new(app, LABEL, WebviewUrl::default())
-        .title("LOKA - simulated phone")
+        .title("TCuFlow - simulated phone")
         .inner_size(SCREEN.w, SCREEN.h)
         .resizable(false)
         .always_on_top(true)

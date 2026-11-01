@@ -1,9 +1,10 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 import { useEffect, useState } from "react";
 import { addPluginListener, invoke } from "@tauri-apps/api/core";
 import { Face } from "./Face";
 import { primaryButton, quietButton } from "./Pairing";
 
-/** What LokaPlugin.kt reports about Wireless debugging and the injector. `batteryExempt`: Android won't stop LOKA in the background. */
+/** What LokaPlugin.kt reports about Wireless debugging and the injector. `batteryExempt`: Android won't stop TCuFlow in the background. */
 export type ControlStatus = { sdk: number; maker: string; devOptions: boolean; wirelessDebugging: boolean; paired: boolean; running: boolean; batteryExempt: boolean };
 
 const status = () => invoke<ControlStatus>("plugin:loka|status");
@@ -12,7 +13,7 @@ const openSettings = (page: "about" | "developer" | "wireless" | "security") => 
 /** Start the injector (it dials back to Rust with the ticket). Rejects with a readable reason (a string). */
 export async function startControl() {
   const ticket = await invoke<[number, string] | null>("injector_ticket");
-  if (!ticket) throw "LOKA isn't ready yet";
+  if (!ticket) throw "TCuFlow isn't ready yet";
   // Kotlin rejections arrive as objects
   await invoke("plugin:loka|start", { port: ticket[0], token: ticket[1] }).catch((e) => {
     throw typeof e === "string" ? e : (e?.message ?? JSON.stringify(e));
@@ -138,7 +139,7 @@ export function Wizard({ computer, onClose }: { computer: string; onClose: () =>
           <ul className="mt-6 space-y-3 text-sm text-muted">
             <li>1 · Turn on Developer options</li>
             <li>2 · Turn on Wireless debugging</li>
-            <li>3 · Pair LOKA with a code</li>
+            <li>3 · Pair TCuFlow with a code</li>
           </ul>
           <Primary onClick={() => setStarted(true)}>Start setup</Primary>
         </Body>
@@ -156,7 +157,7 @@ export function Wizard({ computer, onClose }: { computer: string; onClose: () =>
             </li>
             <li>Come back here when it says "You are now a developer"</li>
           </ol>
-          <Waiting>Waiting for Developer options. LOKA moves on by itself.</Waiting>
+          <Waiting>Waiting for Developer options. TCuFlow moves on by itself.</Waiting>
           <Primary onClick={() => openSettings("about")}>Open About phone</Primary>
         </Body>
       )}
@@ -190,7 +191,7 @@ export function Wizard({ computer, onClose }: { computer: string; onClose: () =>
               In Wireless debugging, tap <b>Pair device with pairing code</b>
             </li>
             <li>
-              Pull down the notification shade and type the 6 digits into <b>LOKA's notification</b>: the code window closes if you switch apps
+              Pull down the notification shade and type the 6 digits into <b>TCuFlow's notification</b>: the code window closes if you switch apps
             </li>
           </ol>
           <form onSubmit={submit} className="mt-6">
@@ -231,7 +232,7 @@ export function Wizard({ computer, onClose }: { computer: string; onClose: () =>
       {step === "mi" && (
         <Body
           title="One more switch on Xiaomi"
-          text="MIUI and HyperOS block typing and clicks from LOKA until this is on."
+          text="MIUI and HyperOS block typing and clicks from TCuFlow until this is on."
         >
           <ol className="mt-4 space-y-3 text-[15px]">
             <li>
@@ -256,7 +257,7 @@ export function Wizard({ computer, onClose }: { computer: string; onClose: () =>
             <Primary onClick={() => startControl().then(() => setStartError(""), (e) => setStartError(String(e)))}>Try again</Primary>
           ) : (
             <>
-              <p className="mt-3 text-center text-sm text-faint">LOKA keeps Wireless debugging on, also after a restart.</p>
+              <p className="mt-3 text-center text-sm text-faint">TCuFlow keeps Wireless debugging on, also after a restart.</p>
               <Primary onClick={onClose}>Done</Primary>
             </>
           )}

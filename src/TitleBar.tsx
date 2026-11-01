@@ -1,3 +1,4 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 import { useEffect, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { setSoundOn, soundOn, tick } from "./sound";
@@ -47,7 +48,7 @@ export function TitleBar() {
 
   return (
     <div data-tauri-drag-region className={`relative z-40 flex h-(--titlebar) shrink-0 items-center bg-ink ${isMac ? "pl-[78px]" : "pl-4"}`}>
-      <span className="pointer-events-none flex-1 font-display text-xs font-semibold tracking-[-0.01em] text-faint">LOKA</span>
+      <span className="pointer-events-none flex-1 font-display text-xs font-semibold tracking-[-0.01em] text-faint">TCuFlow</span>
       <button
         data-silent
         onClick={toggleSound}

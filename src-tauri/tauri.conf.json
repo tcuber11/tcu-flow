@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "LOKA",
+  "productName": "TCuFlow",
   "version": "0.9.5",
-  "identifier": "dev.loka.app",
+  "identifier": "dev.tcuflow.app",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -11,7 +11,7 @@
   },
   "app": {
     "macOSPrivateApi": true,
-    "windows": [{ "label": "main", "title": "LOKA", "width": 860, "height": 700, "minWidth": 680, "minHeight": 560, "backgroundColor": "#05060c", "decorations": false }],
+    "windows": [{ "label": "main", "title": "TCuFlow", "width": 860, "height": 700, "minWidth": 680, "minHeight": 560, "backgroundColor": "#05060c", "decorations": false }],
     "security": { "csp": null }
   },
   "bundle": {
@@ -23,7 +23,7 @@
   "plugins": {
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDc3NjZCNkUyNTFCOEE5ODMKUldTRHFiaFI0clptZHl5aXpiYlUxYTRLanZQcnRXK2t6cWE4eW5mNEVhdWQ4NG8zMnI1bGRnS2wK",
-      "endpoints": ["https://github.com/fanrsd/LOKA/releases/latest/download/latest.json"],
+      "endpoints": ["https://github.com/tcuber11/tcu-flow/releases/latest/download/latest.json"],
       "windows": { "installMode": "passive" }
     }
   }

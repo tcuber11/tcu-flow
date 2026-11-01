@@ -1,10 +1,11 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { Face } from "./Face";
 import { quietButton, type Device, type Peer } from "./Pairing";
 
-/** Files handed to LOKA by Explorer's Send to or Finder's Open With: pick the paired device they go to. */
+/** Files handed to TCuFlow by Explorer's Send to or Finder's Open With: pick the paired device they go to. */
 export function Outbox({ device, peers }: { device: Device; peers: Peer[] }) {
   const [files, setFiles] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -12,7 +13,7 @@ export function Outbox({ device, peers }: { device: Device; peers: Peer[] }) {
   useEffect(() => {
     const take = () => invoke<string[]>("take_outbox").then((f) => f.length && setFiles((old) => [...old, ...f]));
     const off = listen("outbox", take);
-    off.then(take); // files LOKA was started with
+    off.then(take); // files TCuFlow was started with
     return () => {
       off.then((f) => f());
     };

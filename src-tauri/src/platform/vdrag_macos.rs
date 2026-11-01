@@ -1,3 +1,4 @@
+// Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 //! macOS streamed drag: one `NSFilePromiseProvider` per top-level file or folder of the batch. Once dropped,
 //! its delegate writes the promise on its own operation queue from the bytes as they arrive (`Growing`);
 //! a folder is created and filled file by file. A failed transfer or vanished sender fails the promise.
@@ -61,7 +62,7 @@ define_class!(
                 Ok(()) => done.call((std::ptr::null_mut(),)),
                 Err(e) => {
                     journal!("streamed drag: {e}");
-                    let error = NSError::new(1, &NSString::from_str("LOKA"));
+                    let error = NSError::new(1, &NSString::from_str("TCuFlow"));
                     done.call((Retained::as_ptr(&error) as *mut NSError,));
                 }
             }
