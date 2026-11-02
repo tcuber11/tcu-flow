@@ -2,7 +2,7 @@
 # Renders site/promo/index.html into site/promo/promo.mp4 (1920x1080, 30 fps, 46 s) frame by frame with
 # headless Chrome, then muxes the voice-over if site/promo/voice.mp3 exists (ElevenLabs output of voiceover.md).
 #   scripts/render-promo.sh            # full render
-#   scripts/render-promo.sh 10 14      # only seconds 10–14 (quick check)
+#   scripts/render-promo.sh 10 14      # only seconds 10-14 (quick check)
 set -euo pipefail
 cd "$(dirname "$0")/.."
 CHROME="${CHROME:-/Applications/Google Chrome.app/Contents/MacOS/Google Chrome}"
@@ -13,10 +13,10 @@ OUT=site/promo/frames
 mkdir -p "$OUT"
 PAGE="file://$PWD/site/promo/index.html"
 
-n=$(python3 -c "print(int(($TO-$FROM)*$FPS))")
-echo "rendering $n frames ($FROM–$TO s) with $CHROME"
+n=$(python3 -c "print(int((${TO}-${FROM})*${FPS}))")
+echo "rendering ${n} frames (${FROM}-${TO} s) with ${CHROME}"
 for ((i = 0; i < n; i++)); do
-  t=$(python3 -c "print(round($FROM + $i/$FPS, 4))")
+  t=$(python3 -c "print(round(${FROM} + ${i}/${FPS}, 4))")
   f=$(printf "%s/f%05d.png" "$OUT" "$i")
   [ -s "$f" ] && continue
   "$CHROME" --headless=new --disable-gpu --hide-scrollbars --window-size=1920,1080 --virtual-time-budget=2500 \
