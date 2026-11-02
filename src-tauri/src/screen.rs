@@ -133,6 +133,92 @@ fn start_capture(slot: Arc<Slot>) -> Result<Capture, String> {
     }
 }
 
+/// `tcuflow --screen-probe`: captures this computer's primary display for a few seconds and reports what
+/// came, with no window and no network. The one check of the capture path that runs outside the app:
+/// `cargo test` can't, because ScreenCaptureKit answers on the main run loop, which this pumps itself.
+/// Exit 0 with frame stats on stdout, 1 with the refusal (permission, no display, no frames).
+pub fn probe() -> ! {
+    let slot = Arc::new(Slot::default());
+    let (tx, rx) = std::sync::mpsc::channel::<Result<(), String>>();
+    let stop = Arc::new(AtomicBool::new(false));
+    let (s2, sl2) = (stop.clone(), slot.clone());
+    std::thread::spawn(move || cap::run(sl2, s2, tx));
+    let t0 = std::time::Instant::now();
+    let deadline = t0 + Duration::from_secs(12);
+    let (mut started, mut frames, mut bytes, mut unchanged) = (false, 0u32, 0usize, 0u32);
+    let mut last_fp = 0u64;
+    let mut dims = (0u32, 0u32);
+    while std::time::Instant::now() < deadline && frames < 40 {
+        pump_main_run_loop(Duration::from_millis(20));
+        if !started {
+            match rx.try_recv() {
+                Ok(Ok(())) => {
+                    started = true;
+                    println!("capture started after {} ms", t0.elapsed().as_millis());
+                }
+                Ok(Err(e)) => {
+                    println!("refused: {e}");
+                    std::process::exit(1);
+                }
+                Err(_) => {}
+            }
+        }
+        if let Some(rgb) = slot.take(Duration::from_millis(5)) {
+            let fp = fingerprint(&rgb);
+            if fp == last_fp {
+                unchanged += 1;
+                continue;
+            }
+            last_fp = fp;
+            match encode(&rgb) {
+                Ok(jpeg) => {
+                    frames += 1;
+                    bytes += jpeg.len();
+                    dims = (rgb.w, rgb.h);
+                    if frames == 1 {
+                        println!("first frame {}x{} ({} KB jpeg) after {} ms", rgb.w, rgb.h, jpeg.len() / 1024, t0.elapsed().as_millis());
+                    }
+                }
+                Err(e) => {
+                    println!("encode failed: {e}");
+                    std::process::exit(1);
+                }
+            }
+        }
+    }
+    stop.store(true, Ordering::SeqCst);
+    if !started {
+        println!("capture didn't start within {} s (no permission prompt answered, or no run loop)", deadline.duration_since(t0).as_secs());
+        std::process::exit(1);
+    }
+    if frames == 0 {
+        println!("capture started but no frames arrived in {} s", t0.elapsed().as_secs());
+        std::process::exit(1);
+    }
+    let secs = t0.elapsed().as_secs_f32();
+    println!(
+        "{frames} frames {}x{}, {} unchanged skipped, {:.0} KB/frame avg, {:.1} fps over {secs:.1} s",
+        dims.0,
+        dims.1,
+        unchanged,
+        bytes as f32 / frames as f32 / 1024.0,
+        frames as f32 / secs
+    );
+    std::process::exit(0)
+}
+
+#[cfg(target_os = "macos")]
+fn pump_main_run_loop(for_: Duration) {
+    use objc2_foundation::{NSDate, NSRunLoop};
+    let until = NSDate::dateWithTimeIntervalSinceNow(for_.as_secs_f64());
+    NSRunLoop::mainRunLoop().runUntilDate(&until);
+}
+
+#[cfg(not(target_os = "macos"))]
+fn pump_main_run_loop(for_: Duration) {
+    std::thread::sleep(for_);
+}
+
 /// The shared side. `screens`: this computer's displays in physical pixels; the primary one is streamed and
 /// the viewer's positions land on it.
 pub async fn serve(stream: Stream, engine: Arc<dyn SpatialPlatformEngine>, screens: Vec<Rect>) -> io::Result<()> {

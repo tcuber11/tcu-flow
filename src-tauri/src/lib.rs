@@ -1075,6 +1075,10 @@ fn install_send_to() {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    #[cfg(desktop)]
+    if std::env::args().any(|a| a == "--screen-probe") {
+        screen::probe();
+    }
     #[cfg(target_os = "linux")]
     {
         let args: Vec<String> = std::env::args().collect();
