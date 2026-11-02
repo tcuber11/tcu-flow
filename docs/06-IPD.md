@@ -16,7 +16,8 @@ tcu-flow/
 ├── src/                    # React UI (Home, Pairing, Calibrate, …), theme, icons
 ├── src-tauri/
 │   ├── src/                # Rust backend: kvm, clip, carry, network/, platform/, settings
-│   ├── gen/android/        # Android project (dev.tcuflow.app), not an MVP target
+│   ├── gen/android/        # Android project (dev.tcuflow.app); APK built by build.yml
+│   ├── gen/apple/          # iOS/iPadOS Xcode project (touchpad + files only); see docs/guides/ios.md
 │   ├── capabilities/
 │   └── tauri.conf.json
 ├── docs/                   # this pack, adr/, phase-0/, diagrams/

@@ -101,7 +101,7 @@ A person who owns and uses both a Mac and a Windows laptop at the same desk and 
 - Remote screen preview or remote desktop (separate product decision).
 - Internet relay / remote access (requires separate threat model).
 - ~~Images and file clipboard integration.~~ Done in MVP. Rich text remains future.
-- Linux support.
+- ~~Linux support.~~ Shipped as inherited, untested builds (deb/rpm/AppImage) alongside Android (APK) and an iOS project limited to touchpad + files.
 
 ### Explicitly out of scope for MVP
 - Screen streaming or remote desktop.

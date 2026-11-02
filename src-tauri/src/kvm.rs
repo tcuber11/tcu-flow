@@ -185,6 +185,7 @@ pub fn explain(e: &io::Error, alias: &str, os: &str, hint: &str) -> String {
 pub fn not_controllable(alias: &str, os: &str) -> String {
     match os {
         "android" => format!("{alias} isn't set up to be controlled yet: on the phone, open TCuFlow → Set up"),
+        "ios" => format!("{alias} can't be controlled: iOS lets no app move the cursor or type (its touchpad, clipboard and files still work)"),
         "macos" => format!("{alias} doesn't let TCuFlow control it yet: on the Mac, open TCuFlow → About → Allow Accessibility (needed again after each TCuFlow update)"),
         _ => Refusal::NoInput.text().into(),
     }

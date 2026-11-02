@@ -29,7 +29,6 @@ tauri-plugin-global-shortcut = "2.4.1"
 tauri-plugin-dialog = "2.8.4"
 tauri-plugin-single-instance = "2.5.5"
 base64 = "0.23.1"
-mac_address = "1.2.1"
 quinn = { version = "0.11.12", default-features = false, features = ["runtime-tokio", "rustls-ring"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
@@ -67,3 +66,7 @@ hyper = { version = "1.12.0", features = ["server", "http1"] }
 hyper-util = { version = "0.1.21", features = ["tokio"] }
 tauri-plugin-updater = "2.14.1"
 tauri-plugin-autostart = "2"
+
+# no MAC (Wake-on-LAN) on iOS: the crate has no backend there
+[target.'cfg(not(target_os = "ios"))'.dependencies]
+mac_address = "1.2.1"

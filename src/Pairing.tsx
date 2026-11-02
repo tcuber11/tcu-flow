@@ -33,7 +33,9 @@ export const osLabel = (os: string) => OS_LABEL[os] ?? os;
 export const setupHow = (os: string) =>
   os === "android"
     ? "On the phone: open TCuFlow → Set up"
-    : os === "linux"
+    : os === "ios"
+      ? "iPhones and iPads can't be controlled (iOS allows no input injection); use its touchpad instead"
+      : os === "linux"
       ? "On it: About → Allow input access, or run sudo tcuflow --allow-input"
       : os === "macos"
         ? "On the Mac: TCuFlow → About → Allow Accessibility (again after each TCuFlow update)"

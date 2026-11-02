@@ -28,9 +28,10 @@ export function Mobile() {
   const [note, setNote] = useState("");
   const control = useControl();
   // once per launch, as on computers; phones can't update in place, so Download fetches the APK
+  // (an iPhone gets the release page: iOS installs only through TestFlight or the App Store)
   const [prompt, setPrompt] = useState(true);
   const update = useUpdate();
-  const apk = update.available && `https://github.com/tcuber11/tcu-flow/releases/download/${update.available.tag}/TCuFlow_${update.available.tag.slice(1)}_android.apk`;
+  const apk = update.available && device?.info.os !== "ios" ? `https://github.com/tcuber11/tcu-flow/releases/download/${update.available.tag}/TCuFlow_${update.available.tag.slice(1)}_android.apk` : undefined;
   const files = useRef<HTMLInputElement>(null);
   const sendTo = useRef("");
   const refreshDevice = () =>
@@ -302,6 +303,14 @@ function ControlCard({ device, computer, control, fresh, onSetup, onChange }: { 
           {placeNote}
         </p>
         <Battery control={control} />
+      </div>
+    );
+  // iOS lets no app inject input, so there is no setup that would let a computer move in
+  if (device.info.os === "ios")
+    return (
+      <div className="mt-6 rounded-2xl bg-raised p-4 ring-1 ring-line">
+        <p className="font-semibold">{alias} can't move into this {device.info.deviceType === "mobile" ? "iPhone or iPad" : "device"}</p>
+        <p className="mt-1 text-sm leading-relaxed text-muted">iOS doesn't let apps move the cursor or type. The touchpad, clipboard and Send files work.</p>
       </div>
     );
   return (

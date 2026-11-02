@@ -1,0 +1,157 @@
+# Builds every installer: macOS (universal dmg + the .app.tar.gz the in-app updater installs), Windows (nsis),
+# Linux (deb, rpm, AppImage) and Android (apk, signed when the keystore secrets are set).
+# On a push to main the installers are workflow artifacts. When a GitHub release is published they are also
+# attached to it; then run `node scripts/release.mjs vX.Y.Z` locally to sign them into latest.json (the updater
+# key never leaves the maintainer's machine).
+name: Build installers
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - run: npm ci
+      - run: npx tauri build --target universal-apple-darwin --bundles app,dmg
+      # what the in-app updater downloads: the .app itself, packed as tauri's own updater bundle would
+      - name: Pack the app for updates
+        run: |
+          cd src-tauri/target/universal-apple-darwin/release/bundle/macos
+          COPYFILE_DISABLE=1 tar -czf "TCuFlow_$(node -p "require('../../../../../tauri.conf.json').version")_universal.app.tar.gz" TCuFlow.app
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TCuFlow-macos
+          path: |
+            src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+            src-tauri/target/universal-apple-darwin/release/bundle/macos/*.app.tar.gz
+          if-no-files-found: error
+      - if: github.event_name == 'release'
+        run: gh release upload "$GITHUB_REF_NAME" src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg src-tauri/target/universal-apple-darwin/release/bundle/macos/*.app.tar.gz --clobber
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - run: npm ci
+      - run: npx tauri build --bundles nsis
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TCuFlow-windows
+          path: src-tauri/target/release/bundle/nsis/*-setup.exe
+          if-no-files-found: error
+      - if: github.event_name == 'release'
+        shell: bash
+        run: gh release upload "$GITHUB_REF_NAME" src-tauri/target/release/bundle/nsis/*-setup.exe --clobber
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      # Tauri's WebKitGTK stack, plus ALSA for cpal and X11 headers for the input layer
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev patchelf libasound2-dev libx11-dev libxtst-dev
+      - run: npm ci
+      - run: npx tauri build --bundles deb,rpm,appimage
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TCuFlow-linux
+          path: |
+            src-tauri/target/release/bundle/deb/*.deb
+            src-tauri/target/release/bundle/rpm/*.rpm
+            src-tauri/target/release/bundle/appimage/*.AppImage
+          if-no-files-found: error
+      - if: github.event_name == 'release'
+        run: gh release upload "$GITHUB_REF_NAME" src-tauri/target/release/bundle/deb/*.deb src-tauri/target/release/bundle/rpm/*.rpm src-tauri/target/release/bundle/appimage/*.AppImage --clobber
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools platforms;android-36 build-tools;36.0.0 ndk;27.2.12479018
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - run: npm ci
+      # release signing key from the repository secrets (scripts/android-keystore.md); unsigned without it
+      - if: env.ANDROID_KEYSTORE_B64 != ''
+        env:
+          ANDROID_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          echo "$ANDROID_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/tcuflow-android.jks"
+          printf 'storeFile=%s\npassword=%s\nkeyAlias=tcuflow\n' "$RUNNER_TEMP/tcuflow-android.jks" "$ANDROID_KEYSTORE_PASSWORD" > src-tauri/gen/android/keystore.properties
+      - run: npx tauri android build --apk --target aarch64 armv7
+        env:
+          NDK_HOME: ${{ env.ANDROID_SDK_ROOT }}/ndk/27.2.12479018
+      - name: Name the apk
+        run: |
+          v=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          f=$(ls src-tauri/gen/android/app/build/outputs/apk/universal/release/*.apk | head -1)
+          mkdir -p out && cp "$f" "out/TCuFlow_${v}_android.apk"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TCuFlow-android
+          path: out/*.apk
+          if-no-files-found: error
+      - if: github.event_name == 'release'
+        run: gh release upload "$GITHUB_REF_NAME" out/*.apk --clobber
+        env:
+          GH_TOKEN: ${{ github.token }}

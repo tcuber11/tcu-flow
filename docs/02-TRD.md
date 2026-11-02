@@ -52,7 +52,7 @@ This document describes TCuFlow's technical architecture as implemented, the pla
 | `network/discovery.rs` | Multicast announce/answer, manual hosts |
 | `network/transfer.rs` | Files, pictures, clipboard file batches |
 | `network/telemetry.rs` | 60 Hz edge-proximity packets for the glow |
-| `platform/{macos,windows,linux,android}.rs` | Cursor, hooks, injection, screens per OS |
+| `platform/{macos,windows,linux,android}.rs` | Cursor, hooks, injection, screens per OS. iOS has no injection: it uses the generic `TouchEngine` (touchpad only) |
 | `settings.rs` | Persistent state (`settings.json`) |
 | `journal.rs` | Rotating log `logs/tcuflow.log` |
 | `screen.rs` | Remote screen: capture (SCK / Windows Graphics Capture), JPEG encode, viewer input injection, viewer window commands |

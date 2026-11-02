@@ -10,9 +10,11 @@ One mouse and keyboard for a Mac and a Windows PC on the same desk: push the cur
 
 | Platform | Status |
 |---|---|
-| Windows 10/11 | Inherited from LOKA, not yet verified for TCuFlow |
-| macOS | Builds; needs the **Accessibility** permission. Not yet verified on real hardware |
-| Linux, Android | Inherited code, not part of the TCuFlow MVP and not tested |
+| Windows 10/11 | Installer from CI (`build.yml`); not yet verified on real hardware |
+| macOS | Universal dmg from CI; needs the **Accessibility** permission (and **Screen Recording** to share its screen). Not yet verified on real hardware |
+| Linux (x86-64) | deb / rpm / AppImage from CI; X11 or XWayland; `tcuflow --allow-input` once to be controlled. Inherited code, untested |
+| Android 10+ | Signed APK from CI (`scripts/android-keystore.md`): touchpad, clipboard, files; being controlled needs the one-time Wireless-debugging setup in the app. Inherited code, untested |
+| iOS / iPadOS | Project in `src-tauri/gen/apple`: touchpad and file sending only (iOS lets no app inject input). Needs an Apple Developer account to ship (TestFlight / App Store); see `docs/guides/ios.md` |
 
 Not offered in TCuFlow (refused by the backend, hidden in the UI): remote terminal, shared folder as a drive, sound, microphone and notification sharing.
 

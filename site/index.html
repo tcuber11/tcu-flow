@@ -183,6 +183,8 @@ footer a{color:var(--muted);text-decoration:underline;text-underline-offset:3px}
     <symbol id="check" viewBox="0 0 20 20"><circle cx="10" cy="10" r="10" fill="#2a8fff"/><path d="M6 10.4l2.6 2.6L14 7.6" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
     <symbol id="apple" viewBox="0 0 20 20"><path fill="currentColor" d="M14.2 10.6c0-2 1.6-2.9 1.7-3-1-1.4-2.4-1.6-2.9-1.6-1.3-.1-2.4.7-3.1.7-.6 0-1.6-.7-2.6-.7-1.4 0-2.6.8-3.3 2-1.4 2.4-.4 6.1 1 8.1.7 1 1.5 2.1 2.5 2 1 0 1.4-.6 2.6-.6s1.6.6 2.6.6c1.1 0 1.8-1 2.4-2 .8-1.1 1.1-2.2 1.1-2.3 0 0-2-.8-2-3.2zM12.3 4.6c.5-.7.9-1.6.8-2.5-.8 0-1.8.5-2.3 1.2-.5.6-1 1.5-.8 2.4.9.1 1.8-.4 2.3-1.1z"/></symbol>
     <symbol id="windows" viewBox="0 0 20 20"><path fill="currentColor" d="M2 3.6 9.3 2.6v7H2zm0 12.8 7.3 1V10.4H2zM10.1 2.5 18 1.4v8.2h-7.9zm0 7.9H18v8.2l-7.9-1.1z"/></symbol>
+    <symbol id="i-monitor" viewBox="0 0 20 20"><rect x="2.5" y="3.5" width="15" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M7 17h6M10 13.5V17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 20 20"><rect x="5.5" y="2.5" width="9" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 14.5h2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
     <symbol id="i-download" viewBox="0 0 20 20"><path d="M10 3v9m-4-3.5L10 12l4-3.5M4 16h12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
     <symbol id="i-link" viewBox="0 0 20 20"><path d="M8.5 11.5a3 3 0 0 0 4.2 0l2.6-2.6a3 3 0 0 0-4.2-4.2l-1 1M11.5 8.5a3 3 0 0 0-4.2 0l-2.6 2.6a3 3 0 0 0 4.2 4.2l1-1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
     <symbol id="i-edge" viewBox="0 0 20 20"><rect x="2.5" y="4" width="15" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M17.5 7v5" stroke="#2a8fff" stroke-width="3" stroke-linecap="round"/></symbol>
@@ -323,6 +325,24 @@ footer a{color:var(--muted);text-decoration:underline;text-underline-offset:3px}
         <li data-i="dl.win.2" data-html>Saat Windows Firewall bertanya, centang <em>Private</em>.</li>
       </ol>
     </article>
+    <article class="card rise" id="card-linux">
+      <h3><svg><use href="#i-monitor"/></svg>Linux</h3>
+      <p data-i="dl.linux.p">x86-64. Paket .deb (Ubuntu/Debian), .rpm (Fedora), atau AppImage untuk distro lain.</p>
+      <a class="btn btn-blue" href="https://github.com/tcuber11/tcu-flow/releases/latest" data-dl="linux"><svg><use href="#i-download"/></svg><span data-i="dl.linux.btn">Unduh .deb</span></a>
+      <ol>
+        <li data-i="dl.linux.1" data-html>Semua paket ada di <a href="https://github.com/tcuber11/tcu-flow/releases/latest" style="color:var(--blue-ink)">halaman rilis</a>; X11 atau Wayland lewat XWayland.</li>
+        <li data-i="dl.linux.2" data-html>Agar dikendalikan: <code>tcuflow --allow-input</code> sekali (akses <em>uinput</em>).</li>
+      </ol>
+    </article>
+    <article class="card rise" id="card-android">
+      <h3><svg><use href="#i-phone"/></svg>Android</h3>
+      <p data-i="dl.android.p">HP dan tablet Android 10+. Touchpad untuk mengendalikan komputer, clipboard dan kirim file.</p>
+      <a class="btn btn-blue" href="https://github.com/tcuber11/tcu-flow/releases/latest" data-dl="android"><svg><use href="#i-download"/></svg><span data-i="dl.android.btn">Unduh APK</span></a>
+      <ol>
+        <li data-i="dl.android.1" data-html>Di luar Play Store: izinkan <em>Install unknown apps</em> untuk browsermu saat diminta.</li>
+        <li data-i="dl.android.2" data-html>Supaya kursor komputer bisa masuk ke HP: ikuti <em>Set up</em> di app (Wireless debugging, sekali).</li>
+      </ol>
+    </article>
   </div>
   <p class="note" data-i="dl.note" data-html>Kode sumber dan rilis ada di <a href="https://github.com/tcuber11/tcu-flow" style="color:var(--blue-ink);text-decoration:underline;text-underline-offset:3px">GitHub</a>. Lisensi Apache 2.0.</p>
 </section>
@@ -354,13 +374,18 @@ footer a{color:var(--muted);text-decoration:underline;text-underline-offset:3px}
 const DL = {
   mac: "https://github.com/tcuber11/tcu-flow/releases/latest/download/TCuFlow_0.9.6_universal.dmg",
   win: "https://github.com/tcuber11/tcu-flow/releases/latest/download/TCuFlow_0.9.6_x64-setup.exe",
+  // first release with Linux and Android assets is the next one: until then, the release page
+  linux: "https://github.com/tcuber11/tcu-flow/releases/latest",
+  android: "https://github.com/tcuber11/tcu-flow/releases/latest",
 };
 const EN = {
   "nav.how":"How it works","nav.features":"Features","nav.download":"Download",
   "video.cap":"46 seconds: crossing, typing, throwing files, and the security code.",
   "hero.h1":"One keyboard.<br>Two computers. <em>One desk.</em>",
   "hero.sub":"Push the cursor through the glowing edge of your screen and it lands on the computer next to it. Keyboard, clipboard and files follow. Mac and Windows, on your own local network.",
-  "hero.cta":"Download free","alt.mac":"Also for <a href=\"#unduh\">Windows</a>","alt.win":"Also for <a href=\"#unduh\">macOS</a>","alt.other":"For <a href=\"#unduh\">macOS and Windows</a>",
+  "hero.cta":"Download free","alt.mac":"Also for <a href=\"#unduh\">Windows</a>","alt.win":"Also for <a href=\"#unduh\">macOS</a>","alt.other":"For <a href=\"#unduh\">macOS, Windows, Linux and Android</a>","alt.linux":"Also for <a href=\"#unduh\">macOS, Windows and Android</a>","alt.android":"Also for <a href=\"#unduh\">macOS, Windows and Linux</a>",
+  "dl.linux.p":"x86-64. A .deb (Ubuntu/Debian), .rpm (Fedora), or an AppImage for anything else.","dl.linux.btn":"Download .deb","dl.linux.1":"Every package is on the <a href=\"https://github.com/tcuber11/tcu-flow/releases/latest\" style=\"color:var(--blue-ink)\">release page</a>; X11, or Wayland through XWayland.","dl.linux.2":"To be controlled: run <code>tcuflow --allow-input</code> once (<em>uinput</em> access).",
+  "dl.android.p":"Phones and tablets on Android 10+. A touchpad that drives a computer, plus clipboard and file sending.","dl.android.btn":"Download APK","dl.android.1":"Outside the Play Store: allow <em>Install unknown apps</em> for your browser when asked.","dl.android.2":"To let a computer's cursor move onto the phone: follow <em>Set up</em> in the app (Wireless debugging, once).",
   "check.1":"Free and open source","check.2":"No account, no cloud","check.3":"macOS and Windows","check.4":"Clipboard and files cross too",
   "demo.cap":"The cursor enters the glowing edge and appears on the other computer. Push it back out the far side to come home.",
   "how.h2":"Three steps, then forget about it.","how.lead":"No account, no server. Two computers on one Wi-Fi find each other, you match one code, done.",
@@ -397,8 +422,9 @@ const EN = {
 };
 const ID = {};
 document.querySelectorAll("[data-i]").forEach(el => { ID[el.dataset.i] = el.hasAttribute("data-html") ? el.innerHTML : el.textContent; });
-Object.assign(ID, { "alt.mac":"Juga untuk <a href=\"#unduh\">Windows</a>", "alt.win":"Juga untuk <a href=\"#unduh\">macOS</a>", "alt.other":"Untuk <a href=\"#unduh\">macOS dan Windows</a>" });
-const os = /Mac/i.test(navigator.platform) ? "mac" : /Win/i.test(navigator.platform) ? "win" : "other";
+Object.assign(ID, { "alt.mac":"Juga untuk <a href=\"#unduh\">Windows, Linux, dan Android</a>", "alt.win":"Juga untuk <a href=\"#unduh\">macOS, Linux, dan Android</a>", "alt.linux":"Juga untuk <a href=\"#unduh\">macOS, Windows, dan Android</a>", "alt.android":"Juga untuk <a href=\"#unduh\">macOS, Windows, dan Linux</a>", "alt.other":"Untuk <a href=\"#unduh\">macOS, Windows, Linux, dan Android</a>" });
+const ua = navigator.userAgent;
+const os = /Android/i.test(ua) ? "android" : /iPhone|iPad|iPod/i.test(ua) ? "other" : /Mac/i.test(navigator.platform) ? "mac" : /Win/i.test(navigator.platform) ? "win" : /Linux/i.test(navigator.platform) ? "linux" : "other";
 function setLang(lang) {
   const t = lang === "en" ? EN : ID;
   document.documentElement.lang = lang;

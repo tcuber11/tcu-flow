@@ -19,6 +19,7 @@ mod settings;
 mod share;
 #[cfg(desktop)]
 mod screen;
+#[cfg(desktop)]
 mod shell;
 #[cfg(desktop)]
 mod sim;
@@ -777,6 +778,14 @@ fn alias() -> String {
         .unwrap_or_else(|| "TCuFlow".into())
 }
 
+/// This device's MAC address, for the Wake-on-LAN packet other devices send it; iOS exposes none.
+fn own_mac() -> Option<String> {
+    #[cfg(target_os = "ios")]
+    return None;
+    #[cfg(not(target_os = "ios"))]
+    mac_address::get_mac_address().ok().flatten().map(|m| m.to_string())
+}
+
 /// Open a web page in the default browser.
 #[tauri::command]
 fn open_url(app: AppHandle, url: String) -> Result<(), String> {
@@ -1202,9 +1211,13 @@ pub fn run() {
             audio::set_mic,
             #[cfg(desktop)]
             update::check_update,
+            #[cfg(desktop)]
             screen::remote_open,
+            #[cfg(desktop)]
             screen::remote_input,
+            #[cfg(desktop)]
             screen::remote_close,
+            #[cfg(desktop)]
             screen::open_remote_window,
             #[cfg(desktop)]
             update::install_update,
@@ -1250,7 +1263,7 @@ pub fn run() {
                 transfer_port: PORTS.1,
                 kvm_port: PORTS.2,
                 proto: kvm::PROTOCOL,
-                mac: mac_address::get_mac_address().ok().flatten().map(|m| m.to_string()),
+                mac: own_mac(),
                 // a phone's injector starts later; `watch_controllable` keeps it current
                 controllable: !cfg!(target_os = "android"),
                 text: true,
