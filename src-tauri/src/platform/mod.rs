@@ -8,6 +8,8 @@ use tokio::sync::mpsc::UnboundedSender;
 
 #[cfg(target_os = "android")]
 pub mod android;
+#[cfg(target_os = "ios")]
+mod ios;
 #[cfg(target_os = "linux")]
 mod linux;
 #[cfg(target_os = "macos")]
@@ -217,6 +219,8 @@ pub fn clipboard_text() -> Option<String> {
     return with_clipboard(|c| c.get_text()).ok().filter(|t| !t.is_empty() && !clipboard_concealed());
     #[cfg(target_os = "android")]
     return android::clipboard_text().filter(|t| !t.is_empty());
+    #[cfg(target_os = "ios")]
+    return ios::clipboard_text().filter(|t| !t.is_empty());
     #[allow(unreachable_code)]
     None
 }
@@ -230,6 +234,10 @@ pub fn set_clipboard_text(text: &str) {
     #[cfg(target_os = "android")]
     if android::clipboard_text().as_deref() != Some(text) {
         android::set_clipboard_text(text);
+    }
+    #[cfg(target_os = "ios")]
+    if ios::clipboard_text().as_deref() != Some(text) {
+        ios::set_clipboard_text(text);
     }
 }
 

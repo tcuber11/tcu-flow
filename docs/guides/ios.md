@@ -1,6 +1,6 @@
 # TCuFlow on iPhone and iPad
 
-**What it does there:** the touchpad that drives a linked computer, the clipboard, and sending files. **What it
+**What it does there:** the touchpad that drives a linked computer, the clipboard (text, through UIPasteboard in `platform/ios.rs`), and sending files. **What it
 can't do:** be driven. iOS lets no app move the cursor or type into other apps, so a computer's cursor never
 moves onto an iPhone. Android gets that through its Wireless-debugging injector; iOS has no equivalent.
 
@@ -31,8 +31,6 @@ Needs Xcode 15+, CocoaPods (`brew install cocoapods`) and the Rust targets
 
 ## Not done yet
 
-- Clipboard on iOS: `platform::clipboard_text` returns nothing off Android. UIPasteboard through
-  `objc2-ui-kit` is the next slice.
 - Background: iOS suspends the app when it leaves the screen, so the link drops until it comes back; the
   touchpad only works with TCuFlow in front.
 - The multicast entitlement request (developer.apple.com → Identifiers → dev.tcuflow.app → Multicast Networking → request).
