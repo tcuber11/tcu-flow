@@ -33,11 +33,11 @@ V=site/promo/voice.mp3
 B=site/promo/bgm.mp3
 if [ -s "$V" ] && [ -s "$B" ]; then
   ffmpeg -y -loglevel error -i site/promo/promo-silent.mp4 -i "$B" -i "$V" \
-    -filter_complex "[1:a]volume=0.32[bg];[2:a]aformat=channel_layouts=stereo,volume=1.0[vo];[vo]asplit[vo1][vo2];[bg][vo1]sidechaincompress=threshold=0.04:ratio=6:attack=25:release=500[duck];[duck][vo2]amix=inputs=2:normalize=0:duration=first[a]" \
+    -filter_complex "[1:a]volume=0.32[bg];[2:a]aformat=channel_layouts=stereo,volume=1.0[vo];[vo]asplit[vo1][vo2];[bg][vo1]sidechaincompress=threshold=0.04:ratio=6:attack=25:release=500[duck];[duck][vo2]amix=inputs=2:normalize=0:duration=first,loudnorm=I=-16:TP=-1.5:LRA=11[a]" \
     -map 0:v -map "[a]" -c:v copy -c:a aac -b:a 160k -shortest site/promo/promo.mp4
   echo "with voice + music: site/promo/promo.mp4"
 elif [ -s "$B" ]; then
-  ffmpeg -y -loglevel error -i site/promo/promo-silent.mp4 -i "$B" -filter_complex "[1:a]volume=0.9[a]" \
+  ffmpeg -y -loglevel error -i site/promo/promo-silent.mp4 -i "$B" -filter_complex "[1:a]loudnorm=I=-18:TP=-1.5:LRA=11[a]" \
     -map 0:v -map "[a]" -c:v copy -c:a aac -b:a 160k -shortest site/promo/promo.mp4
   echo "with music (no voice yet): site/promo/promo.mp4"
   echo "voice: generate site/promo/voice.mp3 from site/promo/voiceover.md with ElevenLabs, then rerun"
