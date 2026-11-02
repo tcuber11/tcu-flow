@@ -24,11 +24,10 @@ Needs Xcode 15+, CocoaPods (`brew install cocoapods`) and the Rust targets
   `src-tauri/gen/apple/tcuflow.xcodeproj` in Xcode and run `tcuflow_iOS`.
 - Your own iPhone with a **free Apple ID**: in Xcode, Signing & Capabilities → Team: your Apple ID (Personal
   Team). The app runs 7 days, then needs reinstalling. Three apps per device.
-- Other people: the **Apple Developer Program** (US$99/year) is the only road: TestFlight (up to 10 000
-  testers, builds last 90 days) or the App Store. Set `DEVELOPMENT_TEAM` in `src-tauri/gen/apple/project.yml`,
-  then `npx tauri ios build --export-method app-store-connect` and upload the `.ipa` with Transporter.
-
-There is no CI job for iOS: every build needs a signing identity, and the free one is tied to one Mac.
+- Other people: TestFlight (up to 10 000 testers, builds last 90 days) or the App Store, through the team's
+  Apple Developer Program (team `J24ATXQNJW`, set in `tauri.conf.json`). CI uploads every build to TestFlight
+  once the secrets in [apple-signing.md](apple-signing.md) are set; by hand: `npx tauri ios build
+  --export-method app-store-connect` and upload the `.ipa` with Transporter.
 
 ## Not done yet
 
@@ -36,4 +35,4 @@ There is no CI job for iOS: every build needs a signing identity, and the free o
   `objc2-ui-kit` is the next slice.
 - Background: iOS suspends the app when it leaves the screen, so the link drops until it comes back; the
   touchpad only works with TCuFlow in front.
-- The multicast entitlement request, once there is a developer account.
+- The multicast entitlement request (developer.apple.com → Identifiers → dev.tcuflow.app → Multicast Networking → request).
