@@ -155,7 +155,7 @@ function render(t) {
     if (t < 24.5) { fx = 450; fy = CROSS_Y; }
     else if (t < 27) { const k = ease(seg(t, 24.5, 27)); fx = lerp(450, 1300, k); fy = CROSS_Y; }
     else { fx = 1300; fy = CROSS_Y; happy = true; }
-    f.style.transform = `translate(${fx + 70}px, ${fy - 40}px)`;
+    f.style.transform = `translate(${fx + 96}px, ${fy - 118}px)`;
     f.style.opacity = fade(t, 22.6, 23.4, 29.2, 30);
     if (t > 25.4 && t < 26.8) ripples.push({ x: 960, y: CROSS_Y + 55, k: seg(t, 25.4, 26.8) });
   } else {
