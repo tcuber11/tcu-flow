@@ -1,6 +1,6 @@
 # Voice-over — video promosi TCuFlow (46 detik)
 
-Untuk ElevenLabs: pilih suara Indonesia (mis. "Bella" atau suara multilingual v2), kecepatan normal, stability ~50, similarity ~75. Hasilkan **satu file** dari teks di kolom "Naskah" berurutan; jeda antar kalimat sekitar 0,6 detik. Simpan sebagai `site/promo/voice.mp3`, lalu jalankan `scripts/render-promo.sh`. Kalau durasinya meleset lebih dari 1–2 detik, atur kecepatan di ElevenLabs atau gunakan tanda `<break time="0.8s" />` di antara kalimat.
+Untuk ElevenLabs: pilih suara Indonesia (mis. "Bella" atau suara multilingual v2), kecepatan normal, stability ~50, similarity ~75. Hasilkan **satu file** dari teks di kolom "Naskah" berurutan; jeda antar kalimat sekitar 0,6 detik. Simpan sebagai `site/promo/voice.mp3`, lalu jalankan `scripts/render-promo.sh`: musik latar (`site/promo/bgm.mp3`, dibuat `scripts/make-bgm.py`) otomatis mengecil di bawah suara. Kalau durasinya meleset lebih dari 1–2 detik, atur kecepatan di ElevenLabs atau gunakan tanda `<break time="0.8s" />` di antara kalimat.
 
 | Detik | Adegan | Naskah (ID) |
 |---|---|---|

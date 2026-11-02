@@ -13,3 +13,4 @@ src-tauri/gen/schemas
 .preview/
 .impeccable/review/
 site/promo/frames/
+site/promo/bgm.wav

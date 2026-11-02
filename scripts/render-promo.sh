@@ -27,9 +27,21 @@ done
 ffmpeg -y -loglevel error -framerate $FPS -i "$OUT/f%05d.png" -c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p -movflags +faststart site/promo/promo-silent.mp4
 echo "video: site/promo/promo-silent.mp4"
 
-if [ -s site/promo/voice.mp3 ]; then
-  ffmpeg -y -loglevel error -i site/promo/promo-silent.mp4 -i site/promo/voice.mp3 -c:v copy -c:a aac -b:a 160k -shortest site/promo/promo.mp4
-  echo "with voice: site/promo/promo.mp4"
+# Audio: bgm.mp3 comes from scripts/make-bgm.py; voice.mp3 from ElevenLabs (voiceover.md).
+# With both, the music ducks under the voice (sidechain) and sits about 14 dB below it.
+V=site/promo/voice.mp3
+B=site/promo/bgm.mp3
+if [ -s "$V" ] && [ -s "$B" ]; then
+  ffmpeg -y -loglevel error -i site/promo/promo-silent.mp4 -i "$B" -i "$V" \
+    -filter_complex "[1:a]volume=0.32[bg];[2:a]aformat=channel_layouts=stereo,volume=1.0[vo];[vo]asplit[vo1][vo2];[bg][vo1]sidechaincompress=threshold=0.04:ratio=6:attack=25:release=500[duck];[duck][vo2]amix=inputs=2:normalize=0:duration=first[a]" \
+    -map 0:v -map "[a]" -c:v copy -c:a aac -b:a 160k -shortest site/promo/promo.mp4
+  echo "with voice + music: site/promo/promo.mp4"
+elif [ -s "$B" ]; then
+  ffmpeg -y -loglevel error -i site/promo/promo-silent.mp4 -i "$B" -filter_complex "[1:a]volume=0.9[a]" \
+    -map 0:v -map "[a]" -c:v copy -c:a aac -b:a 160k -shortest site/promo/promo.mp4
+  echo "with music (no voice yet): site/promo/promo.mp4"
+  echo "voice: generate site/promo/voice.mp3 from site/promo/voiceover.md with ElevenLabs, then rerun"
 else
-  echo "no site/promo/voice.mp3 yet: generate it from site/promo/voiceover.md with ElevenLabs, then rerun"
+  cp site/promo/promo-silent.mp4 site/promo/promo.mp4
+  echo "silent: run scripts/make-bgm.py for music, add site/promo/voice.mp3 for the voice-over"
 fi
