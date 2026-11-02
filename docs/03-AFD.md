@@ -19,7 +19,7 @@ One window (the same on macOS and Windows) plus the tray menu.
 - Where your devices sit: screens map, device placement, glow colour and style.
 - How it feels over there: pointer speed, edge delay, Ctrl/⌘ swap (when a linked device is selected).
 - Test connection / Troubleshoot (selected device).
-- Received files: destination folder.
+- This computer shares: screen (off by default); Received files: destination folder.
 - Recent clipboard; transfer toasts.
 
 **Tray menu:** Control a placed device, Disconnect, Start with computer, About, Quit.
@@ -73,6 +73,13 @@ Linking never starts with the computer or shares anything on its own; it only al
 - Files land in `Downloads/TCuFlow` (or the folder chosen under **Received files**) without a confirmation on the receiving side; names never overwrite existing files.
 - Both sides show progress, speed and time left; either side can cancel; the receiver can open the folder.
 - **Ctrl+Alt+V** pastes the files that arrived last into the app in front.
+
+## 8a. Viewing another computer's screen (remote screen, ADR-002)
+
+1. On the computer to be viewed: **This computer shares → Its screen** on. macOS asks for Screen Recording the first time a viewer connects; until it is granted the viewer sees the refusal with the setting to open.
+2. On the viewing computer: **View screen** on the linked device's row (or its context menu). A window titled with the device's name opens.
+3. The window shows the other computer's primary display. While the pointer is over the image, mouse, wheel and keyboard go there; moving the pointer off the image gives the keyboard back. The status bar shows fps and KB/s.
+4. Closing the window, turning the toggle off, or losing the link ends the stream.
 
 ## 9. Unlinking
 
