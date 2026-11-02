@@ -32,6 +32,14 @@ const TARGETS = [
 const gh = (...args) => execFileSync("gh", [...args, "-R", REPO], { encoding: "utf8", stdio: ["ignore", "pipe", "inherit"] });
 const dir = mkdtempSync(join(tmpdir(), "tcuflow-release-"));
 try {
+  // The Mac updater installs from a tarball of the .app, not the dmg: pack the universal build if it is here.
+  const macApp = "src-tauri/target/universal-apple-darwin/release/bundle/macos/TCuFlow.app";
+  if (existsSync(macApp)) {
+    const tgz = join(dir, `TCuFlow_${tag.slice(1)}_universal.app.tar.gz`);
+    execFileSync("tar", ["czf", tgz, "-C", join(macApp, ".."), "TCuFlow.app"], { stdio: "inherit" });
+    gh("release", "upload", tag, tgz, "--clobber");
+    console.log(`uploaded ${tgz}`);
+  }
   const release = JSON.parse(gh("release", "view", tag, "--json", "body,publishedAt"));
   gh("release", "download", tag, "-D", dir, ...TARGETS.flatMap(([suffix]) => ["-p", `*${suffix}`]));
 

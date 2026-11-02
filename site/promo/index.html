@@ -54,8 +54,8 @@ h1 em{font-style:normal;color:var(--blue-ink)}
   <!-- scene 0: title -->
   <div class="center" id="s0">
     <div class="brand"><svg width="96" height="96"><use href="#flo-blue"/></svg>TCuFlow</div>
-    <h1 style="margin-top:40px">Satu keyboard.<br>Dua komputer. <em>Satu meja.</em></h1>
-    <p class="tag">Mouse, keyboard, clipboard, dan file mengalir antara Mac dan Windows.</p>
+    <h1 style="margin-top:40px" data-i="s0.h1" data-html>Satu keyboard.<br>Dua komputer. <em>Satu meja.</em></h1>
+    <p class="tag" data-i="s0.tag">Mouse, keyboard, clipboard, dan file mengalir antara Mac dan Windows.</p>
   </div>
 
   <!-- scenes 1–4: two screens -->
@@ -72,11 +72,11 @@ h1 em{font-style:normal;color:var(--blue-ink)}
         <div class="edge" id="edge-win"></div>
         <div class="doc" id="docwin" style="display:none"></div>
         <div class="code" id="code-win" style="display:none"></div>
-        <div class="lock" id="lock" style="display:none">Setiap sambungan dienkripsi · TLS 1.3<br>Tanpa akun · tanpa cloud · tanpa server</div>
+        <div class="lock" id="lock" style="display:none" data-i="lock" data-html>Setiap sambungan dienkripsi · TLS 1.3<br>Tanpa akun · tanpa cloud · tanpa server</div>
       </div>
     </div>
     <div id="ripples"></div>
-    <div class="file" id="file" style="display:none"><div class="icon"></div>foto.png</div>
+    <div class="file" id="file" style="display:none"><div class="icon"></div><span data-i="file">foto.png</span></div>
     <svg class="flo" id="flo-el"><use href="#flo"/></svg>
     <div class="cap" id="cap"></div>
   </div>
@@ -84,9 +84,9 @@ h1 em{font-style:normal;color:var(--blue-ink)}
   <!-- scene 5: download -->
   <div class="center" id="s5">
     <div class="brand"><svg width="96" height="96"><use href="#flo-blue"/></svg>TCuFlow</div>
-    <h1 style="margin-top:36px;font-size:84px">Gratis. Open source.<br><em>macOS dan Windows.</em></h1>
-    <div class="checks"><span>Tanpa akun</span><span>Tanpa cloud</span><span>Jaringan lokal</span></div>
-    <div class="cta">⬇ Unduh gratis</div>
+    <h1 style="margin-top:36px;font-size:84px" data-i="s5.h1" data-html>Gratis. Open source.<br><em>macOS dan Windows.</em></h1>
+    <div class="checks"><span data-i="c1">Tanpa akun</span><span data-i="c2">Tanpa cloud</span><span data-i="c3">Jaringan lokal</span></div>
+    <div class="cta" data-i="cta">⬇ Unduh gratis</div>
   </div>
 </div>
 
@@ -101,8 +101,41 @@ const lerp = (a, b, x) => a + (b - a) * x;
 // screen geometry (stage px): both screens 810 wide; inner content box excludes the bar
 const S = { left: { x: 120, y: 200, w: 810, h: 620 }, right: { x: 990, y: 200, w: 810, h: 620 } };
 const CROSS_Y = 520; // y where Flo crosses
-const MAC_TEXT = "Catatan rapat — ";
-const WIN_TEXT = "lanjut diketik di Windows, keyboard yang sama.";
+// ---- text in both languages; ?lang=en renders the English video
+const T = {
+  id: {
+    "s0.h1": "Satu keyboard.<br>Dua komputer. <em>Satu meja.</em>",
+    "s0.tag": "Mouse, keyboard, clipboard, dan file mengalir antara Mac dan Windows.",
+    lock: "Setiap sambungan dienkripsi · TLS 1.3<br>Tanpa akun · tanpa cloud · tanpa server",
+    file: "foto.png",
+    "s5.h1": "Gratis. Open source.<br><em>macOS dan Windows.</em>",
+    c1: "Tanpa akun", c2: "Tanpa cloud", c3: "Jaringan lokal", cta: "⬇ Unduh gratis",
+    mac: "Catatan rapat — ", win: "lanjut diketik di Windows, keyboard yang sama.",
+    cap1: "Dorong kursor melewati tepi yang menyala.", sub1: "Kursor muncul di komputer sebelahnya.",
+    cap2: "Keyboard ikut pindah.", sub2: "Apa pun yang kamu ketik masuk ke komputer tempat kursor berada.",
+    cap3: "Clipboard dan file ikut.", sub3: "Salin, screenshot, atau seret file lewat tepi: mendarat di Downloads/TCuFlow.",
+    cap4: "Aman sejak detik pertama.", sub4: "Kode 6 digit yang sama di kedua layar · TLS 1.3 · tidak ada yang keluar dari jaringanmu.",
+  },
+  en: {
+    "s0.h1": "One keyboard.<br>Two computers. <em>One desk.</em>",
+    "s0.tag": "Mouse, keyboard, clipboard and files flow between Mac and Windows.",
+    lock: "Every link encrypted · TLS 1.3<br>No account · no cloud · no server",
+    file: "photo.png",
+    "s5.h1": "Free. Open source.<br><em>macOS and Windows.</em>",
+    c1: "No account", c2: "No cloud", c3: "Local network", cta: "⬇ Download free",
+    mac: "Meeting notes — ", win: "continued on Windows, same keyboard.",
+    cap1: "Push the cursor through the glowing edge.", sub1: "It appears on the computer next to it.",
+    cap2: "The keyboard follows.", sub2: "Whatever you type goes to the computer the cursor is on.",
+    cap3: "Clipboard and files come along.", sub3: "Copy, screenshot, or drag a file through the edge: it lands in Downloads/TCuFlow.",
+    cap4: "Secure from the first second.", sub4: "The same 6-digit code on both screens · TLS 1.3 · nothing leaves your network.",
+  },
+};
+const LANG = new URLSearchParams(location.search).get("lang") === "en" ? "en" : "id";
+const TXT = T[LANG];
+document.documentElement.lang = LANG;
+document.querySelectorAll("[data-i]").forEach((el) => { el.hasAttribute("data-html") ? (el.innerHTML = TXT[el.dataset.i]) : (el.textContent = TXT[el.dataset.i]); });
+const MAC_TEXT = TXT.mac;
+const WIN_TEXT = TXT.win;
 
 function render(t) {
   // ---- scene 0: title (0–5)
@@ -126,7 +159,7 @@ function render(t) {
   const ripples = [];
   if (t < 14) {
     // 5–14 crossing: idle → glide to edge (7.5–9.5) → cross (9.5–10.1) → land (10.1–11) → wiggle
-    cap = "Dorong kursor melewati tepi yang menyala."; sub = "Kursor muncul di komputer sebelahnya.";
+    cap = TXT.cap1; sub = TXT.sub1;
     if (t < 7.5) { fx = 400 + 30 * Math.sin(t * 1.5); fy = CROSS_Y + 20 * Math.cos(t * 1.1); }
     else if (t < 9.5) { const k = ease(seg(t, 7.5, 9.5)); fx = lerp(400, 905, k); fy = lerp(CROSS_Y + 10, CROSS_Y, k); }
     else if (t < 10.1) { const k = seg(t, 9.5, 10.1); fx = lerp(905, 1015, k); }
@@ -134,7 +167,7 @@ function render(t) {
     if (t > 9.6 && t < 11.2) ripples.push({ x: 960, y: CROSS_Y + 55, k: seg(t, 9.6, 11.2) });
   } else if (t < 22) {
     // 14–22 keyboard follows: typing on Mac doc (14–17), Flo crosses (17–18.2), typing continues on Windows (18.4–21.5)
-    cap = "Keyboard ikut pindah."; sub = "Apa pun yang kamu ketik masuk ke komputer tempat kursor berada.";
+    cap = TXT.cap2; sub = TXT.sub2;
     const mac = $("docmac"), win = $("docwin");
     mac.style.display = ""; win.style.display = t > 18 ? "" : "none";
     const nMac = Math.round(MAC_TEXT.length * seg(t, 14.4, 16.8));
@@ -148,7 +181,7 @@ function render(t) {
   } else if (t < 30) {
     // 22–30 clipboard / file: Flo carries a file across
     $("docmac").style.display = "none"; $("docwin").style.display = "none";
-    cap = "Clipboard dan file ikut."; sub = "Salin, screenshot, atau seret file lewat tepi: mendarat di Downloads/TCuFlow.";
+    cap = TXT.cap3; sub = TXT.sub3;
     const f = $("file"); f.style.display = "";
     if (t < 24.5) { fx = 450; fy = CROSS_Y; }
     else if (t < 27) { const k = ease(seg(t, 24.5, 27)); fx = lerp(450, 1300, k); fy = CROSS_Y; }
@@ -159,7 +192,7 @@ function render(t) {
   } else {
     // 30–38 security: code boxes on both screens, lock text
     $("file").style.display = "none";
-    cap = "Aman sejak detik pertama."; sub = "Kode 6 digit yang sama di kedua layar · TLS 1.3 · tidak ada yang keluar dari jaringanmu.";
+    cap = TXT.cap4; sub = TXT.sub4;
     show = false;
     const code = "731204".split("");
     for (const [id, delay] of [["code-mac", 30.6], ["code-win", 31.2]]) {

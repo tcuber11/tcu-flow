@@ -26,6 +26,8 @@ Kalau hasilnya terlalu heboh, ganti `[excited]` dengan `[enthusiastic]` atau `[u
 
 ## English version (same timing)
 
+Same settings. Save the take as `site/promo/voice-en-raw.mp3`, find its pauses with `ffmpeg -i site/promo/voice-en-raw.mp3 -af silencedetect=noise=-32dB:d=0.18 -f null -`, put the five between-scene cut points into the `en` row of `scripts/align-voice.sh`, then `scripts/align-voice.sh en && PROMO_LANG=en scripts/render-promo.sh`. The English video (`promo-en.mp4`) plays on the site when the EN language is chosen.
+
 [excited] One keyboard. Two computers. ONE desk! This is TCuFlow. <break time="1.0s" />
 [curious] Push the cursor through the glowing edge of your screen… [excited] and it lands on the computer next to it! Mac to Windows, or the other way round. <break time="1.2s" />
 [cheerful] The keyboard follows. Whatever you type goes to the computer the cursor is on. Shortcuts? Still work! <break time="1.0s" />

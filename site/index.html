@@ -248,8 +248,8 @@ footer a{color:var(--muted);text-decoration:underline;text-underline-offset:3px}
 
 <section id="video" class="wrap eyebrowless" style="padding-top:40px">
   <div class="rise" style="border:1px solid var(--line);border-radius:22px;overflow:hidden;background:var(--panel);box-shadow:0 30px 80px rgb(0 0 0/.4)">
-    <video controls playsinline preload="metadata" poster="promo/poster.jpg" style="display:block;width:100%;aspect-ratio:16/9;background:#000" aria-label="Video 46 detik: cara kerja TCuFlow">
-      <source src="promo/promo.mp4" type="video/mp4">
+    <video id="promo" controls playsinline preload="metadata" poster="promo/poster.jpg" style="display:block;width:100%;aspect-ratio:16/9;background:#000" aria-label="Video 46 detik: cara kerja TCuFlow">
+      <source id="promo-src" src="promo/promo.mp4" type="video/mp4">
     </video>
   </div>
   <p class="rise" style="margin-top:14px;text-align:center;font-size:14px;color:var(--faint)" data-i="video.cap">46 detik: menyeberang, mengetik, melempar file, dan kode keamanan.</p>
@@ -405,6 +405,10 @@ function setLang(lang) {
   document.querySelectorAll("[data-i]").forEach(el => { const v = t[el.dataset.i]; if (v == null) return; if (el.hasAttribute("data-html")) el.innerHTML = v; else el.textContent = v; });
   document.getElementById("cta-alt").innerHTML = t["alt." + os];
   document.querySelectorAll(".lang button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+  // the promo video exists in both languages; swap it only when it actually changes so a playing one isn't restarted
+  const src = document.getElementById("promo-src"), want = lang === "en" ? "promo/promo-en.mp4" : "promo/promo.mp4";
+  if (src && src.getAttribute("src") !== want) { src.setAttribute("src", want); document.getElementById("promo").load(); }
+  document.getElementById("promo").setAttribute("aria-label", lang === "en" ? "46-second video: how TCuFlow works" : "Video 46 detik: cara kerja TCuFlow");
   try { localStorage.setItem("tcuflow.site.lang", lang); } catch {}
 }
 document.querySelectorAll(".lang button").forEach(b => b.addEventListener("click", () => setLang(b.dataset.lang)));
