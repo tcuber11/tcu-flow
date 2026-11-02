@@ -4988,7 +4988,7 @@ dependencies = [
 
 [[package]]
 name = "tcuflow"
-version = "0.9.6"
+version = "0.9.7"
 dependencies = [
  "arboard",
  "base64 0.23.1",
