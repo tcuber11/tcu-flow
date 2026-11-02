@@ -9,7 +9,7 @@ Untuk ElevenLabs: pilih suara Indonesia (mis. "Bella" atau suara multilingual v2
 | 14–22 | Keyboard | Keyboard ikut pindah. Apa pun yang kamu ketik masuk ke komputer tempat kursor berada. Pintasan tetap jalan. |
 | 22–30 | Clipboard & file | Clipboard dan file ikut. Salin di satu komputer, tempel di komputer satunya. Seret file lewat tepi, dan ia mendarat di sana. |
 | 30–38 | Keamanan | Aman sejak detik pertama. Kode enam digit yang sama di kedua layar, enkripsi TLS satu-tiga, dan tidak ada yang keluar dari jaringanmu. |
-| 38–46 | Unduh | Gratis dan open source, untuk macOS dan Windows. Unduh di tcuber sebelas titik github titik io garis miring tcu flow. |
+| 38–46 | Unduh | Gratis dan open source, untuk macOS dan Windows. |
 
 ## Teks siap tempel (ID)
 
@@ -18,7 +18,7 @@ Dorong kursor melewati tepi layar yang menyala… dan ia muncul di komputer sebe
 Keyboard ikut pindah. Apa pun yang kamu ketik masuk ke komputer tempat kursor berada. Pintasan tetap jalan. <break time="1.0s" />
 Clipboard dan file ikut. Salin di satu komputer, tempel di komputer satunya. Seret file lewat tepi, dan ia mendarat di sana. <break time="1.0s" />
 Aman sejak detik pertama. Kode enam digit yang sama di kedua layar, enkripsi TLS satu-tiga, dan tidak ada yang keluar dari jaringanmu. <break time="1.0s" />
-Gratis dan open source, untuk macOS dan Windows. Unduh di tcuber sebelas, titik github, titik io, garis miring, tcu flow.
+Gratis dan open source, untuk macOS dan Windows. Unduh gratis sekarang.
 
 ## English version (same timing)
 
@@ -27,4 +27,4 @@ Push the cursor through the glowing edge of your screen… and it lands on the c
 The keyboard follows. Whatever you type goes to the computer the cursor is on. Your shortcuts keep working. <break time="1.0s" />
 The clipboard and your files come along. Copy on one computer, paste on the other. Drag a file through the edge and it lands over there. <break time="1.0s" />
 Secure from the first second. The same six-digit code on both screens, TLS one-point-three encryption, and nothing ever leaves your network. <break time="1.0s" />
-Free and open source, for macOS and Windows. Download at tcuber eleven dot github dot io slash tcu flow.
+Free and open source, for macOS and Windows. Download it free today.
