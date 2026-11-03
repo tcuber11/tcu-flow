@@ -1,6 +1,6 @@
 # ADR-002 — Remote screen (view and control a linked computer in a window)
 
-**Status:** Accepted, slice 1 implemented (owner request, 2 November 2026)
+**Status:** Accepted; slice 1 implemented 2 November 2026, slice 2 (H.264, indicator, key release) 3 November 2026
 
 ## Context
 
@@ -17,9 +17,13 @@ A `Screen` service (`kvm::Service::Screen = 7`) on the KVM endpoint, refused unl
 - Viewer: canvas in a Tauri window; pointer over the image sends input, pointer off it gives the keyboard back; status bar with fps and KB/s.
 - The phone simulator (`npm run sim`) also serves its host's screen so the viewer can be tried on one computer.
 
-### Slice 2 (next)
-- Hardware H.264 (VideoToolbox / Media Foundation) with WebCodecs decoding in the viewer; same framing, new tag.
-- Multi-display choice; clipboard sync inside the viewer; a "being viewed" indicator on the shared side.
+### Slice 2 (done, 0.9.8+)
+- H.264 through OpenH264 (screen-content real-time mode, 3 Mbit/s, built from source for every platform) with WebCodecs decoding in the viewer; same framing, tag 4 `key | w | h | Annex B`. The viewer asks for video with input frame 6 once it knows its webview decodes (WebKit 16.4+, WebView2); JPEG stays the first frames and the fallback on any decode error. Hardware encoders (VideoToolbox / Media Foundation) can replace OpenH264 behind `screen::H264` later: ~5–10× less CPU, same wire.
+- A "being viewed" banner on the shared side (`screen-viewed` event) with **Stop sharing**, which ends every stream (`screen::stop_sharing`), as does turning the toggle off.
+- Keys and buttons the viewer holds are released when its stream ends.
+
+### Slice 3 (next)
+- Multi-display choice; clipboard sync inside the viewer; hardware encoders.
 
 ### Outside the network
 Not a TCuFlow relay. Tailscale (or any VPN) makes the linked computer reachable: add its Tailscale IP under **Add by IP** on both sides. Documented in `docs/guides/remote-mac-from-iphone.md`; an iPhone viewer would be a separate project (ADR-001 scope note).
@@ -27,6 +31,6 @@ Not a TCuFlow relay. Tailscale (or any VPN) makes the linked computer reachable:
 ## Consequences
 
 - The shared side's screen leaves that computer only to linked devices, over the pinned TLS link, and only while the toggle is on. Lock screen and UAC are never captured (Windows) or controllable.
-- Input injection from the viewer bypasses the edge-crossing session state: there is no cursor hide/park on the shared side, and held keys are not tracked for release-on-drop in slice 1 (the viewer sends key-up as it gets it; a dropped link mid-keypress can leave a modifier held until the next press there).
+- Input injection from the viewer bypasses the edge-crossing session state: there is no cursor hide/park on the shared side. Keys and buttons held when the stream ends are released by the shared side (slice 2).
 - macOS first use triggers the Screen Recording prompt; the refusal text tells the viewer which setting to open on the other Mac.
 - Real-hardware verification (Mac ↔ Windows) is still pending, like the rest of the input path.

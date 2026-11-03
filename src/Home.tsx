@@ -61,6 +61,8 @@ export function Home() {
   const [prompt, setPrompt] = useState(true);
   const update = useUpdate();
   const refreshDevice = () => invoke<Device>("get_device").then(setDevice);
+  // who is viewing this screen right now (the shared side's indicator)
+  const [viewer, setViewer] = useState<string | null>(null);
 
   useEffect(() => {
     const refreshPeers = () => invoke<Peer[]>("peers").then(setPeers);
@@ -71,12 +73,14 @@ export function Home() {
     const unPaired = listen("paired", refreshDevice);
     const unDevice = listen("device", refreshDevice);
     const unAbout = listen("about", () => setAbout(true)); // tray menu
+    const unViewed = listen<{ alias: string; on: boolean }>("screen-viewed", ({ payload }) => setViewer(payload.on ? payload.alias : null));
     const prune = setInterval(refreshPeers, 5000); // devices that went quiet drop off
     return () => {
       unPeer.then((f) => f());
       unPaired.then((f) => f());
       unDevice.then((f) => f());
       unAbout.then((f) => f());
+      unViewed.then((f) => f());
       clearInterval(prune);
     };
   }, []);
@@ -102,6 +106,19 @@ export function Home() {
           {update.available && <span aria-hidden className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-accent ring-2 ring-ink" />}
         </button>
       </header>
+      {viewer && (
+        <div role="status" className="rise mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-accent/40 bg-accent/10 px-5 py-4">
+          <p className="text-sm">
+            <span className="font-semibold text-fg">{viewer}</span> <span className="text-muted">is viewing and controlling this screen.</span>
+          </p>
+          <button
+            onClick={() => invoke("set_sharing", { sharing: { ...device.sharing, screen: false } }).then(refreshDevice)}
+            className={quietButton + " ring-1 ring-line"}
+          >
+            Stop sharing
+          </button>
+        </div>
+      )}
       <Devices device={device} peers={peers} onChange={refreshDevice} />
       <Sharing key={String(device.sharing.folder)} initial={device.sharing} received={device.received} mac={device.info.os === "macos"} onChange={refreshDevice} />
       <ClipHistory />

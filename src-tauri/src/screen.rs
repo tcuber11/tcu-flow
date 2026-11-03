@@ -153,6 +153,13 @@ impl H264 {
     }
 }
 
+/// "Share my screen" turned off: every stream ends, viewers see the share stop.
+static END: tokio::sync::Notify = tokio::sync::Notify::const_new();
+
+pub fn stop_sharing() {
+    END.notify_waiters();
+}
+
 /// A running capture of the primary display; dropping it stops the capture.
 struct Capture {
     stop: Arc<AtomicBool>,
@@ -343,11 +350,26 @@ pub async fn serve(stream: Stream, engine: Arc<dyn SpatialPlatformEngine>, scree
         }
         Ok::<(), io::Error>(())
     };
+    // keys and buttons the viewer holds right now: released when it goes away, so nothing stays pressed
+    let held: Arc<Mutex<(std::collections::HashSet<u16>, std::collections::HashSet<u8>)>> = Arc::default();
+    let (held2, engine2) = (held.clone(), engine.clone());
     // the viewer's input, injected on this computer
     let reader = async move {
         let mut b = [0u8; 9];
         loop {
             rd.read_exact(&mut b).await?;
+            match b[0] {
+                2 if (1..=3).contains(&b[1]) => {
+                    let mut h = held2.lock().unwrap();
+                    if b[2] != 0 { h.1.insert(b[1]) } else { h.1.remove(&b[1]) };
+                }
+                4 => {
+                    let mut h = held2.lock().unwrap();
+                    let scan = u16::from_le_bytes([b[1], b[2]]);
+                    if b[3] != 0 { h.0.insert(scan) } else { h.0.remove(&scan) };
+                }
+                _ => {}
+            }
             let event = match b[0] {
                 1 => {
                     let nx = f32::from_le_bytes(b[1..5].try_into().unwrap()).clamp(0.0, 1.0) as f64;
@@ -375,12 +397,23 @@ pub async fn serve(stream: Stream, engine: Arc<dyn SpatialPlatformEngine>, scree
             engine.inject(event);
         }
     };
+    let stopped = END.notified();
+    tokio::pin!(stopped);
+    stopped.as_mut().enable();
     let r = tokio::select! {
         r = writer => r,
         r = reader => r,
+        () = stopped => Ok(()),
     };
     encoding.store(false, Ordering::Relaxed);
     drop(capture);
+    let (keys, buttons) = std::mem::take(&mut *held.lock().unwrap());
+    for scan in keys {
+        engine2.inject(Injected::Key { scan, down: false });
+    }
+    for button in buttons {
+        engine2.inject(Injected::Button { button, down: false });
+    }
     r
 }
 

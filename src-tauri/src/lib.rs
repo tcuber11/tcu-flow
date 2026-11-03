@@ -434,6 +434,10 @@ pub(crate) fn received_dir(app: &AppHandle) -> PathBuf {
 #[tauri::command]
 fn set_sharing(app: AppHandle, state: State<AppState>, sharing: settings::Sharing) {
     platform::set_clipboard_shared(sharing.clipboard);
+    #[cfg(desktop)]
+    if !sharing.screen {
+        screen::stop_sharing();
+    }
     let mut s = state.lock().unwrap();
     s.settings.sharing = sharing;
     s.settings.save();
@@ -1939,8 +1943,13 @@ fn spawn_kvm_receiver(app: AppHandle, engine: Arc<dyn SpatialPlatformEngine>, st
                     kvm::Service::Screen => {
                         let engine = screen_app.state::<Arc<dyn SpatialPlatformEngine>>().inner().clone();
                         let screens = screens(&screen_app);
-                        journal!("screen shared with {}", screen_app.state::<AppState>().lock().unwrap().who(&fp).0);
-                        screen::serve(stream, engine, screens).await
+                        let alias = screen_app.state::<AppState>().lock().unwrap().who(&fp).0;
+                        journal!("screen shared with {alias}");
+                        // the main window shows who is watching, with a Stop
+                        let _ = screen_app.emit("screen-viewed", serde_json::json!({ "alias": alias, "on": true }));
+                        let r = screen::serve(stream, engine, screens).await;
+                        let _ = screen_app.emit("screen-viewed", serde_json::json!({ "alias": alias, "on": false }));
+                        r
                     }
                     #[cfg(mobile)]
                     kvm::Service::Screen => Ok(drop((stream, &fp))),

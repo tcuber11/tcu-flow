@@ -55,7 +55,7 @@ This document describes TCuFlow's technical architecture as implemented, the pla
 | `platform/{macos,windows,linux,android}.rs` | Cursor, hooks, injection, screens per OS. iOS has no injection: it uses the generic `TouchEngine` (touchpad only) |
 | `settings.rs` | Persistent state (`settings.json`) |
 | `journal.rs` | Rotating log `logs/tcuflow.log` |
-| `screen.rs` | Remote screen: capture (SCK / Windows Graphics Capture), JPEG encode, viewer input injection, viewer window commands |
+| `screen.rs` | Remote screen: capture (SCK / Windows Graphics Capture), H.264 (OpenH264) or JPEG encode, viewer input injection, held-key release, viewer window commands |
 | `update.rs` | In-app update check and install |
 | `src/` | UI: device list and pairing (`Home.tsx`, `Pairing.tsx`), edge placement (`Calibrate.tsx`), pointer settings, transfers, clipboard history |
 
@@ -136,7 +136,7 @@ Ports and ALPN differ from LOKA's on purpose, so TCuFlow and LOKA never pair wit
 
 LOKA's remote terminal, folder-as-drive, sound, microphone and notification sharing are refused in `allow_service` and hidden in the UI. The code remains in `shell.rs`, `share.rs`, `audio.rs`, `notify.rs` and is unreachable from a peer.
 
-TCuFlow adds one service of its own: **Screen** (`screen.rs`, [ADR-002](adr/ADR-002-remote-screen.md)). When its user turns on *Share my screen*, a linked computer can open this one's primary display in a window and drive it: JPEG frames at up to 20 fps, ≤1600 px wide, over the KVM endpoint; the viewer's mouse, wheel, keys (set-1 scancodes) and text are injected through `platform::Injected`. macOS needs Screen Recording permission; Windows uses Graphics Capture (secure desktop never captured). Slice 2 replaces JPEG with hardware H.264.
+TCuFlow adds one service of its own: **Screen** (`screen.rs`, [ADR-002](adr/ADR-002-remote-screen.md)). When its user turns on *Share my screen*, a linked computer can open this one's primary display in a window and drive it: H.264 (OpenH264, ~3 Mbit/s; JPEG until the viewer asks for video and as the fallback) at up to 20 fps, ≤1600 px wide, over the KVM endpoint; the viewer decodes with WebCodecs; its mouse, wheel, keys (set-1 scancodes) and text are injected through `platform::Injected`, and whatever it still holds is released when the stream ends. The shared side shows who is watching, with Stop. macOS needs Screen Recording permission; Windows uses Graphics Capture (secure desktop never captured).
 
 ## 11. Security controls and known gaps
 
