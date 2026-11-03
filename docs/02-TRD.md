@@ -96,7 +96,7 @@ Ports and ALPN differ from LOKA's on purpose, so TCuFlow and LOKA never pair wit
 
 - KVM: fixed 9-byte little-endian frames `tag | 8-byte payload`; text clipboard and typed text follow as UTF-8.
 - Transfer: `u32 header_len | JSON header | bytes`, one QUIC stream per payload.
-- Protocol version `kvm::PROTOCOL` (currently 2) is announced; devices on another version show "Needs update".
+- Protocol version `kvm::PROTOCOL` (3 since 0.9.7: signed telemetry and the Glow service) is announced; devices on another version show "Needs update".
 
 ## 7. Input control
 
