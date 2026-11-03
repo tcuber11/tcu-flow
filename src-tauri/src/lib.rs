@@ -794,6 +794,30 @@ async fn allow_input() -> Result<(), String> {
     Err("Only needed on Linux and macOS".into())
 }
 
+/// macOS Screen Recording, which the screen share needs; `None` where nothing has to be allowed.
+#[tauri::command]
+fn screen_allowed() -> Option<bool> {
+    #[cfg(target_os = "macos")]
+    return Some(platform::macos::screen_allowed());
+    #[allow(unreachable_code)]
+    None
+}
+
+/// macOS: Screen Recording's prompt and its pane in System Settings.
+#[tauri::command]
+async fn allow_screen() -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    return tauri::async_runtime::spawn_blocking(platform::macos::allow_screen).await.map_err(|e| e.to_string())?;
+    #[allow(unreachable_code)]
+    Err("Only needed on macOS".into())
+}
+
+/// A permission switched on in System Settings only counts for a fresh process.
+#[tauri::command]
+fn reopen(app: AppHandle) {
+    app.restart();
+}
+
 /// This computer's name as other devices list it.
 fn alias() -> String {
     std::env::var("COMPUTERNAME")
@@ -1214,6 +1238,9 @@ pub fn run() {
             allow_firewall,
             firewall_status,
             allow_input,
+            screen_allowed,
+            allow_screen,
+            reopen,
             open_url,
             #[cfg(desktop)]
             sim::start_sim,

@@ -98,6 +98,8 @@ extern "C" {
     fn CGGetActiveDisplayList(max: u32, displays: *mut u32, count: *mut u32) -> i32;
     fn CGDisplayBounds(display: u32) -> CGRect;
     fn CGDisplayCopyDisplayMode(display: u32) -> Ref;
+    fn CGPreflightScreenCaptureAccess() -> bool;
+    fn CGRequestScreenCaptureAccess() -> bool;
     fn CGDisplayModeGetPixelWidth(mode: Ref) -> usize;
     fn CGDisplayModeRelease(mode: Ref);
     fn CGMainDisplayID() -> u32;
@@ -286,6 +288,22 @@ pub fn allow_input() -> Result<(), String> {
     ask_accessibility();
     std::process::Command::new("open")
         .arg("x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
+        .status()
+        .map(drop)
+        .map_err(|e| format!("Couldn't open System Settings: {e}"))
+}
+
+/// Screen Recording as this process sees it. Like Accessibility, an ad-hoc signed update no longer matches the entry
+/// an earlier build got, and a fresh grant only counts once TCuFlow restarts.
+pub fn screen_allowed() -> bool {
+    unsafe { CGPreflightScreenCaptureAccess() }
+}
+
+/// Sharing → Open Screen Recording: the system prompt (adds TCuFlow to the list), then the pane itself.
+pub fn allow_screen() -> Result<(), String> {
+    unsafe { CGRequestScreenCaptureAccess() };
+    std::process::Command::new("open")
+        .arg("x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")
         .status()
         .map(drop)
         .map_err(|e| format!("Couldn't open System Settings: {e}"))

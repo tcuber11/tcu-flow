@@ -4,6 +4,10 @@ With the Apple Developer Program, CI (`.github/workflows/build.yml`) signs and n
 "Open Anyway") and uploads the iOS app to TestFlight. Everything below is done once; the secrets then drive every
 build. Nothing here goes into the repository.
 
+It also keeps macOS permissions across updates. An ad-hoc signed app is identified by the hash of that exact
+build, so after every update Screen Recording and Accessibility still show TCuFlow switched on but no longer
+count. A Developer ID signature is identified by team and bundle id instead: allowed once, allowed for good.
+
 ## 1. What to create at developer.apple.com
 
 Certificates, Identifiers & Profiles:
@@ -30,6 +34,9 @@ In Keychain Access → My Certificates: right-click *Developer ID Application: �
 password. Same for *Apple Distribution: …*.
 
 ## 3. Repository secrets
+
+`scripts/apple-secrets.sh` asks for the exported files (drag each into the terminal, Enter skips a part) and
+sets every secret below; the Mac part alone is enough for a signed, permission-keeping Mac app. By hand:
 
 ```sh
 cd ~/Documents/Project/tcu-flow

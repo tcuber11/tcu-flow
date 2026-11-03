@@ -39,9 +39,9 @@ jobs:
       # With APPLE_CERTIFICATE (Developer ID Application .p12) tauri imports it into a temporary keychain, signs
       # with the hardened runtime and notarizes through the App Store Connect API key. Without the secrets the
       # variables must stay unset (an empty APPLE_CERTIFICATE makes tauri try to import nothing and fail), so
-      # they are exported only when present; the build then falls back to the ad-hoc signature ("-").
+      # they are exported only when present; the build then falls back to the ad-hoc signature ("-"). The test is in
+      # the shell: a step's own env is not something its `if:` can rely on.
       - name: Apple signing environment (only when the secrets are set)
-        if: env.CERT != ''
         env:
           CERT: ${{ secrets.APPLE_CERTIFICATE }}
           CERT_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
@@ -51,6 +51,7 @@ jobs:
           KEY_ID: ${{ secrets.APPLE_API_KEY }}
           KEY_B64: ${{ secrets.APPLE_API_KEY_B64 }}
         run: |
+          if [ -z "$CERT" ]; then echo "No Apple certificate: ad-hoc signature"; exit 0; fi
           {
             echo "APPLE_CERTIFICATE=$CERT"
             echo "APPLE_CERTIFICATE_PASSWORD=$CERT_PASSWORD"

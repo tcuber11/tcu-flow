@@ -1,5 +1,5 @@
 // Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { quietButton, type Sharing as SharingPrefs } from "./Pairing";
@@ -25,6 +25,16 @@ const folderName = (p: string) => p.split(/[\\/]/).filter(Boolean).pop() ?? p;
  *  does not offer LOKA's folder, sound, mic, notification or terminal sharing (the backend refuses those too). */
 export function Sharing({ initial, received, mac, onChange }: { initial: SharingPrefs; received: string; mac: boolean; onChange: () => void }) {
   const [s, setS] = useState(initial);
+  // macOS Screen Recording as TCuFlow sees it now (null elsewhere); re-read on coming back from System Settings
+  const [recording, setRecording] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (!mac) return;
+    const read = () => invoke<boolean | null>("screen_allowed").then(setRecording, () => {});
+    read();
+    window.addEventListener("focus", read);
+    return () => window.removeEventListener("focus", read);
+  }, [mac]);
+  const allowScreen = () => invoke("allow_screen").catch(() => {});
   const change = (patch: Partial<SharingPrefs>) => {
     const next = { ...s, ...patch };
     setS(next);
@@ -48,10 +58,29 @@ export function Sharing({ initial, received, mac, onChange }: { initial: Sharing
         />
         <Toggle
           on={s.screen}
-          onChange={(screen) => change({ screen })}
+          onChange={(screen) => {
+            change({ screen });
+            if (screen && recording === false) allowScreen();
+          }}
           label="Its screen"
           hint={mac ? "Linked computers can view and control this screen in a window. Needs Screen Recording permission the first time." : "Linked computers can view and control this screen in a window."}
         />
+        {s.screen && recording === false && (
+          <div role="status" className="ml-[52px] -mt-1 rounded-xl bg-warning/12 px-3.5 py-3 text-xs leading-relaxed text-fg">
+            <p>
+              macOS isn't letting TCuFlow record this screen yet, so viewers would see nothing. Switch TCuFlow on under Screen &amp; System Audio Recording, then
+              reopen TCuFlow. Already on? A TCuFlow update made macOS forget it: remove TCuFlow from that list with −, then open it again from here.
+            </p>
+            <div className="mt-2.5 flex flex-wrap gap-1">
+              <button className={quietButton} onClick={allowScreen}>
+                Open Screen Recording
+              </button>
+              <button className={quietButton} onClick={() => invoke("reopen")}>
+                Reopen TCuFlow
+              </button>
+            </div>
+          </div>
+        )}
       </div>
       <p className="mt-6 text-[15px] font-semibold">Received files</p>
 

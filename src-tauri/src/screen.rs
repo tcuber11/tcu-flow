@@ -1023,7 +1023,8 @@ mod cap {
 
     /// Needs Screen Recording permission; macOS prompts on the first call and refuses until granted.
     pub fn run(slot: Arc<Slot>, stop: Arc<AtomicBool>, started: std::sync::mpsc::Sender<Result<(), String>>, index: usize) {
-        let explain = |e: SCError| format!("this Mac hasn't allowed TCuFlow to record the screen: System Settings → Privacy & Security → Screen & System Audio Recording ({e})");
+        // the viewer reads this; TCuFlow on the Mac itself shows what to switch on (This computer shares → Its screen)
+        let explain = |e: SCError| format!("that Mac hasn't allowed TCuFlow to record its screen yet: open TCuFlow on it, Its screen under This computer shares says what to switch on ({e})");
         let result = (|| {
             let content = SCShareableContent::get().map_err(explain)?;
             let display = content.displays().into_iter().nth(index).ok_or("no such display to share")?;
