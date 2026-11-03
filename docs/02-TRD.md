@@ -146,7 +146,7 @@ TCuFlow adds one service of its own: **Screen** (`screen.rs`, [ADR-002](adr/ADR-
 | Pairing approval with a code on both screens | Met (commit–reveal 6-digit code) |
 | No typed content, clipboard or file content in logs | Met by design; to be re-verified in review |
 | Visible remote-control state and emergency return | Met (status toast, Ctrl+Alt+Esc, double Ctrl) |
-| Private keys in Keychain / DPAPI | **Gap:** `identity.key` is a plain file in the app data directory |
+| Private keys in Keychain / DPAPI | Done: `network::secure::keystore` — macOS login keychain (generic password per data dir), Windows DPAPI user scope (`identity.key.dpapi`), Linux/mobile owner-only `identity.key` (0600). Plain `identity.key` from earlier versions is moved in and deleted |
 | SHA-256 verification of received files (FR-017) | **Gap:** relies on transport integrity only |
 | Every channel authenticated | **Gap:** edge-proximity telemetry (UDP 53419) is unauthenticated plaintext; it carries only glow position, never input |
 | Updates signed | Met: minisign key generated for TCuFlow; private key kept outside the repo |

@@ -22,7 +22,7 @@ TCuFlow has no server. "Backend" here means the Rust side of the desktop app and
 |---|---|---|
 | `settings.json` | Pairings, portals, hosts, preferences (section 4) | Low (aliases, IPs) |
 | `identity.crt` | This device's self-signed certificate (DER) | No (public) |
-| `identity.key` | Its private key (PKCS#8 DER) | **Yes** |
+| `identity.key` (Linux/mobile, 0600) · `identity.key.dpapi` (Windows) · login keychain item (macOS) | Its private key (PKCS#8 DER) | **Yes** |
 | `logs/tcuflow.log`, `logs/tcuflow.1.log` | Lifecycle and error log, rotated at 1 MiB | Low; no content is logged |
 
 UI-only preferences live in the webview's localStorage: `tcuflow.theme`, `tcuflow.look` (glow colour and style), `tcuflow.sound`, `tcuflow.selected`.
@@ -75,6 +75,6 @@ Held in memory and dropped when the session or app ends: the QUIC connections, a
 
 | PRD requirement | Status |
 |---|---|
-| Private keys in Keychain / DPAPI | `identity.key` is a plain file protected only by user-account file permissions |
+| Private keys in Keychain / DPAPI | Done: Keychain (macOS), DPAPI (Windows), owner-only file elsewhere; migration from the plain file on first start |
 | Transfer history (metadata) persisted | Transfers are shown for the session only; no history is stored |
 | Versioned migrations | Not needed for the JSON file today (tolerant defaults); add a version field before any breaking change |

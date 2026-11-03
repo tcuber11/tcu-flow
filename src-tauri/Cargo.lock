@@ -5015,6 +5015,7 @@ dependencies = [
  "ring",
  "rustls",
  "screencapturekit",
+ "security-framework",
  "serde",
  "serde_json",
  "socket2",

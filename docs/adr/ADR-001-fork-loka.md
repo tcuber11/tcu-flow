@@ -23,7 +23,7 @@ Fork [LOKA](https://github.com/fanrsd/LOKA) 0.9.5 (Apache-2.0, Aufa Nirsad) as t
 |---|---|
 | PRD | Clipboard also carries images and copied files (PRD MVP: plain text only); drag-and-drop across the edge exists (PRD: P1); peer-to-peer, either computer can control the other (PRD: Mac controller, Windows agent) |
 | TRD | Stack is Tauri/Rust; transport is QUIC over TLS 1.3 (TRD: TCP + TLS 1.3); discovery is a LocalSend-style JSON announce on UDP multicast, not mDNS/DNS-SD |
-| BSD | Settings are LOKA's JSON settings file, not the SQLite schema; the private key is a plain file `identity.key` in the app data dir, not Keychain/DPAPI (PRD §8 security requirement) |
+| BSD | Settings are LOKA's JSON settings file, not the SQLite schema; the private key was a plain file `identity.key` in the app data dir at fork time; since 0.9.7 it is in the Keychain/DPAPI (PRD §8) |
 | IPD | Repository tree and Phase 1–4 tasks largely done by the import; phases become verification and gap-closing |
 | DBD | Restyled to a system-settings look with light/dark (DESIGN.md); Oka mascot replaced by device avatars |
 

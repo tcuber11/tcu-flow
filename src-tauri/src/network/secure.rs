@@ -104,14 +104,18 @@ pub struct Identity {
 
 impl Identity {
     /// The one kept in `dir`, or a new one saved there (missing or unreadable: pairings must be redone).
+    /// The certificate is a plain file; the private key goes through `keystore` (Keychain on macOS, DPAPI on
+    /// Windows, an owner-only file elsewhere). A plain `identity.key` from earlier versions is moved in once.
     pub fn load_or_create(dir: &Path) -> Self {
-        let (cert_path, key_path) = (dir.join("identity.crt"), dir.join("identity.key"));
-        if let (Ok(cert), Ok(key)) = (std::fs::read(&cert_path), std::fs::read(&key_path)) {
-            return Self { cert: cert.into(), key: key.into() };
+        let cert_path = dir.join("identity.crt");
+        if let Ok(cert) = std::fs::read(&cert_path) {
+            if let Some(key) = keystore::load(dir) {
+                return Self { cert: cert.into(), key: key.into() };
+            }
         }
         let id = Self::generate();
         let _ = std::fs::create_dir_all(dir);
-        if let Err(e) = std::fs::write(&cert_path, &id.cert).and_then(|()| std::fs::write(&key_path, id.key.secret_pkcs8_der())) {
+        if let Err(e) = std::fs::write(&cert_path, &id.cert).and_then(|()| keystore::save(dir, id.key.secret_pkcs8_der())) {
             journal!("saving identity failed: {e}");
         }
         id
@@ -124,6 +128,127 @@ impl Identity {
 
     pub fn fingerprint(&self) -> String {
         fingerprint(&self.cert)
+    }
+}
+
+/// Where the private key rests. `load` is `None` when there is none (or it can't be read: then a new identity
+/// is made and pairings redone, which beats running with a key someone else could have copied).
+mod keystore {
+    use super::*;
+    use std::io;
+
+    const PLAIN: &str = "identity.key";
+
+    /// Pre-keystore installs kept the PKCS#8 key as a plain file: read it once, move it in, delete it.
+    fn take_plain(dir: &Path) -> Option<Vec<u8>> {
+        let path = dir.join(PLAIN);
+        let key = std::fs::read(&path).ok().filter(|k| !k.is_empty())?;
+        match save_protected(dir, &key) {
+            Ok(()) => {
+                let _ = std::fs::remove_file(&path);
+                journal!("identity key moved into the {}", STORE);
+            }
+            Err(e) => journal!("identity key stays a plain file ({STORE}: {e})"),
+        }
+        Some(key)
+    }
+
+    pub fn load(dir: &Path) -> Option<Vec<u8>> {
+        load_protected(dir).or_else(|| take_plain(dir))
+    }
+
+    pub fn save(dir: &Path, key: &[u8]) -> io::Result<()> {
+        save_protected(dir, key).or_else(|e| {
+            journal!("{STORE} refused the identity key ({e}); keeping it as an owner-only file");
+            write_owner_only(&dir.join(PLAIN), key)
+        })
+    }
+
+    /// A file only this user can read (0600; Windows ACLs already scope the profile to the user).
+    fn write_owner_only(path: &Path, bytes: &[u8]) -> io::Result<()> {
+        #[cfg(unix)]
+        {
+            use std::io::Write;
+            use std::os::unix::fs::OpenOptionsExt;
+            let mut f = std::fs::OpenOptions::new().write(true).create(true).truncate(true).mode(0o600).open(path)?;
+            f.write_all(bytes)
+        }
+        #[cfg(not(unix))]
+        std::fs::write(path, bytes)
+    }
+
+    #[cfg(target_os = "macos")]
+    const STORE: &str = "login keychain";
+    #[cfg(target_os = "macos")]
+    const SERVICE: &str = "dev.tcuflow.app identity";
+
+    /// One keychain item per data directory (tests and the simulator use their own), as a generic password
+    /// owned by this app: macOS asks the user before another app may read it.
+    #[cfg(target_os = "macos")]
+    fn load_protected(dir: &Path) -> Option<Vec<u8>> {
+        security_framework::passwords::get_generic_password(SERVICE, &dir.to_string_lossy()).ok().filter(|k| !k.is_empty())
+    }
+    #[cfg(target_os = "macos")]
+    fn save_protected(dir: &Path, key: &[u8]) -> io::Result<()> {
+        security_framework::passwords::set_generic_password(SERVICE, &dir.to_string_lossy(), key).map_err(io::Error::other)
+    }
+    #[cfg(all(target_os = "macos", test))]
+    pub fn forget(dir: &Path) {
+        let _ = security_framework::passwords::delete_generic_password(SERVICE, &dir.to_string_lossy());
+    }
+
+    #[cfg(target_os = "windows")]
+    const STORE: &str = "Windows data protection";
+    /// The key file holds a DPAPI blob (user scope: only this Windows account on this machine decrypts it)
+    /// behind a marker that tells it from the old plain PKCS#8.
+    #[cfg(target_os = "windows")]
+    const MARK: &[u8] = b"TCuFlow-DPAPI-1\n";
+    #[cfg(target_os = "windows")]
+    const PROTECTED: &str = "identity.key.dpapi";
+
+    #[cfg(target_os = "windows")]
+    fn dpapi(input: &[u8], protect: bool) -> io::Result<Vec<u8>> {
+        use windows::Win32::Foundation::{LocalFree, HLOCAL};
+        use windows::Win32::Security::Cryptography::{CryptProtectData, CryptUnprotectData, CRYPTPROTECT_UI_FORBIDDEN, CRYPT_INTEGER_BLOB};
+        let blob = CRYPT_INTEGER_BLOB { cbData: input.len() as u32, pbData: input.as_ptr() as *mut u8 };
+        let mut out = CRYPT_INTEGER_BLOB { cbData: 0, pbData: std::ptr::null_mut() };
+        // SAFETY: `blob` points at `input` for the call; `out` is freed with LocalFree as the API requires
+        let r = unsafe {
+            if protect {
+                CryptProtectData(&blob, windows::core::w!("TCuFlow identity"), None, None, None, CRYPTPROTECT_UI_FORBIDDEN, &mut out)
+            } else {
+                CryptUnprotectData(&blob, None, None, None, None, CRYPTPROTECT_UI_FORBIDDEN, &mut out)
+            }
+        };
+        r.map_err(io::Error::other)?;
+        let bytes = unsafe { std::slice::from_raw_parts(out.pbData, out.cbData as usize) }.to_vec();
+        unsafe { LocalFree(Some(HLOCAL(out.pbData.cast()))) };
+        Ok(bytes)
+    }
+    #[cfg(target_os = "windows")]
+    fn load_protected(dir: &Path) -> Option<Vec<u8>> {
+        let file = std::fs::read(dir.join(PROTECTED)).ok()?;
+        let blob = file.strip_prefix(MARK)?;
+        dpapi(blob, false).inspect_err(|e| journal!("identity key can't be unprotected: {e}")).ok()
+    }
+    #[cfg(target_os = "windows")]
+    fn save_protected(dir: &Path, key: &[u8]) -> io::Result<()> {
+        let mut file = MARK.to_vec();
+        file.extend(dpapi(key, true)?);
+        std::fs::write(dir.join(PROTECTED), file)
+    }
+
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+    const STORE: &str = "owner-only file";
+    /// Linux, Android, iOS: the file itself, readable by this user only (Android and iOS sandbox the app's
+    /// data directory per app already).
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+    fn load_protected(dir: &Path) -> Option<Vec<u8>> {
+        std::fs::read(dir.join(PLAIN)).ok().filter(|k| !k.is_empty())
+    }
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+    fn save_protected(dir: &Path, key: &[u8]) -> io::Result<()> {
+        write_owner_only(&dir.join(PLAIN), key)
     }
 }
 
@@ -388,12 +513,39 @@ mod tests {
         assert_ne!(commit(&na), commit(&nb));
     }
 
+    fn forget(dir: &Path) {
+        #[cfg(target_os = "macos")]
+        keystore::forget(dir);
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
     #[test]
     fn identity_survives_restart() {
         let dir = std::env::temp_dir().join(format!("tcuflow-id-{}", uuid::Uuid::new_v4()));
         let first = Identity::load_or_create(&dir).fingerprint();
         assert_eq!(Identity::load_or_create(&dir).fingerprint(), first);
         assert_eq!(first.len(), 64);
-        let _ = std::fs::remove_dir_all(&dir);
+        // the private key is not lying around as plain PKCS#8 where the OS has a store for it
+        if cfg!(any(target_os = "macos", target_os = "windows")) {
+            assert!(!dir.join("identity.key").exists(), "plain key file left behind");
+        }
+        forget(&dir);
+    }
+
+    #[test]
+    fn plain_key_from_an_older_version_is_moved_into_the_store() {
+        let dir = std::env::temp_dir().join(format!("tcuflow-id-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let old = Identity::generate();
+        std::fs::write(dir.join("identity.crt"), &old.cert).unwrap();
+        std::fs::write(dir.join("identity.key"), old.key.secret_pkcs8_der()).unwrap();
+        let loaded = Identity::load_or_create(&dir);
+        assert_eq!(loaded.fingerprint(), old.fingerprint(), "same identity after the move");
+        assert_eq!(loaded.key.secret_pkcs8_der(), old.key.secret_pkcs8_der());
+        if cfg!(any(target_os = "macos", target_os = "windows")) {
+            assert!(!dir.join("identity.key").exists(), "plain key file should be gone after migration");
+        }
+        assert_eq!(Identity::load_or_create(&dir).fingerprint(), old.fingerprint(), "and it stays");
+        forget(&dir);
     }
 }

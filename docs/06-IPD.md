@@ -45,7 +45,7 @@ Fork work already done: rebrand and internal renames, protocol/port separation f
 ## 4. Next work, in order
 
 1. **Real-hardware verification (blocking):** install on a Mac and a Windows PC on one LAN; run the test matrix in section 6 and record results in `docs/phase-0/` or a new test report.
-2. **Security gaps:** move `identity.key` into Keychain (macOS) and DPAPI (Windows); add SHA-256 verification for received files; authenticate or drop the UDP telemetry channel.
+2. **Security gaps:** add SHA-256 verification for received files; authenticate or drop the UDP telemetry channel. (Keychain/DPAPI for the identity key: done.)
 3. **Clipboard toggle (FR-014):** on/off in the UI, honoured on both sides.
 4. **Release pipeline:** macOS build in CI (universal), signing/notarization decision, Windows code signing decision, public release location so in-app updates can read `latest.json`.
 5. **Docs and DESIGN.md** kept in step with every change.
@@ -89,6 +89,6 @@ Both computers must run builds from the same protocol version (`kvm::PROTOCOL`).
 |---|---|
 | macOS forgets Accessibility after updates | Onboarding in About; troubleshooting step |
 | Unsigned installers trigger SmartScreen/Gatekeeper | Document; decide on signing before public release |
-| Plain-file private key | Keychain/DPAPI migration (next work 2) |
+| Plain-file private key | Done: Keychain/DPAPI with migration |
 | Divergence from upstream LOKA | Keep the import commit; cherry-pick upstream fixes deliberately |
 | Flaky transfer test under load | Investigate timing; keep CI rerun policy |

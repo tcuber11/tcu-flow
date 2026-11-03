@@ -147,7 +147,7 @@ A person who owns and uses both a Mac and a Windows laptop at the same desk and 
 ### Security and privacy
 - TLS 1.3 or a reviewed equivalent secure transport configuration.
 - Strong peer authentication; discovery must never imply trust.
-- Store private keys and secrets in OS credential stores (macOS Keychain; Windows DPAPI/Credential Manager). **Gap:** the identity key is currently a file in the app data directory.
+- Store private keys and secrets in OS credential stores (macOS Keychain; Windows DPAPI/Credential Manager). Done: the identity key lives in the login keychain (macOS) or a DPAPI blob (Windows), an owner-only file elsewhere; older plain files are moved in on first start.
 - Do not log typed content, clipboard contents, file contents or secrets.
 - Make remote-control state visible.
 - Provide immediate local emergency recovery.
