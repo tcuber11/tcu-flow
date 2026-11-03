@@ -37,7 +37,7 @@ TCuFlow lets one keyboard and mouse drive a Mac and a Windows PC on the same LAN
 5. **Clipboard:** text, pictures and copied files (owner decision).
 6. **Not offered:** remote terminal, folder-as-drive, sound, microphone, notification sharing.
 7. **Design:** system-settings look, light and dark ([DESIGN.md](../DESIGN.md)).
-8. **Known gaps:** no SHA-256 file verification, unauthenticated UDP glow telemetry (see TRD §11). Closed: private key in Keychain/DPAPI, clipboard toggle.
+8. **Known gaps:** unauthenticated UDP glow telemetry (see TRD §11). Closed: private key in Keychain/DPAPI, clipboard toggle, SHA-256 on files.
 
 ## How Claude Code should use this pack
 

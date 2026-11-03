@@ -205,7 +205,7 @@ MVP is accepted only when:
 - Keyboard, click and scroll are forwarded as specified.
 - Disconnect and emergency shortcut restore local Mac input.
 - Clipboard text, pictures and files work in both directions without repeated echo.
-- Files transfer in both directions intact (SHA-256 verification still open, FR-017).
+- Files transfer in both directions intact; every file carries a SHA-256 trailer the receiver checks (FR-017), a mismatch deletes the copy.
 - Permissions can be denied and later granted without reinstalling.
 - The app runs on LAN without internet after installation.
 - No input or clipboard content is written to logs.

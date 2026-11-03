@@ -130,7 +130,7 @@ Ports and ALPN differ from LOKA's on purpose, so TCuFlow and LOKA never pair wit
 - Ways to send: drop on the glowing edge, drag across the edge, Explorer **Send to → TCuFlow**, Finder **Open With → TCuFlow**, or **Send files…** on a device.
 - Files land in `Downloads/TCuFlow` (or the user's chosen folder); folder structure is kept; names that would climb out of the folder are rejected; existing files are never overwritten (`name (2).ext`).
 - Progress, speed, cancel, and open-folder on both sides.
-- Integrity comes from the authenticated QUIC/TLS stream; there is **no separate SHA-256 verification** (see gaps).
+- Integrity on the wire comes from the authenticated QUIC/TLS stream; each file also ends with a 32-byte SHA-256 of its bytes (`Header.sha256`), hashed while reading on both ends, so damage between the two disks is caught and the partial copy deleted.
 
 ## 10. Services
 
@@ -147,7 +147,7 @@ TCuFlow adds one service of its own: **Screen** (`screen.rs`, [ADR-002](adr/ADR-
 | No typed content, clipboard or file content in logs | Met by design; to be re-verified in review |
 | Visible remote-control state and emergency return | Met (status toast, Ctrl+Alt+Esc, double Ctrl) |
 | Private keys in Keychain / DPAPI | Done: `network::secure::keystore` — macOS login keychain (generic password per data dir), Windows DPAPI user scope (`identity.key.dpapi`), Linux/mobile owner-only `identity.key` (0600). Plain `identity.key` from earlier versions is moved in and deleted |
-| SHA-256 verification of received files (FR-017) | **Gap:** relies on transport integrity only |
+| SHA-256 verification of received files (FR-017) | Done: trailer after the bytes, checked by the receiver |
 | Every channel authenticated | **Gap:** edge-proximity telemetry (UDP 53419) is unauthenticated plaintext; it carries only glow position, never input |
 | Updates signed | Met: minisign key generated for TCuFlow; private key kept outside the repo |
 

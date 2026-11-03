@@ -1,7 +1,9 @@
 // Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 //! Payload transfer: one stream of a pinned QUIC connection (`secure`) per payload; a sender's
 //! `shutdown` returns once the receiver has every byte, and a dead peer fails it within seconds.
-//! `u32 LE header_len | JSON Header | size bytes`.
+//! `u32 LE header_len | JSON Header | size bytes [| 32-byte SHA-256 of them when the header says so]`.
+//! Files carry the trailer: the receiver hashes as it writes and deletes a file whose digest doesn't
+//! match, so a flipped bit between two disks never lands silently (TLS guards the wire, not the ends).
 //! Also carries the clipboard when it is a picture or files (too big for a KVM frame): pictures as one
 //! PNG payload, files as a batch the receiver puts on its clipboard once every file arrived.
 //! A drag batch first sends a `manifest`: `size` bytes of JSON `[{name, size}]` (≤ 1 MiB, exactly
@@ -64,6 +66,9 @@ pub struct Header {
     pub size: u64,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub clip: Option<ClipBatch>,
+    /// a 32-byte SHA-256 of the payload follows it
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub sha256: bool,
 }
 
 /// One file a drag batch announced, resolved to where it lands here.
@@ -175,9 +180,10 @@ pub async fn send_file(tls: &Tls, to: SocketAddr, expect: &str, path: &Path, nam
     let mut f = File::open(path).await?;
     let size = f.metadata().await?.len();
     let (mut s, _) = tls.connect(to, Some(expect)).await?;
-    write_header(&mut s, &Header { kind: Kind::File, name, size, clip }).await?;
+    write_header(&mut s, &Header { kind: Kind::File, name, size, clip, sha256: true }).await?;
     let mut buf = vec![0u8; CHUNK];
     let (mut done, mut tick) = (0, Throttle(None));
+    let mut digest = ring::digest::Context::new(&ring::digest::SHA256);
     progress(0, size);
     while done < size {
         take_cancel(id)?;
@@ -186,11 +192,13 @@ pub async fn send_file(tls: &Tls, to: SocketAddr, expect: &str, path: &Path, nam
             return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "file shrank while sending"));
         }
         s.write_all(&buf[..n]).await?;
+        digest.update(&buf[..n]);
         done += n as u64;
         if tick.due(done, size) {
             progress(done, size);
         }
     }
+    s.write_all(digest.finish().as_ref()).await?;
     s.shutdown().await
 }
 
@@ -237,7 +245,7 @@ pub async fn send_manifest(tls: &Tls, to: SocketAddr, expect: &str, batch: ClipB
 
 async fn send_raw(tls: &Tls, to: SocketAddr, expect: &str, kind: Kind, clip: Option<ClipBatch>, bytes: &[u8]) -> io::Result<()> {
     let (mut s, _) = tls.connect(to, Some(expect)).await?;
-    write_header(&mut s, &Header { kind, name: String::new(), size: bytes.len() as u64, clip }).await?;
+    write_header(&mut s, &Header { kind, name: String::new(), size: bytes.len() as u64, clip, sha256: false }).await?;
     s.write_all(bytes).await?;
     s.shutdown().await
 }
@@ -323,6 +331,7 @@ async fn receive(mut s: impl AsyncRead + Unpin, dir: &Path, clip_dir: &Path, bat
     let r = async {
         let mut buf = vec![0u8; CHUNK];
         let (mut done, mut tick) = (0, Throttle(None));
+        let mut digest = ring::digest::Context::new(&ring::digest::SHA256);
         on_event(TransferEvent::Progress { id, outgoing: false, name: h.name.clone(), done, total: h.size });
         while done < h.size {
             take_cancel(id)?;
@@ -332,12 +341,22 @@ async fn receive(mut s: impl AsyncRead + Unpin, dir: &Path, clip_dir: &Path, bat
                 return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "the sender stopped"));
             }
             f.write_all(&buf[..n]).await?;
+            if h.sha256 {
+                digest.update(&buf[..n]);
+            }
             done += n as u64;
             if tick.due(done, h.size) {
                 on_event(TransferEvent::Progress { id, outgoing: false, name: h.name.clone(), done, total: h.size });
                 if let Some(b) = h.clip.filter(|b| b.drag) {
                     with_streamed(|m| m.get_mut(&b.id).map(|e| e.0 = Instant::now()));
                 }
+            }
+        }
+        if h.sha256 {
+            let mut sent = [0u8; 32];
+            s.read_exact(&mut sent).await.map_err(|_| io::Error::new(io::ErrorKind::UnexpectedEof, "the sender stopped before the checksum"))?;
+            if digest.finish().as_ref() != sent {
+                return Err(io::Error::new(io::ErrorKind::InvalidData, "the file arrived damaged (checksum mismatch)"));
             }
         }
         f.flush().await
@@ -460,8 +479,16 @@ mod tests {
         // hostile name must stay inside `dir`
         for name in ["../../evil.txt", "C:/Photos/./../2024/a.jpg"] {
             let (mut s, _) = me.connect(to, Some(&fp)).await.unwrap();
-            write_header(&mut s, &Header { kind: Kind::File, name: name.into(), size: 2, clip: None }).await.unwrap();
+            write_header(&mut s, &Header { kind: Kind::File, name: name.into(), size: 2, clip: None, sha256: false }).await.unwrap();
             s.write_all(b"hi").await.unwrap();
+            s.shutdown().await.unwrap();
+        }
+        // a file whose bytes don't match the checksum it announced is thrown away
+        {
+            let (mut s, _) = me.connect(to, Some(&fp)).await.unwrap();
+            write_header(&mut s, &Header { kind: Kind::File, name: "damaged.bin".into(), size: 2, clip: None, sha256: true }).await.unwrap();
+            s.write_all(b"hi").await.unwrap();
+            s.write_all(&[0u8; 32]).await.unwrap();
             s.shutdown().await.unwrap();
         }
         send_text(&me, to, &fp, Kind::Url, "https://example.com").await.unwrap();
@@ -477,6 +504,8 @@ mod tests {
         assert_eq!(std::fs::read(dir.join("evil.txt")).unwrap(), b"hi");
         assert_eq!(std::fs::read(dir.join("Photos").join("2024").join("a.jpg")).unwrap(), b"hi"); // folder drops keep their tree
         assert!(!dir.join(format!("{stem} (2).bin")).exists());
+        assert!(!dir.join("damaged.bin").exists(), "a checksum mismatch must not leave the file");
+        assert!(events.lock().unwrap().iter().any(|e| matches!(e, TransferEvent::Failed { outgoing: false, error, .. } if error.contains("checksum"))));
         assert!(events.lock().unwrap().iter().any(|e| matches!(e, TransferEvent::Failed { outgoing: false, .. })));
         assert!(events.lock().unwrap().iter().any(|e| matches!(e, TransferEvent::Text { kind: Kind::Url, text } if text == "https://example.com")));
         assert!(!events.lock().unwrap().iter().any(|e| matches!(e, TransferEvent::Text { text, .. } if text == "spam")));

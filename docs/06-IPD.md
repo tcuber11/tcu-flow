@@ -35,7 +35,7 @@ tcu-flow/
 | 1 | Pairing, identity, discovery, connection | Implemented (inherited); **verify on real Mac + Windows** |
 | 2 | Input sharing, return shortcut, release on loss | Implemented (inherited); **verify on real hardware** |
 | 3 | Clipboard | Implemented with text, pictures and files; toggle missing (FR-014) |
-| 4 | File transfer | Implemented; SHA-256 verification missing (FR-017) |
+| 4 | File transfer | Implemented, with SHA-256 verification (FR-017) |
 | 5 | Stabilization and release | Open |
 
 Remote screen (ADR-002): slice 1 implemented (view + control a linked computer's primary display, JPEG); slice 2 (hardware H.264, multi-display, being-viewed indicator) open.
@@ -45,7 +45,7 @@ Fork work already done: rebrand and internal renames, protocol/port separation f
 ## 4. Next work, in order
 
 1. **Real-hardware verification (blocking):** install on a Mac and a Windows PC on one LAN; run the test matrix in section 6 and record results in `docs/phase-0/` or a new test report.
-2. **Security gaps:** add SHA-256 verification for received files; authenticate or drop the UDP telemetry channel. (Keychain/DPAPI for the identity key: done.)
+2. **Security gaps:** authenticate or drop the UDP telemetry channel. (Keychain/DPAPI for the identity key and SHA-256 on files: done.)
 3. **Clipboard toggle (FR-014):** on/off in the UI, honoured on both sides.
 4. **Release pipeline:** macOS build in CI (universal), signing/notarization decision, Windows code signing decision, public release location so in-app updates can read `latest.json`.
 5. **Docs and DESIGN.md** kept in step with every change.
