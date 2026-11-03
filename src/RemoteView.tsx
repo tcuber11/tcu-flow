@@ -29,7 +29,13 @@ export function RemoteView() {
     let drawing = false;
     let latest: Blob | null = null;
     // H.264 through the webview's WebCodecs when it has them (WebKit 16.4+, WebView2); JPEG otherwise
-    const canVideo = typeof VideoDecoder !== "undefined";
+    // Annex B, constrained baseline, level 4: what both of the other side's encoders produce
+    const AVC = { codec: "avc1.42E028", optimizeForLatency: true };
+    const canVideo: Promise<boolean> =
+      typeof VideoDecoder === "undefined" ? Promise.resolve(false) : VideoDecoder.isConfigSupported(AVC).then((r) => r.supported === true, () => false);
+    // a decoder that lost its place (fell behind, or failed once) skips deltas until the key frame it asked for
+    let waitingKey = false;
+    let decodeErrors = 0;
     let decoder: VideoDecoder | null = null;
     let latestFrame: VideoFrame | null = null;
     let decoderBroken = false;
@@ -109,15 +115,28 @@ export function RemoteView() {
       invoke("remote_input", { id: idRef.current, data: Array.from(b) });
     };
 
-    /** Falls back to JPEG for the rest of the session when decoding fails. */
+    const askKey = () => {
+      if (idRef.current === null) return;
+      const b = new Uint8Array(9);
+      b[0] = 9;
+      invoke("remote_input", { id: idRef.current, data: Array.from(b) });
+    };
+
+    /** A failed decode starts over from a fresh key frame once; failing again, the session goes back to JPEG. */
     const videoFailed = (e: unknown) => {
-      if (decoderBroken) return;
-      decoderBroken = true;
-      console.warn("remote screen: video decode failed, back to JPEG", e);
       try {
         decoder?.close();
       } catch {}
       decoder = null;
+      if (decoderBroken) return;
+      if (++decodeErrors === 1) {
+        console.warn("remote screen: video decode failed, starting over from a key frame", e);
+        waitingKey = true;
+        askKey();
+        return;
+      }
+      decoderBroken = true;
+      console.warn("remote screen: video decode failed again, back to JPEG", e);
       sendCodec(false);
     };
 
@@ -125,14 +144,15 @@ export function RemoteView() {
       if (decoder && decoder.state === "configured") return decoder;
       decoder = new VideoDecoder({
         output: (f) => {
+          decodeErrors = 0; // decoding again: a later failure gets its own fresh start
           latestFrame?.close();
           latestFrame = f;
           drawFrame();
         },
         error: videoFailed,
       });
-      // Annex B stream (no description): SPS/PPS come with every key frame; constrained baseline, level 4
-      decoder.configure({ codec: "avc1.42E028", optimizeForLatency: true });
+      // Annex B stream (no description): SPS/PPS come with every key frame
+      decoder.configure(AVC);
       return decoder;
     };
 
@@ -146,9 +166,16 @@ export function RemoteView() {
         if (decoderBroken) return;
         const key = body[0] === 1;
         try {
+          // a delta frame only makes sense on top of every frame before it: none are skipped, except
+          // while waiting for a key frame, which starts the picture over
+          if (waitingKey && !key) return;
           const d = ensureDecoder();
-          // a decoder can only start on a key frame; the server sends one first, and after every size change
-          if (d.decodeQueueSize > 4 && !key) return; // behind: let it catch up on the next key frame
+          if (!key && d.decodeQueueSize > 8) {
+            waitingKey = true; // fell behind: catch up from a fresh key frame instead of queueing more
+            askKey();
+            return;
+          }
+          waitingKey = false;
           d.decode(new EncodedVideoChunk({ type: key ? "key" : "delta", timestamp: Math.round(performance.now() * 1000), data: body.slice(5) }));
         } catch (e) {
           videoFailed(e);
@@ -207,7 +234,7 @@ export function RemoteView() {
         id = i;
         idRef.current = i;
         if (gone) invoke("remote_close", { id: i });
-        else if (canVideo) sendCodec(true);
+        else void canVideo.then((ok) => ok && !gone && sendCodec(true));
       },
       (e) => {
         gone = true;

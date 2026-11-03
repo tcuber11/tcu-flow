@@ -1,9 +1,10 @@
 //! Remote screen: a paired device's primary display streamed over the pinned link, with the viewer's mouse
 //! and keyboard sent back and injected there. Opt-in on the shared side ("Share my screen"), refused
 //! otherwise like every service. Frames are downscaled to at most 1600 px wide and sent at up to 20 fps:
-//! as H.264 (OpenH264, screen-content mode, ~3 Mbit/s) once the viewer says it can decode video (its
-//! webview's WebCodecs), as JPEG until then and for a viewer that can't. Hardware encoders can replace
-//! OpenH264 behind `H264` without touching the wire.
+//! as H.264 (~3 Mbit/s; the Mac's media engine through VideoToolbox, OpenH264 on the CPU elsewhere) once
+//! the viewer says it can decode video (its webview's WebCodecs), as JPEG until then and for a viewer that
+//! can't. Encoded video is never dropped (every frame builds on the one before); while the link is busy
+//! the capture slot drops raw frames instead.
 //!
 //! Wire after the service handshake (little-endian):
 //! - server → client: `tag: u8 | len: u32 | len bytes`. Tag 1: a JPEG frame. Tag 2: info, `w: u32, h: u32`
@@ -17,7 +18,8 @@
 //!   (120 per notch, up is positive), 4 key `scan: u16, down: u8` (set-1 scancode); 5 text `len: u32` then
 //!   `len` bytes of UTF-8 typed at the cursor; 6 codec `video: u8` (1: send H.264, 0: back to JPEG); 7 display
 //!   `index: u8` into the info list: show that one instead; 8 clipboard `len: u32` then `len` bytes of UTF-8
-//!   copied on the viewer, for the shared computer's clipboard. Both directions obey "Its clipboard" there.
+//!   copied on the viewer, for the shared computer's clipboard. Both directions obey "Its clipboard" there;
+//!   9 key frame, no payload: the viewer's decoder lost its place (it fell behind, or failed) and starts over.
 //! Any malformed client frame ends the session, and so does the viewer going away: the capture stops with it.
 
 use std::collections::HashMap;
@@ -120,17 +122,36 @@ fn encode(rgb: &Rgb) -> io::Result<Vec<u8>> {
     Ok(out)
 }
 
-/// The H.264 encoder for one stream, remade when the frame size changes.
+/// The H.264 encoder for one stream, remade when the frame size changes: VideoToolbox on a Mac (its media
+/// engine, next to no CPU), OpenH264 on the CPU elsewhere and when VideoToolbox won't open a session. Both
+/// give baseline-profile Annex B without B-frames, so the viewer can't tell which one made a frame.
 struct H264 {
-    enc: openh264::encoder::Encoder,
-    yuv: openh264::formats::YUVBuffer,
     w: u32,
     h: u32,
-    started: std::time::Instant,
+    backend: Backend,
+}
+
+enum Backend {
+    #[cfg(target_os = "macos")]
+    VideoToolbox(vt::Session),
+    OpenH264 {
+        enc: openh264::encoder::Encoder,
+        yuv: openh264::formats::YUVBuffer,
+        started: std::time::Instant,
+    },
 }
 
 impl H264 {
     fn new(w: u32, h: u32) -> io::Result<Self> {
+        #[cfg(target_os = "macos")]
+        match vt::Session::new(w, h) {
+            Ok(s) => return Ok(Self { w, h, backend: Backend::VideoToolbox(s) }),
+            Err(e) => journal!("VideoToolbox unavailable, encoding on the CPU: {e}"),
+        }
+        Self::software(w, h)
+    }
+
+    fn software(w: u32, h: u32) -> io::Result<Self> {
         use openh264::encoder::{BitRate, EncoderConfig, FrameRate, RateControlMode, UsageType};
         let config = EncoderConfig::new()
             .usage_type(UsageType::ScreenContentRealTime)
@@ -139,25 +160,340 @@ impl H264 {
             .max_frame_rate(FrameRate::from_hz(1000.0 / MIN_INTERVAL.as_millis() as f32))
             .skip_frames(false);
         let enc = openh264::encoder::Encoder::with_api_config(openh264::OpenH264API::from_source(), config).map_err(io::Error::other)?;
-        Ok(Self { enc, yuv: openh264::formats::YUVBuffer::new(w as usize, h as usize), w, h, started: std::time::Instant::now() })
+        let yuv = openh264::formats::YUVBuffer::new(w as usize, h as usize);
+        Ok(Self { w, h, backend: Backend::OpenH264 { enc, yuv, started: std::time::Instant::now() } })
     }
 
-    /// `(key frame?, Annex B bytes)`, or `None` when the encoder skipped the frame.
+    /// The next frame comes out as a key frame: the viewer lost its place and asked for one.
+    fn force_key(&mut self) {
+        match &mut self.backend {
+            #[cfg(target_os = "macos")]
+            Backend::VideoToolbox(s) => s.force_key(),
+            Backend::OpenH264 { enc, .. } => enc.force_intra_frame(),
+        }
+    }
+
+    /// `(key frame?, tag-4 body)`, or `None` when the encoder dropped the frame (before encoding it, so
+    /// nothing later refers to it).
     fn encode(&mut self, rgb: &Rgb) -> io::Result<Option<(bool, Vec<u8>)>> {
-        use openh264::encoder::FrameType;
-        self.yuv.read_rgb8(openh264::formats::RgbSliceU8::new(&rgb.data, (rgb.w as usize, rgb.h as usize)));
-        let at = openh264::Timestamp::from_millis(self.started.elapsed().as_millis() as u64);
-        let out = self.enc.encode_at(&self.yuv, at).map_err(io::Error::other)?;
-        let key = match out.frame_type() {
-            FrameType::Skip | FrameType::Invalid => return Ok(None),
-            FrameType::IDR | FrameType::I => true,
-            _ => false,
-        };
-        let mut body = vec![key as u8];
+        let mut body = vec![0u8];
         body.extend_from_slice(&(rgb.w as u16).to_le_bytes());
         body.extend_from_slice(&(rgb.h as u16).to_le_bytes());
-        out.write_vec(&mut body);
+        let key = match &mut self.backend {
+            #[cfg(target_os = "macos")]
+            Backend::VideoToolbox(s) => match s.encode(rgb, &mut body)? {
+                Some(key) => key,
+                None => return Ok(None),
+            },
+            Backend::OpenH264 { enc, yuv, started } => {
+                use openh264::encoder::FrameType;
+                yuv.read_rgb8(openh264::formats::RgbSliceU8::new(&rgb.data, (rgb.w as usize, rgb.h as usize)));
+                let at = openh264::Timestamp::from_millis(started.elapsed().as_millis() as u64);
+                let out = enc.encode_at(&*yuv, at).map_err(io::Error::other)?;
+                let key = match out.frame_type() {
+                    FrameType::Skip | FrameType::Invalid => return Ok(None),
+                    FrameType::IDR | FrameType::I => true,
+                    _ => false,
+                };
+                out.write_vec(&mut body);
+                key
+            }
+        };
+        body[0] = key as u8;
         Ok(Some((key, body)))
+    }
+}
+
+/// VideoToolbox's H.264 encoder, called synchronously: one frame in, `CompleteFrames`, its access unit out.
+#[cfg(target_os = "macos")]
+mod vt {
+    use super::Rgb;
+    use std::ffi::c_void;
+    use std::io;
+    use std::ptr::{null, null_mut};
+    use std::sync::Mutex;
+
+    type Ref = *const c_void;
+    type OutputCallback = unsafe extern "C" fn(refcon: *mut c_void, frame: *mut c_void, status: i32, flags: u32, sample: Ref);
+
+    #[repr(C)]
+    #[derive(Clone, Copy)]
+    struct CMTime {
+        value: i64,
+        timescale: i32,
+        flags: u32,
+        epoch: i64,
+    }
+
+    /// kCMTimeInvalid: no duration, and "complete every pending frame"
+    const NO_TIME: CMTime = CMTime { value: 0, timescale: 0, flags: 0, epoch: 0 };
+    const TIME_VALID: u32 = 1;
+    const CODEC_H264: u32 = u32::from_be_bytes(*b"avc1");
+    const PIXEL_BGRA: u32 = u32::from_be_bytes(*b"BGRA");
+    const NUMBER_SINT32: isize = 3;
+    /// Annex B start code, in front of every NAL unit
+    const START: [u8; 4] = [0, 0, 0, 1];
+
+    #[link(name = "VideoToolbox", kind = "framework")]
+    extern "C" {
+        static kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder: Ref;
+        static kVTCompressionPropertyKey_RealTime: Ref;
+        static kVTCompressionPropertyKey_AllowFrameReordering: Ref;
+        static kVTCompressionPropertyKey_ProfileLevel: Ref;
+        static kVTProfileLevel_H264_Baseline_AutoLevel: Ref;
+        static kVTCompressionPropertyKey_AverageBitRate: Ref;
+        static kVTCompressionPropertyKey_ExpectedFrameRate: Ref;
+        static kVTCompressionPropertyKey_MaxKeyFrameInterval: Ref;
+        static kVTEncodeFrameOptionKey_ForceKeyFrame: Ref;
+        fn VTCompressionSessionCreate(
+            allocator: Ref,
+            width: i32,
+            height: i32,
+            codec: u32,
+            encoder_specification: Ref,
+            source_attributes: Ref,
+            data_allocator: Ref,
+            callback: Option<OutputCallback>,
+            refcon: *mut c_void,
+            session_out: *mut Ref,
+        ) -> i32;
+        fn VTSessionSetProperty(session: Ref, key: Ref, value: Ref) -> i32;
+        fn VTCompressionSessionPrepareToEncodeFrames(session: Ref) -> i32;
+        fn VTCompressionSessionEncodeFrame(session: Ref, image: Ref, pts: CMTime, duration: CMTime, properties: Ref, frame_refcon: *mut c_void, info_out: *mut u32) -> i32;
+        fn VTCompressionSessionCompleteFrames(session: Ref, until: CMTime) -> i32;
+        fn VTCompressionSessionInvalidate(session: Ref);
+    }
+
+    #[link(name = "CoreMedia", kind = "framework")]
+    extern "C" {
+        static kCMSampleAttachmentKey_NotSync: Ref;
+        fn CMSampleBufferGetSampleAttachmentsArray(sample: Ref, create: u8) -> Ref;
+        fn CMSampleBufferGetFormatDescription(sample: Ref) -> Ref;
+        fn CMSampleBufferGetDataBuffer(sample: Ref) -> Ref;
+        fn CMBlockBufferGetDataLength(block: Ref) -> usize;
+        fn CMBlockBufferCopyDataBytes(block: Ref, offset: usize, len: usize, destination: *mut c_void) -> i32;
+        fn CMVideoFormatDescriptionGetH264ParameterSetAtIndex(
+            description: Ref,
+            index: usize,
+            set_out: *mut *const u8,
+            size_out: *mut usize,
+            count_out: *mut usize,
+            nal_header_length_out: *mut i32,
+        ) -> i32;
+    }
+
+    #[link(name = "CoreVideo", kind = "framework")]
+    extern "C" {
+        fn CVPixelBufferCreate(allocator: Ref, width: usize, height: usize, format: u32, attributes: Ref, buffer_out: *mut Ref) -> i32;
+        fn CVPixelBufferLockBaseAddress(buffer: Ref, flags: u64) -> i32;
+        fn CVPixelBufferUnlockBaseAddress(buffer: Ref, flags: u64) -> i32;
+        fn CVPixelBufferGetBaseAddress(buffer: Ref) -> *mut u8;
+        fn CVPixelBufferGetBytesPerRow(buffer: Ref) -> usize;
+    }
+
+    #[link(name = "CoreFoundation", kind = "framework")]
+    extern "C" {
+        static kCFBooleanTrue: Ref;
+        static kCFBooleanFalse: Ref;
+        // declared as in platform::macos, which uses them too
+        static kCFTypeDictionaryKeyCallBacks: c_void;
+        static kCFTypeDictionaryValueCallBacks: c_void;
+        fn CFDictionaryCreate(allocator: *const c_void, keys: *const *const c_void, values: *const *const c_void, count: isize, key_callbacks: *const c_void, value_callbacks: *const c_void) -> *mut c_void;
+        fn CFDictionaryGetValue(dictionary: Ref, key: Ref) -> Ref;
+        fn CFArrayGetCount(array: Ref) -> isize;
+        fn CFArrayGetValueAtIndex(array: Ref, index: isize) -> Ref;
+        fn CFNumberCreate(allocator: Ref, kind: isize, value: *const c_void) -> Ref;
+        fn CFRelease(object: Ref);
+    }
+
+    /// Where the output callback leaves the frame it was handed: `(key frame?, Annex B)`.
+    type Out = Mutex<Option<(bool, Vec<u8>)>>;
+
+    pub struct Session {
+        session: Ref,
+        /// frame options asking for a key frame, made once
+        key_frame: Ref,
+        force_key: bool,
+        out: Box<Out>,
+        started: std::time::Instant,
+        last_pts: i64,
+        w: usize,
+        h: usize,
+    }
+
+    // SAFETY: a session is made, used and dropped by the one encoder thread that owns it
+    unsafe impl Send for Session {}
+
+    impl Session {
+        pub fn new(w: u32, h: u32) -> io::Result<Self> {
+            let out: Box<Out> = Box::default();
+            // SAFETY: every CF object made here is released here or by Drop; the callback's refcon is `out`'s
+            // heap address, which outlives the session (Drop invalidates the session before `out` goes)
+            unsafe {
+                let spec = dictionary(&[kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder], &[kCFBooleanTrue]);
+                let mut session: Ref = null();
+                let status = VTCompressionSessionCreate(null(), w as i32, h as i32, CODEC_H264, spec, null(), null(), Some(on_output), &*out as *const Out as *mut c_void, &mut session);
+                CFRelease(spec);
+                if status != 0 || session.is_null() {
+                    return Err(io::Error::other(format!("VTCompressionSessionCreate: OSStatus {status}")));
+                }
+                let key_frame = dictionary(&[kVTEncodeFrameOptionKey_ForceKeyFrame], &[kCFBooleanTrue]);
+                let me = Self { session, key_frame, force_key: false, out, started: std::time::Instant::now(), last_pts: -1, w: w as usize, h: h as usize };
+                // without reordering every frame comes out as it goes in: one access unit per CompleteFrames
+                let status = VTSessionSetProperty(session, kVTCompressionPropertyKey_AllowFrameReordering, kCFBooleanFalse);
+                if status != 0 {
+                    return Err(io::Error::other(format!("no frame reordering control: OSStatus {status}")));
+                }
+                let (rate, fps, gop) = (number(super::BITRATE as i32), number((1000 / super::MIN_INTERVAL.as_millis()) as i32), number(1200));
+                for (key, value) in [
+                    (kVTCompressionPropertyKey_RealTime, kCFBooleanTrue),
+                    (kVTCompressionPropertyKey_ProfileLevel, kVTProfileLevel_H264_Baseline_AutoLevel),
+                    (kVTCompressionPropertyKey_AverageBitRate, rate),
+                    (kVTCompressionPropertyKey_ExpectedFrameRate, fps),
+                    // key frames come when the viewer asks; one a minute regardless
+                    (kVTCompressionPropertyKey_MaxKeyFrameInterval, gop),
+                ] {
+                    let status = VTSessionSetProperty(session, key, value);
+                    if status != 0 {
+                        journal!("VideoToolbox kept a default (OSStatus {status})");
+                    }
+                }
+                for n in [rate, fps, gop] {
+                    CFRelease(n);
+                }
+                let status = VTCompressionSessionPrepareToEncodeFrames(session);
+                if status != 0 {
+                    return Err(io::Error::other(format!("VTCompressionSessionPrepareToEncodeFrames: OSStatus {status}")));
+                }
+                Ok(me)
+            }
+        }
+
+        pub fn force_key(&mut self) {
+            self.force_key = true;
+        }
+
+        /// Encodes `rgb` and appends its Annex B bytes to `out`: `Some(key frame?)`, or `None` when the
+        /// encoder dropped the frame (real-time mode may, under load, before anything refers to it).
+        pub fn encode(&mut self, rgb: &Rgb, out: &mut Vec<u8>) -> io::Result<Option<bool>> {
+            let (w, h) = (self.w, self.h);
+            if (rgb.w as usize, rgb.h as usize) != (w, h) || rgb.data.len() < w * h * 3 {
+                return Err(io::Error::other("frame size differs from the session's"));
+            }
+            // SAFETY: the pixel buffer is locked while written, rows stay within its bytes-per-row, and it
+            // is released after the encoder took its own reference
+            unsafe {
+                let mut pixels: Ref = null();
+                let status = CVPixelBufferCreate(null(), w, h, PIXEL_BGRA, null(), &mut pixels);
+                if status != 0 || pixels.is_null() {
+                    return Err(io::Error::other(format!("CVPixelBufferCreate: {status}")));
+                }
+                if CVPixelBufferLockBaseAddress(pixels, 0) != 0 {
+                    CFRelease(pixels);
+                    return Err(io::Error::other("can't write the pixel buffer"));
+                }
+                let (base, stride) = (CVPixelBufferGetBaseAddress(pixels), CVPixelBufferGetBytesPerRow(pixels));
+                for y in 0..h {
+                    let row = std::slice::from_raw_parts_mut(base.add(y * stride), w * 4);
+                    for (px, src) in row.chunks_exact_mut(4).zip(rgb.data[y * w * 3..(y + 1) * w * 3].chunks_exact(3)) {
+                        px.copy_from_slice(&[src[2], src[1], src[0], 255]);
+                    }
+                }
+                CVPixelBufferUnlockBaseAddress(pixels, 0);
+                // presentation times only have to increase: milliseconds since the session began
+                let pts = (self.started.elapsed().as_millis() as i64).max(self.last_pts + 1);
+                self.last_pts = pts;
+                let options = if std::mem::take(&mut self.force_key) { self.key_frame } else { null() };
+                let time = CMTime { value: pts, timescale: 1000, flags: TIME_VALID, epoch: 0 };
+                let status = VTCompressionSessionEncodeFrame(self.session, pixels, time, NO_TIME, options, null_mut(), null_mut());
+                CFRelease(pixels);
+                if status != 0 {
+                    return Err(io::Error::other(format!("VTCompressionSessionEncodeFrame: OSStatus {status}")));
+                }
+                VTCompressionSessionCompleteFrames(self.session, NO_TIME);
+            }
+            let Some((key, bytes)) = self.out.lock().unwrap_or_else(|p| p.into_inner()).take() else { return Ok(None) };
+            out.extend_from_slice(&bytes);
+            Ok(Some(key))
+        }
+    }
+
+    impl Drop for Session {
+        fn drop(&mut self) {
+            // SAFETY: invalidating waits out the callback, so `out` is no longer referenced afterwards
+            unsafe {
+                VTCompressionSessionInvalidate(self.session);
+                CFRelease(self.session);
+                CFRelease(self.key_frame);
+            }
+        }
+    }
+
+    /// Called by VideoToolbox (during CompleteFrames) with the encoded frame, or a null one when it dropped it.
+    unsafe extern "C" fn on_output(refcon: *mut c_void, _frame: *mut c_void, status: i32, _flags: u32, sample: Ref) {
+        let out = &*(refcon as *const Out);
+        let frame = if status == 0 && !sample.is_null() { annex_b(sample) } else { None };
+        *out.lock().unwrap_or_else(|p| p.into_inner()) = frame;
+    }
+
+    /// The sample's access unit in Annex B: SPS and PPS first on a key frame, then each NAL unit behind a
+    /// start code instead of its big-endian length.
+    unsafe fn annex_b(sample: Ref) -> Option<(bool, Vec<u8>)> {
+        let attachments = CMSampleBufferGetSampleAttachmentsArray(sample, 0);
+        let not_sync = if !attachments.is_null() && CFArrayGetCount(attachments) > 0 {
+            CFDictionaryGetValue(CFArrayGetValueAtIndex(attachments, 0), kCMSampleAttachmentKey_NotSync)
+        } else {
+            null()
+        };
+        let key = not_sync != kCFBooleanTrue;
+        let format = CMSampleBufferGetFormatDescription(sample);
+        if format.is_null() {
+            return None;
+        }
+        let (mut sets, mut length_size) = (0usize, 4i32);
+        if CMVideoFormatDescriptionGetH264ParameterSetAtIndex(format, 0, null_mut(), null_mut(), &mut sets, &mut length_size) != 0 {
+            return None;
+        }
+        let mut out = Vec::new();
+        if key {
+            for i in 0..sets {
+                let (mut set, mut size) = (null(), 0usize);
+                if CMVideoFormatDescriptionGetH264ParameterSetAtIndex(format, i, &mut set, &mut size, null_mut(), null_mut()) == 0 && !set.is_null() {
+                    out.extend_from_slice(&START);
+                    out.extend_from_slice(std::slice::from_raw_parts(set, size));
+                }
+            }
+        }
+        let block = CMSampleBufferGetDataBuffer(sample);
+        if block.is_null() {
+            return None;
+        }
+        let len = CMBlockBufferGetDataLength(block);
+        let mut avcc = vec![0u8; len];
+        if CMBlockBufferCopyDataBytes(block, 0, len, avcc.as_mut_ptr().cast()) != 0 {
+            return None;
+        }
+        let n = length_size.clamp(1, 4) as usize;
+        let mut at = 0;
+        while at + n <= avcc.len() {
+            let unit = avcc[at..at + n].iter().fold(0usize, |l, &b| l << 8 | b as usize);
+            at += n;
+            if unit > avcc.len() - at {
+                return None;
+            }
+            out.extend_from_slice(&START);
+            out.extend_from_slice(&avcc[at..at + unit]);
+            at += unit;
+        }
+        Some((key, out))
+    }
+
+    unsafe fn dictionary(keys: &[Ref], values: &[Ref]) -> Ref {
+        CFDictionaryCreate(null(), keys.as_ptr(), values.as_ptr(), keys.len() as isize, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks)
+    }
+
+    unsafe fn number(n: i32) -> Ref {
+        CFNumberCreate(null(), NUMBER_SINT32, (&n as *const i32).cast())
     }
 }
 
@@ -337,18 +673,34 @@ pub async fn serve(stream: Stream, engine: Arc<dyn SpatialPlatformEngine>, scree
     let (tx_info, tx_clip) = (tx.clone(), tx.clone());
     let encoding = Arc::new(AtomicBool::new(true));
     let want_video = Arc::new(AtomicBool::new(false));
-    let (slot2, enc2, video2) = (slot.clone(), encoding.clone(), want_video.clone());
+    let want_key = Arc::new(AtomicBool::new(false));
+    let (slot2, enc2, video2, key2) = (slot.clone(), encoding.clone(), want_video.clone(), want_key.clone());
     std::thread::Builder::new()
         .name("tcuflow-encode".into())
         .spawn(move || {
             let mut last = 0u64;
             let mut h264: Option<H264> = None;
+            // the last frame sent as video: a viewer that lost its place gets it again as a key frame even
+            // while the screen holds still and nothing new arrives
+            let mut still: Option<Rgb> = None;
             while enc2.load(Ordering::Relaxed) {
-                let Some(rgb) = slot2.take(Duration::from_millis(500)) else { continue };
-                let fp = fingerprint(&rgb);
-                if fp == last {
-                    continue;
-                }
+                let rgb = match slot2.take(Duration::from_millis(500)) {
+                    Some(rgb) => {
+                        let fp = fingerprint(&rgb);
+                        if fp == last && !key2.load(Ordering::Relaxed) {
+                            continue;
+                        }
+                        last = fp;
+                        rgb
+                    }
+                    None => match still.take() {
+                        Some(rgb) if key2.load(Ordering::Relaxed) && video2.load(Ordering::Relaxed) => rgb,
+                        other => {
+                            still = other;
+                            continue;
+                        }
+                    },
+                };
                 if video2.load(Ordering::Relaxed) {
                     if h264.as_ref().is_none_or(|h| (h.w, h.h) != (rgb.w, rgb.h)) {
                         match H264::new(rgb.w, rgb.h) {
@@ -360,10 +712,17 @@ pub async fn serve(stream: Stream, engine: Arc<dyn SpatialPlatformEngine>, scree
                         }
                     }
                     if let Some(h) = h264.as_mut() {
+                        if key2.swap(false, Ordering::Relaxed) {
+                            h.force_key();
+                        }
                         match h.encode(&rgb) {
                             Ok(Some((_, body))) => {
-                                last = fp;
-                                let _ = tx.try_send((VIDEO, body));
+                                // waits while the link is busy rather than dropping: every later frame
+                                // builds on this one (the slot drops raw frames meanwhile)
+                                if tx.blocking_send((VIDEO, body)).is_err() {
+                                    break;
+                                }
+                                still = Some(rgb);
                             }
                             Ok(None) => {}
                             Err(e) => journal!("screen encode (h264): {e}"),
@@ -371,11 +730,13 @@ pub async fn serve(stream: Stream, engine: Arc<dyn SpatialPlatformEngine>, scree
                         continue;
                     }
                 } else if h264.is_some() {
-                    h264 = None; // the viewer went back to JPEG
+                    // the viewer went back to JPEG
+                    h264 = None;
+                    still = None;
                 }
                 match encode(&rgb) {
+                    // a JPEG stands alone: when the link is busy it is dropped, the next one is newer anyway
                     Ok(jpeg) => {
-                        last = fp;
                         let _ = tx.try_send((FRAME, jpeg));
                     }
                     Err(e) => journal!("screen encode: {e}"),
@@ -460,6 +821,10 @@ pub async fn serve(stream: Stream, engine: Arc<dyn SpatialPlatformEngine>, scree
                 }
                 6 => {
                     want_video.store(b[1] == 1, Ordering::Relaxed);
+                    continue;
+                }
+                9 => {
+                    want_key.store(true, Ordering::Relaxed);
                     continue;
                 }
                 8 => {
@@ -813,23 +1178,41 @@ mod cap {
 mod tests {
     use super::*;
 
-    #[test]
-    fn h264_frames_start_with_a_key_frame_and_carry_their_size() {
-        let (w, h) = (320u32, 200u32);
+    /// What the viewer relies on from either backend: a key frame first, carrying its size and leading with
+    /// its SPS; smaller deltas after; a key frame again when one is asked for.
+    fn check_h264(mut enc: H264) {
+        let (w, h) = (enc.w, enc.h);
         let mut rgb = Rgb { w, h, data: vec![0; (w * h * 3) as usize] };
-        let mut enc = H264::new(w, h).unwrap();
         let (key, body) = enc.encode(&rgb).unwrap().expect("first frame");
-        assert!(key, "the first frame is an IDR");
+        assert!(key, "the first frame is a key frame");
         assert_eq!(&body[..5], &[1, 64, 1, 200, 0], "key flag, width 320, height 200");
         assert_eq!(&body[5..9], &[0, 0, 0, 1], "Annex B start code");
-        assert!(body.len() > 9);
-        // a change makes a (smaller) delta frame
+        assert_eq!(body[9] & 0x1f, 7, "a key frame leads with its SPS");
         for px in rgb.data.chunks_mut(3).take(5000) {
             px[0] = 200;
         }
         let (key2, body2) = enc.encode(&rgb).unwrap().expect("second frame");
         assert!(!key2);
+        assert_eq!(body2[0], 0);
         assert!(body2.len() < body.len());
+        enc.force_key();
+        rgb.data[0] = 1;
+        let (key3, body3) = enc.encode(&rgb).unwrap().expect("third frame");
+        assert!(key3, "a key frame when asked for");
+        assert_eq!(body3[9] & 0x1f, 7);
+    }
+
+    #[test]
+    fn openh264_frames() {
+        check_h264(H264::software(320, 200).unwrap());
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn videotoolbox_frames() {
+        let enc = H264::new(320, 200).unwrap();
+        assert!(matches!(enc.backend, Backend::VideoToolbox(_)), "VideoToolbox opened a session");
+        check_h264(enc);
     }
 
     #[test]

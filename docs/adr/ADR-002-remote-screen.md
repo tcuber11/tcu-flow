@@ -25,7 +25,8 @@ A `Screen` service (`kvm::Service::Screen = 7`) on the KVM endpoint, refused unl
 ### Slice 3
 - Multi-display (done): the capture backend lists its displays with their physical bounds (ScreenCaptureKit + CoreGraphics on macOS, `GetMonitorInfoW` on Windows); tag 2 carries the list, the viewer shows a picker when there is more than one, input frame 7 switches the shared display mid-stream (the encoder restarts on the new size).
 - Clipboard inside the viewer (done): text copied on either side while the window is open lands on the other (tag 5 down, input frame 8 up, both honouring "Its clipboard"), so copy there / paste here works without an edge crossing.
-- Next: hardware encoders (VideoToolbox / Media Foundation) behind `screen::H264`.
+- Hardware encoding on the Mac (done): `screen::H264` opens a VideoToolbox session (the media engine; RealTime, baseline, no frame reordering, 3 Mbit/s, called synchronously per frame) and falls back to OpenH264 when it can't. Windows keeps OpenH264: a Media Foundation hardware encoder (async MFT, NV12) can only be proven on a PC with a GPU, which CI doesn't have.
+- Video is never dropped once encoded (the encoder thread waits for the link; the capture slot drops raw frames meanwhile). A viewer whose decoder falls behind or fails asks for a key frame (input frame 9) and skips deltas until it arrives; the shared side re-sends a still screen as that key frame. A second decode failure in a row goes back to JPEG.
 
 ### Outside the network
 Not a TCuFlow relay. Tailscale (or any VPN) makes the linked computer reachable: add its Tailscale IP under **Add by IP** on both sides. Documented in `docs/guides/remote-mac-from-iphone.md`; an iPhone viewer would be a separate project (ADR-001 scope note).
