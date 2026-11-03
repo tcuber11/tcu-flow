@@ -428,7 +428,9 @@ const ID = {};
 document.querySelectorAll("[data-i]").forEach(el => { ID[el.dataset.i] = el.hasAttribute("data-html") ? el.innerHTML : el.textContent; });
 Object.assign(ID, { "alt.mac":"Juga untuk <a href=\"#unduh\">Windows, Linux, dan Android</a>", "alt.win":"Juga untuk <a href=\"#unduh\">macOS, Linux, dan Android</a>", "alt.linux":"Juga untuk <a href=\"#unduh\">macOS, Windows, dan Android</a>", "alt.android":"Juga untuk <a href=\"#unduh\">macOS, Windows, dan Linux</a>", "alt.other":"Untuk <a href=\"#unduh\">macOS, Windows, Linux, dan Android</a>" });
 const ua = navigator.userAgent;
-const os = /Android/i.test(ua) ? "android" : /iPhone|iPad|iPod/i.test(ua) ? "other" : /Mac/i.test(navigator.platform) ? "mac" : /Win/i.test(navigator.platform) ? "win" : /Linux/i.test(navigator.platform) ? "linux" : "other";
+// iPadOS asks for the desktop site as a Mac (but has touch); the Linux packages are x86-64 only
+const plat = navigator.platform, ipad = /Mac/i.test(plat) && navigator.maxTouchPoints > 1;
+const os = /Android/i.test(ua) ? "android" : /iPhone|iPad|iPod/i.test(ua) || ipad ? "other" : /Mac/i.test(plat) ? "mac" : /Win/i.test(plat) ? "win" : /Linux/i.test(plat) && /x86_64|amd64/i.test(plat) ? "linux" : "other";
 function setLang(lang) {
   const t = lang === "en" ? EN : ID;
   document.documentElement.lang = lang;
@@ -453,11 +455,13 @@ const applyDL = () => {
 applyDL();
 // Windows on ARM still says x64 in its user agent; Chromium's client hints tell the truth
 if (os === "win") navigator.userAgentData?.getHighEntropyValues?.(["architecture"]).then(h => { winArm = h.architecture === "arm"; applyDL(); }).catch(() => {});
-fetch("https://api.github.com/repos/tcuber11/tcu-flow/releases/latest").then(r => r.ok ? r.json() : null).then(rel => {
-  if (!rel?.assets) return;
-  const by = (test) => rel.assets.find(a => test(a.name))?.browser_download_url;
+// each file from the newest release that has it: a release just published has none until CI attaches them
+fetch("https://api.github.com/repos/tcuber11/tcu-flow/releases?per_page=5").then(r => r.ok ? r.json() : null).then(list => {
+  const rels = (Array.isArray(list) ? list : []).filter(r => !r.draft && !r.prerelease && r.assets?.length);
+  if (!rels.length) return;
+  const by = (test) => rels.map(rel => rel.assets.find(a => test(a.name))).find(Boolean)?.browser_download_url;
   const found = { mac: by(n => n.endsWith(".dmg")), win: by(n => n.endsWith("_x64-setup.exe")), winarm: by(n => n.endsWith("_arm64-setup.exe")), linux: by(n => n.endsWith(".deb")), android: by(n => n.endsWith(".apk")) };
-  for (const k in found) DL[k] = found[k] ?? `https://github.com/tcuber11/tcu-flow/releases/tag/${rel.tag_name}`;
+  for (const k in found) DL[k] = found[k] ?? "https://github.com/tcuber11/tcu-flow/releases";
   applyDL();
 }).catch(() => {});
 // reveal on scroll

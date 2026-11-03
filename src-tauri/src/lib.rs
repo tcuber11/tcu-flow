@@ -826,7 +826,24 @@ async fn allow_screen() -> Result<(), String> {
 /// A permission switched on in System Settings only counts for a fresh process.
 #[tauri::command]
 fn reopen(app: AppHandle) {
+    show_window_next_start(&app);
     app.restart();
+}
+
+/// Restarts and updates relaunch with this run's arguments, so one that began at login (`--autostart`, window
+/// hidden) would come back hidden too: a marker in the data folder makes the next start show its window, once.
+const SHOW_ONCE: &str = "show-window-once";
+
+pub(crate) fn show_window_next_start(app: &AppHandle) {
+    if let Ok(dir) = app.path().app_data_dir() {
+        let _ = std::fs::write(dir.join(SHOW_ONCE), b"");
+    }
+}
+
+pub(crate) fn forget_show_window(app: &AppHandle) {
+    if let Ok(dir) = app.path().app_data_dir() {
+        let _ = std::fs::remove_file(dir.join(SHOW_ONCE));
+    }
 }
 
 /// This computer's name as other devices list it.
@@ -864,13 +881,20 @@ fn open_url(app: AppHandle, url: String) -> Result<(), String> {
     }
     #[cfg(target_os = "android")]
     let r = app.state::<tauri::plugin::PluginHandle<tauri::Wry>>().run_mobile_plugin::<serde_json::Value>("openUrl", serde_json::json!({ "url": url }));
-    #[cfg(not(target_os = "android"))]
+    // UIKit wants the main thread; a sync command may already be on it, so this doesn't wait for the answer
+    #[cfg(target_os = "ios")]
+    let r = app.run_on_main_thread(move || {
+        if let Err(e) = platform::ios::open_url(&url) {
+            journal!("opening a link: {e}");
+        }
+    });
+    #[cfg(not(any(target_os = "android", target_os = "ios")))]
     let _ = app;
     #[cfg(target_os = "windows")]
     let r = std::process::Command::new("explorer").arg(&url).spawn();
     #[cfg(target_os = "macos")]
     let r = std::process::Command::new("open").arg(&url).spawn();
-    #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "android")))]
+    #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "android", target_os = "ios")))]
     let r = std::process::Command::new("xdg-open").arg(&url).spawn();
     r.map(drop).map_err(|e| e.to_string())
 }
@@ -1316,7 +1340,9 @@ pub fn run() {
             let handle = app.handle().clone();
             let data = app.path().app_data_dir()?;
             journal::init(&data);
-            let autostarted = std::env::args().any(|a| a == "--autostart");
+            // taken on every start, so a marker can't outlive the restart it was for
+            let show_once = std::fs::remove_file(data.join(SHOW_ONCE)).is_ok();
+            let autostarted = std::env::args().any(|a| a == "--autostart") && !show_once;
             journal!("TCuFlow {} starting on {} {}{}", env!("CARGO_PKG_VERSION"), std::env::consts::OS, std::env::consts::ARCH, if autostarted { ", with the computer" } else { "" });
             let settings = Settings::load(&data);
             #[cfg(desktop)]

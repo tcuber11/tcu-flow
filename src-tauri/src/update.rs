@@ -26,6 +26,8 @@ pub async fn check_update(app: AppHandle) -> Result<Option<Available>, String> {
 #[tauri::command]
 pub async fn install_update(app: AppHandle) -> Result<(), String> {
     let update = app.updater().map_err(|e| e.to_string())?.check().await.map_err(|e| e.to_string())?.ok_or("TCuFlow is up to date")?;
+    // Windows: the installer starts the new version itself, with these same arguments
+    crate::show_window_next_start(&app);
     let mut done = 0u64;
     let a = app.clone();
     update
@@ -37,6 +39,9 @@ pub async fn install_update(app: AppHandle) -> Result<(), String> {
             || {},
         )
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            crate::forget_show_window(&app);
+            e.to_string()
+        })?;
     app.restart();
 }

@@ -28,9 +28,10 @@ async function fetchReleases(): Promise<Release[]> {
   // unauthenticated API: 60 requests/hour per IP, shared behind VPNs like Cloudflare WARP or office NAT
   if (r.status === 403 || r.status === 429) throw new Error("GitHub is limiting checks from this network right now. Try again later.");
   if (!r.ok) throw new Error(`GitHub answered ${r.status}.`);
-  const list: { tag_name: string; name: string | null; html_url: string; published_at: string; body: string | null; draft: boolean; prerelease: boolean }[] = await r.json();
+  const list: { tag_name: string; name: string | null; html_url: string; published_at: string; body: string | null; draft: boolean; prerelease: boolean; assets?: unknown[] }[] = await r.json();
   return list
-    .filter((x) => !x.draft && !x.prerelease)
+    // a release just published has no files until CI attaches them: not offered before there is something to get
+    .filter((x) => !x.draft && !x.prerelease && (x.assets?.length ?? 0) > 0)
     .map((x) => ({ tag: x.tag_name, name: x.name || x.tag_name, url: x.html_url, date: x.published_at, notes: x.body ?? "" }));
 }
 
