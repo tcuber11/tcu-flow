@@ -703,55 +703,8 @@ mod tests {
         assert_eq!(&jpeg[..2], &[0xFF, 0xD8], "JPEG SOI");
     }
 
-    /// Real capture of this computer's primary display over a loopback QUIC link: `cargo test --lib
-    /// screen::tests::streams_this_screen -- --ignored --nocapture`. Needs Screen Recording permission for
-    /// the test host; without it the server's refusal text comes back instead of a frame. On macOS,
-    /// ScreenCaptureKit's content query waits on the main run loop, which a test binary has none of, so it
-    /// may time out here while working in the app (`npm run sim` → View screen on the simulated phone).
-    #[tokio::test]
-    #[ignore]
-    async fn streams_this_screen_over_loopback() {
-        tokio::time::timeout(Duration::from_secs(40), streams_this_screen()).await.expect("capture didn't start: no run loop or no permission");
-    }
-
-    async fn streams_this_screen() {
-        use crate::network::secure::{Identity, Tls};
-        let (them, me) = (Arc::new(Tls::new(&Identity::generate())), Tls::new(&Identity::generate()));
-        let fp = them.me.clone();
-        let port = 53377;
-        let server = them.clone();
-        tokio::spawn(async move {
-            let mut l = server.listen(port).unwrap();
-            let (stream, _, _) = l.accept().await.unwrap();
-            let engine: Arc<dyn SpatialPlatformEngine> = Arc::from(crate::platform::engine());
-            let screens = vec![Rect { x: 0.0, y: 0.0, w: 3024.0, h: 1964.0 }];
-            let _ = serve(stream, engine, screens).await;
-        });
-        tokio::time::sleep(Duration::from_millis(200)).await;
-        let (mut s, _) = me.connect(([127, 0, 0, 1], port).into(), Some(&fp)).await.unwrap();
-        let mut seen = Vec::new();
-        let started = std::time::Instant::now();
-        while seen.len() < 3 && started.elapsed() < Duration::from_secs(20) {
-            let tag = s.read_u8().await.unwrap();
-            let len = s.read_u32_le().await.unwrap();
-            let mut body = vec![0u8; len as usize];
-            s.read_exact(&mut body).await.unwrap();
-            match tag {
-                INFO => println!("info: {}x{}", u32::from_le_bytes(body[..4].try_into().unwrap()), u32::from_le_bytes(body[4..8].try_into().unwrap())),
-                FRAME => {
-                    assert_eq!(&body[..2], &[0xFF, 0xD8]);
-                    println!("frame: {} bytes after {:?}", body.len(), started.elapsed());
-                }
-                ERROR => {
-                    println!("refused: {}", String::from_utf8_lossy(&body));
-                    return;
-                }
-                _ => panic!("bad tag {tag}"),
-            }
-            seen.push(tag);
-        }
-        assert!(seen.contains(&FRAME), "no frame arrived: {seen:?}");
-    }
+    // A real capture can't run under `cargo test` (ScreenCaptureKit answers on the app's main run loop):
+    // `tcuflow --screen-probe` is that check, and `npm run sim` → View screen the end-to-end one.
 
     #[test]
     fn slot_keeps_only_the_newest_frame() {
