@@ -58,7 +58,9 @@ npm run tauri dev                               # run locally
 npm run tauri build                             # installers in src-tauri/target/release/bundle
 cargo test --manifest-path src-tauri/Cargo.toml # backend tests
 gh workflow run "Build installers"              # every installer as artifacts on GitHub
-# release: node scripts/bump.mjs X.Y.Z → commit → gh release create vX.Y.Z --generate-notes → (CI attaches) → node scripts/release.mjs vX.Y.Z
+# release: node scripts/bump.mjs X.Y.Z → commit and push → gh release create vX.Y.Z --generate-notes → (CI attaches) → node scripts/release.mjs vX.Y.Z
+# GitHub short of Apple Silicon runners (Mac job "cancelled"): gh variable set MAC_RUNNER --body macos-15-intel,
+# gh run rerun <id> --failed, release.mjs again; gh variable delete MAC_RUNNER when they are back
 ```
 
 Both computers must run builds from the same protocol version (`kvm::PROTOCOL`).

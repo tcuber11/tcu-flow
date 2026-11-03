@@ -167,4 +167,4 @@ TCuFlow adds one service of its own: **Screen** (`screen.rs`, [ADR-002](adr/ADR-
 
 - macOS: universal `.app`/`.dmg`; not notarized yet (Apple Development identity only).
 - Windows: NSIS installer from GitHub Actions; unsigned, so SmartScreen warns.
-- Updates: `latest.json` on this repository's releases, signed with `~/.tauri/tcuflow.key` (`scripts/release.mjs`). The repository is private, so in-app update checks cannot read releases until releases are published somewhere readable.
+- Updates: `latest.json` on this repository's (public) releases, signed with `~/.tauri/tcuflow.key` (`scripts/release.mjs`) after CI has attached every installer; the app checks the signature against the public key in `tauri.conf.json` before installing.
