@@ -57,7 +57,8 @@ The exact signing identity string: `security find-identity -v -p codesigning` on
 ## 4. What CI does with them
 
 - **macOS job**: tauri imports the Developer ID certificate into a temporary keychain, signs the universal app
-  with the hardened runtime, builds the dmg, and notarizes both through the API key (`APPLE_API_*`). Without the
+  with the hardened runtime, builds the dmg, and notarizes both through the API key (`APPLE_API_*`): on releases
+  and manual runs only, since Apple can take 40 minutes; pushes are signed but not notarized. Without the
   secrets it falls back to the ad-hoc signature as before.
 - **iOS job**: imports the distribution certificate and the profile, `tauri ios build --export-method
   app-store-connect`, uploads the `.ipa` with `altool`. The build appears in App Store Connect → TestFlight a

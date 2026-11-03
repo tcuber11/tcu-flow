@@ -141,6 +141,8 @@ section{padding:112px 0}
 .card h3 svg{width:24px;height:24px}
 .card p{margin-top:10px;color:var(--muted);font-size:14px}
 .card .btn{margin-top:20px;width:100%}
+.card .arm{margin-top:12px;font-size:13px;color:var(--faint)}
+.card .arm a{color:var(--blue-ink);text-decoration:underline;text-underline-offset:3px}
 .card ol{margin:18px 0 0;padding-left:18px;color:var(--faint);font-size:13px;display:grid;gap:6px}
 .note{margin-top:22px;font-size:13px;color:var(--faint)}
 @media(max-width:720px){.dl .cards{grid-template-columns:1fr}}
@@ -312,14 +314,15 @@ footer a{color:var(--muted);text-decoration:underline;text-underline-offset:3px}
       <p data-i="dl.mac.p">Apple Silicon dan Intel. Buka file .dmg, seret TCuFlow ke Applications.</p>
       <a class="btn btn-blue" href="https://github.com/tcuber11/tcu-flow/releases/latest" data-dl="mac"><svg><use href="#i-download"/></svg><span data-i="dl.mac.btn">Unduh untuk macOS</span></a>
       <ol>
-        <li data-i="dl.mac.1" data-html>Belum dinotarisasi: saat diblokir, buka <em>System Settings → Privacy &amp; Security → Open Anyway</em>.</li>
-        <li data-i="dl.mac.2" data-html>Izinkan <em>Accessibility</em> saat diminta (dan <em>Local Network</em> di macOS 15+).</li>
+        <li data-i="dl.mac.1" data-html>Ditandatangani dan dinotarisasi Apple: cukup klik <em>Open</em> saat pertama dibuka.</li>
+        <li data-i="dl.mac.2" data-html>Izinkan <em>Accessibility</em> saat diminta (dan <em>Local Network</em> di macOS 15+); untuk berbagi layar, juga <em>Screen Recording</em>.</li>
       </ol>
     </article>
     <article class="card rise" id="card-win">
       <h3><svg><use href="#windows"/></svg>Windows</h3>
       <p data-i="dl.win.p">Windows 10 dan 11, 64-bit. Installer .exe, sekitar 5 MB.</p>
       <a class="btn btn-blue" href="https://github.com/tcuber11/tcu-flow/releases/latest" data-dl="win"><svg><use href="#i-download"/></svg><span data-i="dl.win.btn">Unduh untuk Windows</span></a>
+      <p class="arm"><span data-i="dl.win.arm">Windows di ARM (Snapdragon, Surface Pro X):</span> <a href="https://github.com/tcuber11/tcu-flow/releases/latest" data-dl="winarm">ARM64 .exe</a></p>
       <ol>
         <li data-i="dl.win.1" data-html>Belum ditandatangani: kalau SmartScreen muncul, pilih <em>More info → Run anyway</em>.</li>
         <li data-i="dl.win.2" data-html>Saat Windows Firewall bertanya, centang <em>Private</em>.</li>
@@ -375,6 +378,7 @@ footer a{color:var(--muted);text-decoration:underline;text-underline-offset:3px}
 const DL = {
   mac: "https://github.com/tcuber11/tcu-flow/releases/latest/download/TCuFlow_0.9.10_universal.dmg",
   win: "https://github.com/tcuber11/tcu-flow/releases/latest/download/TCuFlow_0.9.10_x64-setup.exe",
+  winarm: "https://github.com/tcuber11/tcu-flow/releases/latest/download/TCuFlow_0.9.10_arm64-setup.exe",
   linux: "https://github.com/tcuber11/tcu-flow/releases/latest/download/TCuFlow_0.9.10_amd64.deb",
   android: "https://github.com/tcuber11/tcu-flow/releases/latest/download/TCuFlow_0.9.10_android.apk",
 };
@@ -407,8 +411,8 @@ const EN = {
   "sec.4":"No account, no server, no telemetry. The source is open.",
   "dl.h2":"Download TCuFlow","dl.lead":"Early version 0.9.10. Install on both computers; both must run the same version.",
   "dl.mac.p":"Apple Silicon and Intel. Open the .dmg and drag TCuFlow to Applications.","dl.mac.btn":"Download for macOS",
-  "dl.mac.1":"Not notarized yet: when blocked, open <em>System Settings → Privacy &amp; Security → Open Anyway</em>.","dl.mac.2":"Allow <em>Accessibility</em> when asked (and <em>Local Network</em> on macOS 15+).",
-  "dl.win.p":"Windows 10 and 11, 64-bit. An .exe installer, about 5 MB.","dl.win.btn":"Download for Windows",
+  "dl.mac.1":"Signed and notarized by Apple: just click <em>Open</em> the first time.","dl.mac.2":"Allow <em>Accessibility</em> when asked (and <em>Local Network</em> on macOS 15+); to share the screen, <em>Screen Recording</em> too.",
+  "dl.win.p":"Windows 10 and 11, 64-bit. An .exe installer, about 5 MB.","dl.win.btn":"Download for Windows","dl.win.arm":"Windows on ARM (Snapdragon, Surface Pro X):",
   "dl.win.1":"Not code-signed yet: if SmartScreen appears, choose <em>More info → Run anyway</em>.","dl.win.2":"When Windows Firewall asks, tick <em>Private</em>.",
   "dl.note":"Source and releases are on <a href=\"https://github.com/tcuber11/tcu-flow\" style=\"color:var(--blue-ink);text-decoration:underline;text-underline-offset:3px\">GitHub</a>. Apache License 2.0.",
   "q1":"Does Windows need TCuFlow too?","a1":"Yes. An app has to run on both computers: one sends the mouse and keyboard, the other receives them. Sharing a network alone is not enough.",
@@ -441,15 +445,18 @@ document.querySelectorAll(".lang button").forEach(b => b.addEventListener("click
 let lang = "id"; try { lang = localStorage.getItem("tcuflow.site.lang") || (navigator.language.startsWith("id") ? "id" : "en"); } catch {}
 setLang(lang);
 // OS-aware download
+let winArm = false;
 const applyDL = () => {
   document.querySelectorAll("[data-dl]").forEach(a => { a.href = DL[a.dataset.dl]; });
-  if (os !== "other") document.getElementById("cta").href = DL[os];
+  if (os !== "other") document.getElementById("cta").href = DL[os === "win" && winArm ? "winarm" : os];
 };
 applyDL();
+// Windows on ARM still says x64 in its user agent; Chromium's client hints tell the truth
+if (os === "win") navigator.userAgentData?.getHighEntropyValues?.(["architecture"]).then(h => { winArm = h.architecture === "arm"; applyDL(); }).catch(() => {});
 fetch("https://api.github.com/repos/tcuber11/tcu-flow/releases/latest").then(r => r.ok ? r.json() : null).then(rel => {
   if (!rel?.assets) return;
   const by = (test) => rel.assets.find(a => test(a.name))?.browser_download_url;
-  const found = { mac: by(n => n.endsWith(".dmg")), win: by(n => n.endsWith("-setup.exe")), linux: by(n => n.endsWith(".deb")), android: by(n => n.endsWith(".apk")) };
+  const found = { mac: by(n => n.endsWith(".dmg")), win: by(n => n.endsWith("_x64-setup.exe")), winarm: by(n => n.endsWith("_arm64-setup.exe")), linux: by(n => n.endsWith(".deb")), android: by(n => n.endsWith(".apk")) };
   for (const k in found) DL[k] = found[k] ?? `https://github.com/tcuber11/tcu-flow/releases/tag/${rel.tag_name}`;
   applyDL();
 }).catch(() => {});
