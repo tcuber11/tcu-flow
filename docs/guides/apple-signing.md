@@ -42,13 +42,13 @@ sets every secret below; the Mac part alone is enough for a signed, permission-k
 cd ~/Documents/Project/tcu-flow
 gh secret set APPLE_TEAM_ID            --body "J24ATXQNJW"
 gh secret set APPLE_CERTIFICATE        < <(base64 -i developer-id.p12)
-gh secret set APPLE_CERTIFICATE_PASSWORD --body "<p12 password>"
+gh secret set APPLE_CERTIFICATE_PASSWORD   # asks for it; a password never goes on the command line
 gh secret set APPLE_SIGNING_IDENTITY   --body "Developer ID Application: Widyo Tri Cahya Utomo (J24ATXQNJW)"
 gh secret set APPLE_API_ISSUER         --body "<issuer id>"
 gh secret set APPLE_API_KEY            --body "<key id>"
 gh secret set APPLE_API_KEY_B64        < <(base64 -i AuthKey_<KEYID>.p8)
 gh secret set IOS_CERTIFICATE          < <(base64 -i apple-distribution.p12)
-gh secret set IOS_CERTIFICATE_PASSWORD --body "<p12 password>"
+gh secret set IOS_CERTIFICATE_PASSWORD     # asks for it
 gh secret set IOS_PROVISIONING_PROFILE < <(base64 -i tcuflow.mobileprovision)
 ```
 

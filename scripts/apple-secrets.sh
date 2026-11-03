@@ -9,7 +9,9 @@ command -v gh >/dev/null || { echo "Needs the GitHub CLI: brew install gh, then 
 TEAM=J24ATXQNJW
 
 ask() { printf '%s: ' "$1" >&2; read -r v; printf '%s' "$v"; }
-secret_ask() { printf '%s: ' "$1" >&2; stty -echo; read -r v; stty echo; echo >&2; printf '%s' "$v"; }
+# IFS= keeps a password's leading or trailing spaces; echo comes back even after Ctrl-C
+secret_ask() { printf '%s: ' "$1" >&2; stty -echo; IFS= read -r v; stty echo; echo >&2; printf '%s' "$v"; }
+trap 'stty echo 2>/dev/null' EXIT INT TERM
 # a dragged-in path: quotes or backslash escapes around it, maybe ~
 path() {
   p=$(printf '%s' "$1" | sed -e "s/^ *['\"]//" -e "s/['\"] *$//" -e 's/\\\(.\)/\1/g' -e 's/ *$//')

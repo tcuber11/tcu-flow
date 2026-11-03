@@ -262,7 +262,9 @@ jobs:
         run: npx tauri ios build --export-method app-store-connect
         env:
           APPLE_DEVELOPMENT_TEAM: ${{ secrets.APPLE_TEAM_ID }}
-      - if: steps.gate.outputs.ok == 'true'
+      # one upload per version: its build number is the version, and TestFlight refuses the same one twice, so
+      # pushes and manual runs only check that the signed build works
+      - if: steps.gate.outputs.ok == 'true' && github.event_name == 'release'
         run: xcrun altool --upload-app --type ios --file src-tauri/gen/apple/build/arm64/tcuflow.ipa --apiKey "$APPLE_API_KEY" --apiIssuer "$APPLE_API_ISSUER"
         env:
           APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}

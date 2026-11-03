@@ -1,8 +1,8 @@
 // Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 // node scripts/release.mjs v0.9.0
-// After the installers are on the GitHub release (as today, plus the Mac's TCuFlow_universal.app.tar.gz from Codemagic):
-// downloads them, signs each with the updater key, and uploads latest.json, which the in-app updater reads from
-// releases/latest/download/latest.json. Key: TAURI_SIGNING_PRIVATE_KEY(_PASSWORD), else ~/.tauri/tcuflow.key(.password).
+// Once CI (build.yml) has attached the installers to the GitHub release: downloads them, signs each with the
+// updater key, and uploads latest.json, which the in-app updater reads from releases/latest/download/latest.json.
+// Key: TAURI_SIGNING_PRIVATE_KEY(_PASSWORD), else ~/.tauri/tcuflow.key(.password).
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, readdirSync, writeFileSync, existsSync, rmSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
@@ -34,14 +34,8 @@ const gh = (...args) => execFileSync("gh", [...args, "-R", REPO], { encoding: "u
 const dir = mkdtempSync(join(tmpdir(), "tcuflow-release-"));
 await (async () => {
 try {
-  // The Mac updater installs from a tarball of the .app, not the dmg: pack the universal build if it is here.
-  const macApp = "src-tauri/target/universal-apple-darwin/release/bundle/macos/TCuFlow.app";
-  if (existsSync(macApp)) {
-    const tgz = join(dir, `TCuFlow_${tag.slice(1)}_universal.app.tar.gz`);
-    execFileSync("tar", ["czf", tgz, "-C", join(macApp, ".."), "TCuFlow.app"], { stdio: "inherit" });
-    gh("release", "upload", tag, tgz, "--clobber");
-    console.log(`uploaded ${tgz}`);
-  }
+  // Only CI's files are signed: its Mac tarball is the notarized one (a local build is ad-hoc, and was once
+  // uploaded over it here).
   // CI attaches the installers to the release (build.yml); if its run is still going, wait for it. Right after
   // `gh release create` the run may not be listed yet, so give it two minutes to appear before signing without it.
   // Notarizing alone can take 40 minutes.
@@ -60,6 +54,12 @@ try {
   }
   const release = JSON.parse(gh("release", "view", tag, "--json", "body,publishedAt"));
   gh("release", "download", tag, "-D", dir, ...TARGETS.flatMap(([suffix]) => ["-p", `*${suffix}`]));
+
+  // an installer of another version (a tag on a commit that wasn't bumped) would make every client "update" to it,
+  // still be offered this version, and loop
+  const version = tag.slice(1);
+  const stray = readdirSync(dir).filter((n) => TARGETS.some(([s]) => n.endsWith(s)) && !n.includes(`_${version}_`) && !n.includes(`-${version}-`));
+  if (stray.length) throw new Error(`${tag} carries installers of another version: ${stray.join(", ")}. Was the bump commit pushed before the tag?`);
 
   const platforms = {};
   for (const name of readdirSync(dir)) {

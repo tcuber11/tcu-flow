@@ -1,7 +1,7 @@
 // node scripts/bump.mjs 0.9.7
 // Writes the version everywhere it is spelled out: package.json, Cargo.toml, tauri.conf.json, the iOS project,
-// and the site's download links and lead. Then: commit, `gh release create vX.Y.Z --generate-notes` (CI attaches
-// every installer), `node scripts/release.mjs vX.Y.Z` to sign latest.json.
+// and the site's download links and lead. Then: commit and push (the tag must land on that commit), `gh release
+// create vX.Y.Z --generate-notes` (CI attaches every installer), `node scripts/release.mjs vX.Y.Z` to sign latest.json.
 import { readFileSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 
@@ -36,4 +36,4 @@ for (const [file, pairs] of edits) {
 }
 // Cargo.lock carries the crate's own version too
 execFileSync("cargo", ["update", "--manifest-path", "src-tauri/Cargo.toml", "--workspace", "--offline"], { stdio: "inherit" });
-console.log(`\n${current} → ${next}. Next: commit, gh release create v${next} --generate-notes, then node scripts/release.mjs v${next}`);
+console.log(`\n${current} → ${next}. Next: commit and push, gh release create v${next} --generate-notes, then node scripts/release.mjs v${next}`);
