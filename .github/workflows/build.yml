@@ -27,6 +27,14 @@ jobs:
     runs-on: ${{ vars.MAC_RUNNER || 'macos-latest' }}
     steps:
       - uses: actions/checkout@v5
+      # screencapturekit's Metal bridge needs the macOS 26 SDK; an Intel image starts on an older Xcode
+      - name: Newest Xcode (Intel runner)
+        if: runner.arch == 'X64'
+        run: |
+          x=$(ls -d /Applications/Xcode_2[6-9]*.app 2>/dev/null | sort -V | tail -1)
+          if [ -z "$x" ]; then echo "::error::no Xcode 26 or later on this image: unset MAC_RUNNER and wait for Apple Silicon runners"; exit 1; fi
+          sudo xcode-select -s "$x"
+          xcodebuild -version
       - uses: actions/setup-node@v5
         with:
           node-version: 22
