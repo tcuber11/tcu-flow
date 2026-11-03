@@ -606,11 +606,23 @@ unsafe fn gesture(event: Ref, field: impl Fn(u32) -> i64) -> Option<InputEvent> 
     Some(InputEvent::Gesture { gesture: g })
 }
 
-/// Global physical px (tao's space: each display at `origin_points * scale`) → global points.
+/// The display a remote-screen viewer is looking at (0: none). Displays of different scales overlap in the pixel
+/// space tao reports, so a position the viewer aims at it is looked up there first, not on the main display.
+static PREFERRED: AtomicU32 = AtomicU32::new(0);
+
+pub fn prefer_display(id: Option<u32>) {
+    PREFERRED.store(id.unwrap_or(0), Ordering::Relaxed);
+}
+
+/// Global physical px (tao's space: each display at `origin_points * scale`) → global points; where displays
+/// overlap there, the `PREFERRED` one wins, then the main one (listed first).
 unsafe fn to_points(x: f64, y: f64) -> CGPoint {
     let (mut ids, mut n) = ([0u32; 16], 0u32);
     if CGGetActiveDisplayList(16, ids.as_mut_ptr(), &mut n) == 0 {
-        for &id in &ids[..n as usize] {
+        let preferred = PREFERRED.load(Ordering::Relaxed);
+        let listed = &ids[..n as usize];
+        let order = listed.iter().copied().filter(|&id| id == preferred).chain(listed.iter().copied().filter(|&id| id != preferred));
+        for id in order {
             let (b, s) = (CGDisplayBounds(id), display_scale(id));
             let (l, t) = (b.origin.x * s, b.origin.y * s);
             if x >= l && x < l + b.size.width * s && y >= t && y < t + b.size.height * s {

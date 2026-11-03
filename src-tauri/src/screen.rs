@@ -510,6 +510,17 @@ pub fn stop_sharing() {
 pub struct Display {
     pub rect: Rect,
     pub primary: bool,
+    /// macOS: its CGDirectDisplayID, which the viewer's positions are aimed at; 0 elsewhere
+    pub id: u32,
+}
+
+/// The viewer's positions land on `d`. macOS: displays of different scales overlap in the pixel space positions
+/// are given in (a 2× main display covers part of a 1× one beside it), so the shown one is named outright.
+fn aim(d: &Display) {
+    #[cfg(target_os = "macos")]
+    crate::platform::macos::prefer_display(Some(d.id).filter(|&id| id != 0));
+    #[cfg(not(target_os = "macos"))]
+    let _ = d;
 }
 
 /// Tag 2: the shown display's size, which one it is, and every display's size.
@@ -648,7 +659,7 @@ pub async fn serve(stream: Stream, engine: Arc<dyn SpatialPlatformEngine>, scree
     // the displays as the capture backend sees them (physical px); the app's monitor list is the fallback
     let mut displays = cap::displays();
     if displays.is_empty() {
-        displays = screens.iter().map(|r| Display { rect: *r, primary: r.x == 0.0 && r.y == 0.0 }).collect();
+        displays = screens.iter().map(|r| Display { rect: *r, primary: r.x == 0.0 && r.y == 0.0, id: 0 }).collect();
     }
     if displays.is_empty() {
         return say(&mut wr, ERROR, b"no display to share").await;
@@ -665,6 +676,7 @@ pub async fn serve(stream: Stream, engine: Arc<dyn SpatialPlatformEngine>, scree
     // the viewer may switch displays mid-stream: the capture and the rect its positions map onto are shared
     let capture = Arc::new(Mutex::new(Some(capture)));
     let display = Arc::new(Mutex::new(displays[chosen].rect));
+    aim(&displays[chosen]);
     say(&mut wr, INFO, &info_body(&displays, chosen)).await?;
 
     // encoder thread → bounded queue → writer; a full queue drops the frame (the next one is newer anyway).
@@ -712,20 +724,32 @@ pub async fn serve(stream: Stream, engine: Arc<dyn SpatialPlatformEngine>, scree
                         }
                     }
                     if let Some(h) = h264.as_mut() {
-                        if key2.swap(false, Ordering::Relaxed) {
+                        let forced = key2.swap(false, Ordering::Relaxed);
+                        if forced {
                             h.force_key();
                         }
-                        match h.encode(&rgb) {
+                        let sent = match h.encode(&rgb) {
                             Ok(Some((_, body))) => {
                                 // waits while the link is busy rather than dropping: every later frame
                                 // builds on this one (the slot drops raw frames meanwhile)
                                 if tx.blocking_send((VIDEO, body)).is_err() {
                                     break;
                                 }
-                                still = Some(rgb);
+                                true
                             }
-                            Ok(None) => {}
-                            Err(e) => journal!("screen encode (h264): {e}"),
+                            Ok(None) => false,
+                            Err(e) => {
+                                journal!("screen encode (h264): {e}");
+                                false
+                            }
+                        };
+                        if sent {
+                            still = Some(rgb);
+                        } else if forced {
+                            // the key frame the viewer waits for was dropped: ask again, with this frame
+                            // (the newest) kept for a screen that holds still
+                            key2.store(true, Ordering::Relaxed);
+                            still = Some(rgb);
                         }
                         continue;
                     }
@@ -843,18 +867,37 @@ pub async fn serve(stream: Stream, engine: Arc<dyn SpatialPlatformEngine>, scree
                 }
                 7 => {
                     let want = b[1] as usize;
-                    if want < displays.len() && want != shown {
-                        *capture_r.lock().unwrap() = None; // stops the current capture first
-                        let sl = slot_r.clone();
-                        match tokio::task::spawn_blocking(move || start_capture(sl, want)).await.map_err(io::Error::other)? {
-                            Ok(c) => {
-                                *capture_r.lock().unwrap() = Some(c);
-                                *display_r.lock().unwrap() = displays[want].rect;
-                                shown = want;
-                                let _ = tx_info.send((INFO, info_body(&displays, want))).await;
-                            }
-                            Err(e) => journal!("switching display: {e}"),
+                    if want != shown {
+                        // displays come and go during a session: the list the viewer picked from may be stale
+                        let now = tokio::task::spawn_blocking(cap::displays).await.unwrap_or_default();
+                        if !now.is_empty() {
+                            displays = now;
                         }
+                        // the one on screen went away: whatever is picked, the capture has to start over
+                        let lost = shown >= displays.len();
+                        shown = shown.min(displays.len() - 1);
+                        if want < displays.len() && (want != shown || lost) {
+                            *capture_r.lock().unwrap() = None; // stops the current capture first
+                            let sl = slot_r.clone();
+                            let started = match tokio::task::spawn_blocking(move || start_capture(sl, want)).await.map_err(io::Error::other)? {
+                                Ok(c) => Some((c, want)),
+                                Err(e) => {
+                                    journal!("switching display: {e}");
+                                    // back to the one it was on, so the picture doesn't just stop
+                                    let (sl, back) = (slot_r.clone(), shown);
+                                    tokio::task::spawn_blocking(move || start_capture(sl, back)).await.map_err(io::Error::other)?.ok().map(|c| (c, back))
+                                }
+                            };
+                            let Some((c, at)) = started else {
+                                return Err(io::Error::other("no display can be captured any more"));
+                            };
+                            *capture_r.lock().unwrap() = Some(c);
+                            *display_r.lock().unwrap() = displays[at].rect;
+                            aim(&displays[at]);
+                            shown = at;
+                        }
+                        // the viewer's picker shows what is really on screen, whichever way it went
+                        let _ = tx_info.send((INFO, info_body(&displays, shown))).await;
                     }
                     continue;
                 }
@@ -874,6 +917,8 @@ pub async fn serve(stream: Stream, engine: Arc<dyn SpatialPlatformEngine>, scree
     };
     encoding.store(false, Ordering::Relaxed);
     *capture.lock().unwrap() = None;
+    #[cfg(target_os = "macos")]
+    crate::platform::macos::prefer_display(None);
     let (keys, buttons) = std::mem::take(&mut *held.lock().unwrap());
     for scan in keys {
         engine2.inject(Injected::Key { scan, down: false });
@@ -1016,7 +1061,7 @@ mod cap {
             .into_iter()
             .map(|d| {
                 let id = d.display_id();
-                Display { rect: crate::platform::macos::display_bounds_px(id), primary: id == main }
+                Display { rect: crate::platform::macos::display_bounds_px(id), primary: id == main, id }
             })
             .collect()
     }
@@ -1128,6 +1173,7 @@ mod cap {
                 Some(Display {
                     rect: Rect { x: r.left as f64, y: r.top as f64, w: (r.right - r.left) as f64, h: (r.bottom - r.top) as f64 },
                     primary: mi.dwFlags & MONITORINFOF_PRIMARY != 0,
+                    id: 0,
                 })
             })
             .collect()
@@ -1252,8 +1298,8 @@ mod tests {
     #[test]
     fn info_lists_every_display_and_which_is_shown() {
         let displays = vec![
-            Display { rect: Rect { x: 0.0, y: 0.0, w: 2560.0, h: 1440.0 }, primary: true },
-            Display { rect: Rect { x: 2560.0, y: 0.0, w: 1920.0, h: 1080.0 }, primary: false },
+            Display { rect: Rect { x: 0.0, y: 0.0, w: 2560.0, h: 1440.0 }, primary: true, id: 0 },
+            Display { rect: Rect { x: 2560.0, y: 0.0, w: 1920.0, h: 1080.0 }, primary: false, id: 0 },
         ];
         let b = info_body(&displays, 1);
         assert_eq!(&b[..8], &[128, 7, 0, 0, 56, 4, 0, 0], "1920×1080 shown");

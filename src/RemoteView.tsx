@@ -33,16 +33,23 @@ export function RemoteView() {
     const AVC = { codec: "avc1.42E028", optimizeForLatency: true };
     const canVideo: Promise<boolean> =
       typeof VideoDecoder === "undefined" ? Promise.resolve(false) : VideoDecoder.isConfigSupported(AVC).then((r) => r.supported === true, () => false);
-    // a decoder that lost its place (fell behind, or failed once) skips deltas until the key frame it asked for
+    // a sharer on 0.9.10 or later (its INFO lists the displays) understands frames 7–9; an older one ends the
+    // session on any of them
+    let modern = false;
+    // a decoder that lost its place (fell behind, or failed once) skips deltas until the key frame it asked for,
+    // asking again each second
     let waitingKey = false;
+    let asks = 0;
+    let askedAt = 0;
     let decodeErrors = 0;
     let decoder: VideoDecoder | null = null;
     let latestFrame: VideoFrame | null = null;
     let decoderBroken = false;
-    // clipboard both ways: what this computer copies goes over while the window is open, and back
+    // clipboard both ways: what this computer copies goes over while the window is open, and back. `null` until
+    // the session opens, with what is on this clipboard then, which stays here
     let lastClip: string | null = null;
     const clipPoll = setInterval(async () => {
-      if (gone || idRef.current === null || document.hidden) return;
+      if (gone || idRef.current === null || document.hidden || !modern || lastClip === null) return;
       const text = await invoke<string | null>("remote_clipboard_get").catch(() => null);
       if (!text || text === lastClip) return;
       lastClip = text;
@@ -54,6 +61,7 @@ export function RemoteView() {
       invoke("remote_input", { id: idRef.current, data: [...head, ...bytes] });
     }, 1000);
     const meter = setInterval(() => {
+      if (waitingKey && !decoderBroken && performance.now() - askedAt > 1000) askKey();
       if (!gone) setState((s) => (s.at === "live" || s.at === "connecting" ? { at: "live", fps: frames, kb: Math.round(bytes / 1024) } : s));
       frames = 0;
       bytes = 0;
@@ -117,6 +125,14 @@ export function RemoteView() {
 
     const askKey = () => {
       if (idRef.current === null) return;
+      if (!modern || ++asks > 5) {
+        // an older sharer can't send a key frame on request, and one that never comes won't either: plain JPEG
+        decoderBroken = true;
+        waitingKey = false;
+        sendCodec(false);
+        return;
+      }
+      askedAt = performance.now();
       const b = new Uint8Array(9);
       b[0] = 9;
       invoke("remote_input", { id: idRef.current, data: Array.from(b) });
@@ -176,6 +192,7 @@ export function RemoteView() {
             return;
           }
           waitingKey = false;
+          if (key) asks = 0;
           d.decode(new EncodedVideoChunk({ type: key ? "key" : "delta", timestamp: Math.round(performance.now() * 1000), data: body.slice(5) }));
         } catch (e) {
           videoFailed(e);
@@ -189,6 +206,7 @@ export function RemoteView() {
         const v = new DataView(body.buffer, body.byteOffset);
         size.current = { w: v.getUint32(0, true), h: v.getUint32(4, true) };
         if (body.length >= 10) {
+          modern = true;
           const n = Math.min(body[9], Math.floor((body.length - 10) / 9));
           const list = [];
           for (let i = 0; i < n; i++) {
@@ -235,6 +253,14 @@ export function RemoteView() {
         idRef.current = i;
         if (gone) invoke("remote_close", { id: i });
         else void canVideo.then((ok) => ok && !gone && sendCodec(true));
+        invoke<string | null>("remote_clipboard_get").then(
+          (t) => {
+            if (lastClip === null) lastClip = t ?? "";
+          },
+          () => {
+            if (lastClip === null) lastClip = "";
+          },
+        );
       },
       (e) => {
         gone = true;
