@@ -106,11 +106,22 @@ impl Identity {
     /// The one kept in `dir`, or a new one saved there (missing or unreadable: pairings must be redone).
     /// The certificate is a plain file; the private key goes through `keystore` (Keychain on macOS, DPAPI on
     /// Windows, an owner-only file elsewhere). A plain `identity.key` from earlier versions is moved in once.
+    /// Like `open`, but a refused key gives a throwaway identity (kept in memory only, so the real one survives).
     pub fn load_or_create(dir: &Path) -> Self {
+        Self::open(dir).unwrap_or_else(|e| {
+            journal!("identity key refused ({e}); using a temporary identity");
+            Self::generate()
+        })
+    }
+
+    /// The identity in `dir`, created on first use. `Err`: there is one, but its key store won't hand the key over
+    /// (macOS: the keychain prompt was denied, as after the app's signature changes). Nothing is replaced then: a
+    /// new identity would end every pairing, and the old key would later come back next to the new certificate.
+    pub fn open(dir: &Path) -> io::Result<Self> {
         let cert_path = dir.join("identity.crt");
         if let Ok(cert) = std::fs::read(&cert_path) {
-            if let Some(key) = keystore::load(dir) {
-                return Self { cert: cert.into(), key: key.into() };
+            if let Some(key) = keystore::load(dir)? {
+                return Ok(Self { cert: cert.into(), key: key.into() });
             }
         }
         let id = Self::generate();
@@ -118,7 +129,7 @@ impl Identity {
         if let Err(e) = std::fs::write(&cert_path, &id.cert).and_then(|()| keystore::save(dir, id.key.secret_pkcs8_der())) {
             journal!("saving identity failed: {e}");
         }
-        id
+        Ok(id)
     }
 
     pub fn generate() -> Self {
@@ -153,8 +164,14 @@ mod keystore {
         Some(key)
     }
 
-    pub fn load(dir: &Path) -> Option<Vec<u8>> {
-        load_protected(dir).or_else(|| take_plain(dir))
+    /// `Err`: a key is there but the store refused it, and no plain file stands in.
+    pub fn load(dir: &Path) -> io::Result<Option<Vec<u8>>> {
+        match load_protected(dir) {
+            Ok(Some(key)) => Ok(Some(key)),
+            Ok(None) => Ok(take_plain(dir)),
+            // the plain file is where the key went when the store refused saving it
+            Err(e) => take_plain(dir).map(Some).ok_or(e),
+        }
     }
 
     pub fn save(dir: &Path, key: &[u8]) -> io::Result<()> {
@@ -184,9 +201,16 @@ mod keystore {
 
     /// One keychain item per data directory (tests and the simulator use their own), as a generic password
     /// owned by this app: macOS asks the user before another app may read it.
+    /// Absent, or no keychain to ask (a session without one): `None`, and the plain file is the store. Anything
+    /// else — a denied prompt above all — is an error, since the key is there.
     #[cfg(target_os = "macos")]
-    fn load_protected(dir: &Path) -> Option<Vec<u8>> {
-        security_framework::passwords::get_generic_password(SERVICE, &dir.to_string_lossy()).ok().filter(|k| !k.is_empty())
+    fn load_protected(dir: &Path) -> io::Result<Option<Vec<u8>>> {
+        const ABSENT: [i32; 3] = [-25300, -25291, -25294]; // errSecItemNotFound, errSecNotAvailable, errSecNoSuchKeychain
+        match security_framework::passwords::get_generic_password(SERVICE, &dir.to_string_lossy()) {
+            Ok(key) => Ok(Some(key).filter(|k| !k.is_empty())),
+            Err(e) if ABSENT.contains(&e.code()) => Ok(None),
+            Err(e) => Err(io::Error::other(e)),
+        }
     }
     #[cfg(target_os = "macos")]
     fn save_protected(dir: &Path, key: &[u8]) -> io::Result<()> {
@@ -225,11 +249,12 @@ mod keystore {
         unsafe { LocalFree(Some(HLOCAL(out.pbData.cast()))) };
         Ok(bytes)
     }
+    /// A blob this account can't unprotect (a profile copied from another PC) never will be: `None`, start over.
     #[cfg(target_os = "windows")]
-    fn load_protected(dir: &Path) -> Option<Vec<u8>> {
-        let file = std::fs::read(dir.join(PROTECTED)).ok()?;
-        let blob = file.strip_prefix(MARK)?;
-        dpapi(blob, false).inspect_err(|e| journal!("identity key can't be unprotected: {e}")).ok()
+    fn load_protected(dir: &Path) -> io::Result<Option<Vec<u8>>> {
+        let Ok(file) = std::fs::read(dir.join(PROTECTED)) else { return Ok(None) };
+        let Some(blob) = file.strip_prefix(MARK) else { return Ok(None) };
+        Ok(dpapi(blob, false).inspect_err(|e| journal!("identity key can't be unprotected: {e}")).ok())
     }
     #[cfg(target_os = "windows")]
     fn save_protected(dir: &Path, key: &[u8]) -> io::Result<()> {
@@ -243,8 +268,8 @@ mod keystore {
     /// Linux, Android, iOS: the file itself, readable by this user only (Android and iOS sandbox the app's
     /// data directory per app already).
     #[cfg(not(any(target_os = "macos", target_os = "windows")))]
-    fn load_protected(dir: &Path) -> Option<Vec<u8>> {
-        std::fs::read(dir.join(PLAIN)).ok().filter(|k| !k.is_empty())
+    fn load_protected(dir: &Path) -> io::Result<Option<Vec<u8>>> {
+        Ok(std::fs::read(dir.join(PLAIN)).ok().filter(|k| !k.is_empty()))
     }
     #[cfg(not(any(target_os = "macos", target_os = "windows")))]
     fn save_protected(dir: &Path, key: &[u8]) -> io::Result<()> {

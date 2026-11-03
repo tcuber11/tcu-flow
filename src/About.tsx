@@ -81,7 +81,7 @@ const FIX: Record<string, { title: string; text: string; button: string; command
   },
   macos: {
     title: "Mouse and keyboard",
-    text: "Other devices can only move the cursor and type here when TCuFlow is allowed under Accessibility. macOS forgets that after every TCuFlow update, so allow it again then.",
+    text: "Other devices can only move the cursor and type here when TCuFlow is allowed under Accessibility. Already on there but still not working? Remove TCuFlow from that list with −, then allow it again.",
     button: "Allow Accessibility",
     command: "allow_input",
     failed: "System Settings didn't open",

@@ -282,8 +282,9 @@ static INJECTION: Mutex<Injection> = Mutex::new(Injection { at: CGPoint { x: 0.0
 
 pub struct MacEngine;
 
-/// About → Allow: the system prompt (adds TCuFlow to the list), then the Accessibility pane itself; after an update
-/// the ad-hoc signature changes and the old entry stops counting, so the pane is where it gets switched on again.
+/// About → Allow: the system prompt (adds TCuFlow to the list), then the Accessibility pane itself. A differently
+/// signed build (an ad-hoc one changes with every update) no longer matches its old entry, so the pane is where it
+/// gets switched on again.
 pub fn allow_input() -> Result<(), String> {
     ask_accessibility();
     std::process::Command::new("open")
@@ -380,8 +381,8 @@ impl SpatialPlatformEngine for MacEngine {
             Ok(())
         } else {
             *CAPTURE.lock().unwrap() = None;
-            // ad-hoc signing: an updated TCuFlow no longer matches its old Accessibility entry, though the switch still shows on
-            Err("TCuFlow can't take the mouse and keyboard: allow it in Privacy → Accessibility (after an update, remove TCuFlow there and add it again)".into())
+            // a differently signed TCuFlow (ad-hoc: every update) no longer matches its old Accessibility entry, though the switch still shows on
+            Err("TCuFlow can't take the mouse and keyboard: allow it in Privacy → Accessibility (already on there? remove TCuFlow and add it again)".into())
         }
     }
 

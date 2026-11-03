@@ -93,6 +93,10 @@ type AppState = Arc<Mutex<Shared>>;
 
 /// This computer's mouse & keyboard are on another device right now.
 static DRIVING: AtomicBool = AtomicBool::new(false);
+/// The keychain kept this Mac's identity key (a denied prompt): TCuFlow runs on a temporary identity, pairs with
+/// nothing, and Home says to reopen it.
+static KEY_REFUSED: AtomicBool = AtomicBool::new(false);
+const KEY_REFUSED_TEXT: &str = "TCuFlow couldn't open its key in the keychain: reopen TCuFlow and choose Always Allow when macOS asks";
 
 /// A stream to paired device `fingerprint`'s `service` (it must share it). Err = user-readable message.
 pub(crate) async fn open_service(app: &AppHandle, fingerprint: &str, service: kvm::Service) -> Result<secure::Stream, String> {
@@ -634,6 +638,9 @@ struct Device {
     received: PathBuf,
     /// paired devices that can be woken up
     wakeable: Vec<String>,
+    /// see `KEY_REFUSED`
+    #[serde(rename = "keyRefused")]
+    key_refused: bool,
 }
 
 #[tauri::command]
@@ -650,6 +657,7 @@ fn get_device(app: AppHandle, state: State<AppState>, me: State<watch::Sender<De
         sharing: s.settings.sharing.clone(),
         received,
         wakeable: s.settings.macs.keys().cloned().collect(),
+        key_refused: KEY_REFUSED.load(Ordering::Relaxed),
     }
 }
 
@@ -670,6 +678,9 @@ fn peers(state: State<AppState>) -> Vec<Peer> {
 /// screens show is known; resolves with their answer (`accepted`, `declined`, `noAnswer`, `unknown`).
 #[tauri::command]
 async fn pair(app: AppHandle, state: State<'_, AppState>, tls: State<'_, Arc<Tls>>, fingerprint: String) -> Result<kvm::PairAnswer, String> {
+    if KEY_REFUSED.load(Ordering::Relaxed) {
+        return Err(KEY_REFUSED_TEXT.into()); // a pairing with the temporary identity would break on the next start
+    }
     let peer = state.lock().unwrap().live_peers().find(|p| p.info.fingerprint == fingerprint).cloned().ok_or("device is no longer on the network")?;
     // the connection only goes through if the device there holds the certificate discovery announced
     let show = |code: String| {
@@ -687,7 +698,7 @@ async fn pair(app: AppHandle, state: State<'_, AppState>, tls: State<'_, Arc<Tls
 #[tauri::command]
 fn answer_pair(state: State<AppState>, id: u64, accept: bool) {
     if let Some(tx) = state.lock().unwrap().pending.remove(&id) {
-        let _ = tx.send(accept);
+        let _ = tx.send(accept && !KEY_REFUSED.load(Ordering::Relaxed));
     }
 }
 
@@ -1317,7 +1328,12 @@ pub fn run() {
                     }
                 }
             }
-            let tls = Arc::new(Tls::new(&Identity::load_or_create(&data)));
+            // a denied keychain prompt gets asked again (a misclick), then the real identity stays untouched
+            let identity = (0..3).find_map(|_| Identity::open(&data).inspect_err(|e| journal!("identity key refused: {e}")).ok()).unwrap_or_else(|| {
+                KEY_REFUSED.store(true, Ordering::Relaxed);
+                Identity::generate()
+            });
+            let tls = Arc::new(Tls::new(&identity));
             let aspect_ratio = app
                 .primary_monitor()?
                 .map(|m| m.size().width as f32 / m.size().height as f32)

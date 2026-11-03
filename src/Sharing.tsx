@@ -69,7 +69,7 @@ export function Sharing({ initial, received, mac, onChange }: { initial: Sharing
           <div role="status" className="ml-[52px] -mt-1 rounded-xl bg-warning/12 px-3.5 py-3 text-xs leading-relaxed text-fg">
             <p>
               macOS isn't letting TCuFlow record this screen yet, so viewers would see nothing. Switch TCuFlow on under Screen &amp; System Audio Recording, then
-              reopen TCuFlow. Already on? A TCuFlow update made macOS forget it: remove TCuFlow from that list with −, then open it again from here.
+              reopen TCuFlow. Already on there? Remove TCuFlow from that list with −, then open it again from here.
             </p>
             <div className="mt-2.5 flex flex-wrap gap-1">
               <button className={quietButton} onClick={allowScreen}>

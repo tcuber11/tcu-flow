@@ -106,6 +106,17 @@ export function Home() {
           {update.available && <span aria-hidden className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-accent ring-2 ring-ink" />}
         </button>
       </header>
+      {device.keyRefused && (
+        <div role="alert" className="rise mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-warning/40 bg-warning/12 px-5 py-4">
+          <p className="min-w-0 flex-1 text-sm text-fg">
+            macOS didn't let TCuFlow open its key in the keychain, so your linked devices won't know this Mac and pairing is off. Reopen TCuFlow and
+            choose <span className="font-semibold">Always Allow</span> when macOS asks.
+          </p>
+          <button onClick={() => invoke("reopen")} className={quietButton + " ring-1 ring-line"}>
+            Reopen TCuFlow
+          </button>
+        </div>
+      )}
       {viewer && (
         <div role="status" className="rise mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-accent/40 bg-accent/10 px-5 py-4">
           <p className="text-sm">

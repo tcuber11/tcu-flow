@@ -24,6 +24,8 @@ export type Device = {
   sharing: Sharing;
   received: string;
   wakeable: string[];
+  /** the keychain refused this Mac's identity key: running on a temporary one until TCuFlow reopens */
+  keyRefused: boolean;
 };
 
 const OS_LABEL: Record<string, string> = { windows: "Windows", macos: "macOS", linux: "Linux", android: "Android", ios: "iOS", sim: "Simulator" };
@@ -38,7 +40,7 @@ export const setupHow = (os: string) =>
       : os === "linux"
       ? "On it: About → Allow input access, or run sudo tcuflow --allow-input"
       : os === "macos"
-        ? "On the Mac: TCuFlow → About → Allow Accessibility (again after each TCuFlow update)"
+        ? "On the Mac: TCuFlow → About → Allow Accessibility"
         : "Open TCuFlow there and follow its setup";
 
 export type DeviceState = "ready" | "setup" | "offline" | "update";
