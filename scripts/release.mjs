@@ -41,10 +41,18 @@ try {
   // Notarizing alone can take 40 minutes.
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   for (let waited = 0; ; waited += 30) {
-    const runs = JSON.parse(gh("run", "list", "--workflow", "build.yml", "--event", "release", "--limit", "3", "--json", "status,conclusion,headBranch"));
+    const runs = JSON.parse(gh("run", "list", "--workflow", "build.yml", "--event", "release", "--limit", "3", "--json", "databaseId,status,conclusion,headBranch"));
     const run = runs.find((r) => r.headBranch === tag);
     if (run?.status === "completed") {
-      if (run.conclusion !== "success") console.warn(`build.yml for ${tag}: ${run.conclusion}; signing what is there`);
+      if (run.conclusion !== "success") {
+        // a desktop installer missing from latest.json leaves that platform without the update (a job GitHub had
+        // no runner for ends "cancelled"); the phone jobs aren't in latest.json
+        const { jobs } = JSON.parse(gh("run", "view", String(run.databaseId), "--json", "jobs"));
+        const missing = jobs.filter((j) => ["macos", "windows", "windows-arm64", "linux"].includes(j.name) && j.conclusion !== "success");
+        if (missing.length)
+          throw new Error(`build.yml for ${tag}: ${missing.map((j) => `${j.name} ${j.conclusion}`).join(", ")}. Re-run with \`gh run rerun ${run.databaseId} --failed\`, then run this again.`);
+        console.warn(`build.yml for ${tag}: ${run.conclusion} (${jobs.filter((j) => j.conclusion !== "success" && j.conclusion !== "skipped").map((j) => j.name).join(", ")}); the installers are all there`);
+      }
       break;
     }
     if (!run && waited >= 120) break;
