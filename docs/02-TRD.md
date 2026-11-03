@@ -66,7 +66,7 @@ This document describes TCuFlow's technical architecture as implemented, the pla
 | Port | Protocol | Use |
 |---|---|---|
 | 53418 | UDP | Discovery announce/answer (multicast + unicast) |
-| 53419 | UDP | Edge-proximity telemetry for the glow |
+| 53419 | UDP | Edge-proximity telemetry for the glow (HMAC-signed, key per run handed over `Service::Glow`) |
 | 53420 | QUIC (UDP) | Transfers: files, pictures, clipboard files |
 | 53421 | QUIC (UDP) | KVM sessions, pairing, services |
 
@@ -148,7 +148,7 @@ TCuFlow adds one service of its own: **Screen** (`screen.rs`, [ADR-002](adr/ADR-
 | Visible remote-control state and emergency return | Met (status toast, Ctrl+Alt+Esc, double Ctrl) |
 | Private keys in Keychain / DPAPI | Done: `network::secure::keystore` — macOS login keychain (generic password per data dir), Windows DPAPI user scope (`identity.key.dpapi`), Linux/mobile owner-only `identity.key` (0600). Plain `identity.key` from earlier versions is moved in and deleted |
 | SHA-256 verification of received files (FR-017) | Done: trailer after the bytes, checked by the receiver |
-| Every channel authenticated | **Gap:** edge-proximity telemetry (UDP 53419) is unauthenticated plaintext; it carries only glow position, never input |
+| Every channel authenticated | Done: telemetry datagrams carry an HMAC-SHA256 tag and a counter under a per-run key each sender hands to each paired device over the authenticated link (`kvm::Service::Glow`, protocol 3); unknown senders and replays are dropped. The position itself is not secret, so it stays plaintext |
 | Updates signed | Met: minisign key generated for TCuFlow; private key kept outside the repo |
 
 ## 12. Observability

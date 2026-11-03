@@ -45,7 +45,7 @@ Fork work already done: rebrand and internal renames, protocol/port separation f
 ## 4. Next work, in order
 
 1. **Real-hardware verification (blocking):** install on a Mac and a Windows PC on one LAN; run the test matrix in section 6 and record results in `docs/phase-0/` or a new test report.
-2. **Security gaps:** authenticate or drop the UDP telemetry channel. (Keychain/DPAPI for the identity key and SHA-256 on files: done.)
+2. **Security gaps:** none open from TRD §11 (Keychain/DPAPI, SHA-256 on files, signed telemetry: done). Next: the threat model for internet relay if that ever comes.
 3. **Clipboard toggle (FR-014):** on/off in the UI, honoured on both sides.
 4. **Release pipeline:** macOS build in CI (universal), signing/notarization decision, Windows code signing decision, public release location so in-app updates can read `latest.json`.
 5. **Docs and DESIGN.md** kept in step with every change.

@@ -26,7 +26,7 @@ Not offered in TCuFlow (refused by the backend, hidden in the UI): remote termin
 
 ## Network
 
-UDP 53418 (discovery), TCP 53419–53421 (telemetry, files, input). Both computers must be on the same LAN; use **Add by IP** where discovery is blocked.
+UDP 53418 (discovery) and 53419 (signed glow telemetry), UDP/QUIC 53420–53421 (files, input). Both computers must be on the same LAN; use **Add by IP** where discovery is blocked.
 
 ## Build from source
 

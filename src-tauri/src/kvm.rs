@@ -33,7 +33,7 @@ use tokio::{
 
 pub const PORT: u16 = 53421;
 /// Wire version, announced by discovery: devices with another one can't pair or connect.
-pub const PROTOCOL: u32 = 2;
+pub const PROTOCOL: u32 = 3;
 const FRAME: usize = 9;
 /// A stalled peer must never keep this machine's input hostage.
 const WRITE_TIMEOUT: Duration = Duration::from_secs(1);
@@ -107,11 +107,13 @@ pub enum Service {
     Diagnostics = 6,
     /// its primary display as a video stream, with the viewer's input injected (TCuFlow)
     Screen = 7,
+    /// the caller's telemetry signing key for this run (TCuFlow; `telemetry::receive_key`)
+    Glow = 8,
 }
 
 impl Service {
     fn from_u8(b: u8) -> Option<Self> {
-        [Service::Shell, Service::Files, Service::Sound, Service::Notifications, Service::Mic, Service::Diagnostics, Service::Screen].into_iter().find(|s| *s as u8 == b)
+        [Service::Shell, Service::Files, Service::Sound, Service::Notifications, Service::Mic, Service::Diagnostics, Service::Screen, Service::Glow].into_iter().find(|s| *s as u8 == b)
     }
 
     fn not_shared(self) -> &'static str {
@@ -123,6 +125,7 @@ impl Service {
             Service::Mic => "the other computer isn't sharing its microphone",
             Service::Diagnostics => "the other device didn't send its report",
             Service::Screen => "the other computer isn't sharing its screen: turn on \"Share my screen\" there",
+            Service::Glow => "the other device didn't take the glow key",
         }
     }
 }

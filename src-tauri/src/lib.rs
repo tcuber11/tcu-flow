@@ -101,6 +101,36 @@ pub(crate) async fn open_service(app: &AppHandle, fingerprint: &str, service: kv
     kvm::open(&tls, to, fingerprint, service).await.map_err(|e| explain(app, fingerprint, &e))
 }
 
+/// This run's telemetry signing key, and which paired devices were handed it when.
+struct Glow {
+    signer: telemetry::Signer,
+    told: Mutex<HashMap<String, std::time::Instant>>,
+}
+
+static GLOW: std::sync::LazyLock<Glow> = std::sync::LazyLock::new(|| Glow { signer: telemetry::Signer::new(), told: Mutex::new(HashMap::new()) });
+
+/// A signed telemetry packet to paired device `fp` at `to`. The key goes over first (and again every
+/// 30 s: the other side forgets it when it restarts), in its own task so the 60 Hz loop never waits.
+async fn glow_send(app: &AppHandle, sock: &tokio::net::UdpSocket, fp: &str, to: SocketAddr, packet: &SpatialPacket) {
+    let stale = GLOW.told.lock().unwrap().get(fp).is_none_or(|t| t.elapsed() > Duration::from_secs(30));
+    if stale {
+        GLOW.told.lock().unwrap().insert(fp.to_string(), std::time::Instant::now());
+        let (app, fp) = (app.clone(), fp.to_string());
+        tauri::async_runtime::spawn(async move {
+            match open_service(&app, &fp, kvm::Service::Glow).await {
+                Ok(s) => {
+                    if let Err(e) = telemetry::send_key(s, &GLOW.signer).await {
+                        journal!("glow key not taken by {fp}: {e}");
+                    }
+                }
+                Err(e) => journal!("glow key to {fp}: {e}"),
+            }
+        });
+    }
+    let me = app.state::<Arc<Tls>>().me.clone();
+    telemetry::send(sock, to, packet, &GLOW.signer, &telemetry::key_id(&me)).await;
+}
+
 /// `e` from talking to device `fp`, as a message the user can act on (`kvm::explain`).
 fn explain(app: &AppHandle, fp: &str, e: &std::io::Error) -> String {
     let (alias, os, heard) = app.state::<AppState>().lock().unwrap().who(fp);
@@ -955,7 +985,7 @@ fn open_overlay(app: &AppHandle, label: &str, to: Option<String>, edge: Edge) ->
         tauri::async_runtime::spawn(async move {
             let packet = SpatialPacket { kind: PacketType::Drop, normalized_y: y, proximity: 1.0, payload: PayloadKind::File };
             if let (Ok(sock), Some(tele)) = (telemetry::sender().await, tele) {
-                telemetry::send(&sock, tele, &packet).await;
+                glow_send(&h, &sock, &fp, tele, &packet).await;
             }
             let _ = h.emit_to(&label, "spatial", packet);
             let files = tokio::task::spawn_blocking(move || transfer::expand(&paths)).await.unwrap_or_default();
@@ -1294,9 +1324,12 @@ pub fn run() {
             spawn_discovery(handle.clone(), state.clone(), me_rx);
             spawn_watchdog(handle.clone(), state.clone());
             spawn_transfer_server(&handle, state.clone(), tls.clone())?;
+            // senders whose glow packets this device accepts: paired devices hand their key over `Service::Glow`
+            let glow_keys = telemetry::Keys::default();
+            app.manage(glow_keys.clone());
             let h = handle.clone();
             tauri::async_runtime::spawn(async move {
-                if let Err(e) = telemetry::listen(PORTS.0, |p| {
+                if let Err(e) = telemetry::listen(PORTS.0, glow_keys, |p| {
                     let _ = h.emit("spatial-remote", p);
                 })
                 .await
@@ -1890,7 +1923,7 @@ fn spawn_kvm_receiver(app: AppHandle, engine: Arc<dyn SpatialPlatformEngine>, st
                     | kvm::Service::Sound
                     | kvm::Service::Notifications
                     | kvm::Service::Mic => false,
-                    kvm::Service::Diagnostics => true,
+                    kvm::Service::Diagnostics | kvm::Service::Glow => true,
                     kvm::Service::Screen => cfg!(desktop) && s.settings.sharing.screen,
                 }
         };
@@ -1911,6 +1944,7 @@ fn spawn_kvm_receiver(app: AppHandle, engine: Arc<dyn SpatialPlatformEngine>, st
                     }
                     #[cfg(mobile)]
                     kvm::Service::Screen => Ok(drop((stream, &fp))),
+                    kvm::Service::Glow => telemetry::receive_key(stream, screen_app.state::<telemetry::Keys>().inner(), &fp).await,
                     kvm::Service::Diagnostics => {
                         use tokio::io::AsyncWriteExt;
                         let text = report(&reporter);
@@ -2261,7 +2295,7 @@ async fn track(app: AppHandle, engine: Arc<dyn SpatialPlatformEngine>, state: Ap
         // the device behind a portal glows too; a band's driver has no glow for it
         let to = if band && packet.kind == PacketType::Proximity { None } else { state.lock().unwrap().addr(&fp, |i| i.telemetry_port) };
         if let Some(to) = to {
-            telemetry::send(&sock, to, &packet).await;
+            glow_send(&app, &sock, &fp, to, &packet).await;
         }
     }
 }

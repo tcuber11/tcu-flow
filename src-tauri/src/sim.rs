@@ -96,8 +96,10 @@ pub fn start(app: &AppHandle, state: &AppState) -> tauri::Result<()> {
     });
 
     let h = app.clone();
+    let glow_keys = telemetry::Keys::default();
+    let sim_keys = glow_keys.clone();
     tauri::async_runtime::spawn(async move {
-        let r = telemetry::listen(TELEMETRY_PORT, |p| {
+        let r = telemetry::listen(TELEMETRY_PORT, glow_keys, |p| {
             let _ = h.emit_to(LABEL, "spatial-remote", p);
         })
         .await;
@@ -143,10 +145,17 @@ pub fn start(app: &AppHandle, state: &AppState) -> tauri::Result<()> {
     // TCuFlow: the simulated phone "shares its screen" (this host's own display) so the remote viewer can be
     // tried on one computer; its input lands on this host too, so don't click around in that window
     let screen_app = app.clone();
-    let allow_service = move |service: kvm::Service, fp: &str| matches!(service, kvm::Service::Screen) && screen_paired(fp);
-    let on_service = move |_: kvm::Service, _: String, stream: crate::network::secure::Stream| {
+    let allow_service = move |service: kvm::Service, fp: &str| matches!(service, kvm::Service::Screen | kvm::Service::Glow) && screen_paired(fp);
+    let on_service = move |service: kvm::Service, fp: String, stream: crate::network::secure::Stream| {
         let app = screen_app.clone();
+        let keys = sim_keys.clone();
         tauri::async_runtime::spawn(async move {
+            if service == kvm::Service::Glow {
+                if let Err(e) = telemetry::receive_key(stream, &keys, &fp).await {
+                    journal!("sim glow key: {e}");
+                }
+                return;
+            }
             let engine = app.state::<Arc<dyn crate::platform::SpatialPlatformEngine>>().inner().clone();
             let screens = app.available_monitors().unwrap_or_default().iter().map(|m| crate::platform::Rect { x: m.position().x as f64, y: m.position().y as f64, w: m.size().width as f64, h: m.size().height as f64 }).collect();
             if let Err(e) = crate::screen::serve(stream, engine, screens).await {
