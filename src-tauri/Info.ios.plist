@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- iOS only; merged after Info.plist, whose desktop keys (document types, sound, microphone) iOS also gets.
+     TCuFlow on iOS doesn't open documents in place: saying so keeps App Store Connect's ITMS-90737 quiet. -->
+<plist version="1.0">
+<dict>
+  <key>LSSupportsOpeningDocumentsInPlace</key>
+  <false/>
+</dict>
+</plist>

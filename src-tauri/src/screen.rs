@@ -747,7 +747,8 @@ mod cap {
 
     /// Every monitor, in enumeration order, with its bounds in physical pixels.
     pub fn displays() -> Vec<Display> {
-        use windows::Win32::Graphics::Gdi::{GetMonitorInfoW, HMONITOR, MONITORINFO, MONITORINFOF_PRIMARY};
+        use windows::Win32::Graphics::Gdi::{GetMonitorInfoW, HMONITOR, MONITORINFO};
+        use windows_sys::Win32::UI::WindowsAndMessaging::MONITORINFOF_PRIMARY;
         let Ok(monitors) = Monitor::enumerate() else { return Vec::new() };
         monitors
             .iter()
