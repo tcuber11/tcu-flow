@@ -42,16 +42,19 @@ try {
     gh("release", "upload", tag, tgz, "--clobber");
     console.log(`uploaded ${tgz}`);
   }
-  // CI attaches the installers to the release (build.yml); if its run is still going, wait for it
+  // CI attaches the installers to the release (build.yml); if its run is still going, wait for it. Right after
+  // `gh release create` the run may not be listed yet, so give it two minutes to appear before signing without it.
+  // Notarizing alone can take 40 minutes.
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   for (let waited = 0; ; waited += 30) {
     const runs = JSON.parse(gh("run", "list", "--workflow", "build.yml", "--event", "release", "--limit", "3", "--json", "status,conclusion,headBranch"));
     const run = runs.find((r) => r.headBranch === tag);
-    if (!run || run.status === "completed") {
-      if (run?.conclusion && run.conclusion !== "success") console.warn(`build.yml for ${tag}: ${run.conclusion}; signing what is there`);
+    if (run?.status === "completed") {
+      if (run.conclusion !== "success") console.warn(`build.yml for ${tag}: ${run.conclusion}; signing what is there`);
       break;
     }
-    if (waited >= 45 * 60) throw new Error(`build.yml for ${tag} still running after 45 min`);
+    if (!run && waited >= 120) break;
+    if (waited >= 90 * 60) throw new Error(`build.yml for ${tag} still running after 90 min`);
     if (waited === 0) console.log(`waiting for build.yml to attach the installers to ${tag}…`);
     await sleep(30_000);
   }
