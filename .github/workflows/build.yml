@@ -217,40 +217,44 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
-  ios:
-    # TestFlight upload; needs the Apple secrets (docs/guides/apple-signing.md), skipped without them
-    runs-on: macos-latest
+  # Whether the iOS job has anything to do, decided on a Linux runner: without the iOS secrets it would hold a
+  # macOS runner (scarce at times, and the Mac build needs one) only to skip every step.
+  ios-gate:
+    runs-on: ubuntu-latest
     if: github.event_name != 'pull_request'
+    outputs:
+      ok: ${{ steps.gate.outputs.ok }}
     steps:
-      - uses: actions/checkout@v5
       - id: gate
         env:
           HAVE: ${{ secrets.IOS_CERTIFICATE != '' && secrets.IOS_PROVISIONING_PROFILE != '' && secrets.APPLE_API_KEY_B64 != '' }}
         run: echo "ok=$HAVE" >> "$GITHUB_OUTPUT"
-      - if: steps.gate.outputs.ok == 'true'
-        uses: actions/setup-node@v5
+
+  ios:
+    # TestFlight upload; needs the Apple secrets (docs/guides/apple-signing.md), skipped without them
+    needs: ios-gate
+    if: needs.ios-gate.outputs.ok == 'true'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
-      - if: steps.gate.outputs.ok == 'true'
-        uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-apple-ios
-      - if: steps.gate.outputs.ok == 'true'
-        uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
-      - if: steps.gate.outputs.ok == 'true'
-        run: npm ci
+      - run: npm ci
       # Apple Distribution certificate into a throwaway keychain, the App Store provisioning profile where Xcode
       # looks, and the App Store Connect API key for the upload
-      - if: steps.gate.outputs.ok == 'true'
-        uses: apple-actions/import-codesign-certs@v3
+      - uses: apple-actions/import-codesign-certs@v3
         with:
           p12-file-base64: ${{ secrets.IOS_CERTIFICATE }}
           p12-password: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
-      - if: steps.gate.outputs.ok == 'true'
-        env:
+      - env:
           PROFILE_B64: ${{ secrets.IOS_PROVISIONING_PROFILE }}
           APPLE_API_KEY_B64: ${{ secrets.APPLE_API_KEY_B64 }}
           APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
@@ -258,19 +262,17 @@ jobs:
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles ~/.appstoreconnect/private_keys
           echo "$PROFILE_B64" | base64 -d > ~/Library/MobileDevice/Provisioning\ Profiles/tcuflow.mobileprovision
           echo "$APPLE_API_KEY_B64" | base64 -d > ~/.appstoreconnect/private_keys/AuthKey_${APPLE_API_KEY}.p8
-      - if: steps.gate.outputs.ok == 'true'
-        run: npx tauri ios build --export-method app-store-connect
+      - run: npx tauri ios build --export-method app-store-connect
         env:
           APPLE_DEVELOPMENT_TEAM: ${{ secrets.APPLE_TEAM_ID }}
       # one upload per version: its build number is the version, and TestFlight refuses the same one twice, so
       # pushes and manual runs only check that the signed build works
-      - if: steps.gate.outputs.ok == 'true' && github.event_name == 'release'
+      - if: github.event_name == 'release'
         run: xcrun altool --upload-app --type ios --file src-tauri/gen/apple/build/arm64/tcuflow.ipa --apiKey "$APPLE_API_KEY" --apiIssuer "$APPLE_API_ISSUER"
         env:
           APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
-      - if: steps.gate.outputs.ok == 'true'
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: TCuFlow-ios
           path: src-tauri/gen/apple/build/arm64/*.ipa
