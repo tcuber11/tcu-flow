@@ -7,6 +7,7 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, readdirSync, writeFileSync, existsSync, rmSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const REPO = "tcuber11/tcu-flow";
 const tag = process.argv[2];
@@ -87,7 +88,38 @@ try {
   writeFileSync(join(dir, "latest.json"), JSON.stringify(latest, null, 2));
   gh("release", "upload", tag, join(dir, "latest.json"), "--clobber");
   console.log(`latest.json uploaded: ${Object.keys(platforms).length} targets`);
+  packageManagers(version);
 } finally {
   rmSync(dir, { recursive: true, force: true });
 }
 })();
+
+/** Homebrew (Casks/) and Scoop (bucket/) install from this repository: point both at this release, with the
+ *  checksums GitHub keeps for each file, and commit that (no CI run: nothing to build). */
+function packageManagers(version) {
+  const { assets } = JSON.parse(gh("api", `repos/${REPO}/releases/tags/${tag}`));
+  const sha = (suffix) => assets.find((a) => a.name.endsWith(suffix))?.digest?.replace(/^sha256:/, "");
+  const sums = { dmg: sha("_universal.dmg"), x64: sha("_x64-setup.exe"), arm64: sha("_arm64-setup.exe") };
+  if (!Object.values(sums).every(Boolean)) {
+    console.warn(`no checksums for the dmg and setup files of ${tag}: Homebrew and Scoop stay on the previous release`);
+    return;
+  }
+  const root = fileURLToPath(new URL("..", import.meta.url));
+  const files = ["Casks/tcuflow.rb", "bucket/tcuflow.json"];
+  const [cask, scoop] = files.map((f) => join(root, f));
+  writeFileSync(cask, readFileSync(cask, "utf8").replace(/version "[^"]*"/, `version "${version}"`).replace(/sha256 "[^"]*"/, `sha256 "${sums.dmg}"`));
+  const manifest = JSON.parse(readFileSync(scoop, "utf8"));
+  manifest.version = version;
+  for (const [arch, name] of [["64bit", "x64"], ["arm64", "arm64"]])
+    manifest.architecture[arch] = { url: `https://github.com/${REPO}/releases/download/${tag}/TCuFlow_${version}_${name}-setup.exe#/setup.exe`, hash: sums[name] };
+  writeFileSync(scoop, JSON.stringify(manifest, null, 4) + "\n");
+  const git = (...args) => execFileSync("git", args, { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "inherit"] });
+  if (!git("status", "--porcelain", "--", ...files).trim()) return;
+  git("commit", "-m", `chore: Homebrew and Scoop install ${tag} [skip ci]`, "--", ...files);
+  try {
+    git("push");
+    console.log(`Homebrew and Scoop now install ${tag}`);
+  } catch {
+    console.warn("Homebrew and Scoop files are committed but not pushed: run git push");
+  }
+}

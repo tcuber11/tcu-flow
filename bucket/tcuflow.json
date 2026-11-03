@@ -1,0 +1,41 @@
+{
+    "version": "0.9.11",
+    "description": "Share one mouse, keyboard and clipboard between computers on a network.",
+    "homepage": "https://tcuber11.github.io/tcu-flow/",
+    "license": "Apache-2.0",
+    "notes": "TCuFlow installs per user (%LOCALAPPDATA%\\TCuFlow) and updates itself from inside the app; `scoop update tcuflow` works too.",
+    "architecture": {
+        "64bit": {
+            "url": "https://github.com/tcuber11/tcu-flow/releases/download/v0.9.11/TCuFlow_0.9.11_x64-setup.exe#/setup.exe",
+            "hash": "e00f52c84ac3610fb13784bfc427100641a2722123e6d83abdfc59665cd8c1b8"
+        },
+        "arm64": {
+            "url": "https://github.com/tcuber11/tcu-flow/releases/download/v0.9.11/TCuFlow_0.9.11_arm64-setup.exe#/setup.exe",
+            "hash": "9c676824a5f2d4b182bfaf59aeabf2b26919900df79c84b4747fdaf7d3e3125b"
+        }
+    },
+    "installer": {
+        "script": [
+            "# TCuFlow's own installer, silently: it installs where the app's in-app updates expect to find it",
+            "Start-Process -Wait -FilePath \"$dir\\setup.exe\" -ArgumentList '/S'",
+            "Remove-Item \"$dir\\setup.exe\""
+        ]
+    },
+    "uninstaller": {
+        "script": [
+            "$entry = Get-ChildItem 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall' | Get-ItemProperty | Where-Object DisplayName -eq 'TCuFlow' | Select-Object -First 1",
+            "if ($entry) { Start-Process -Wait -FilePath $entry.UninstallString.Trim('\"') -ArgumentList '/S' }"
+        ]
+    },
+    "checkver": "github",
+    "autoupdate": {
+        "architecture": {
+            "64bit": {
+                "url": "https://github.com/tcuber11/tcu-flow/releases/download/v$version/TCuFlow_$version_x64-setup.exe#/setup.exe"
+            },
+            "arm64": {
+                "url": "https://github.com/tcuber11/tcu-flow/releases/download/v$version/TCuFlow_$version_arm64-setup.exe#/setup.exe"
+            }
+        }
+    }
+}

@@ -6,15 +6,34 @@ One mouse and keyboard for a Mac and a Windows PC on the same desk: push the cur
 
 > **Based on [LOKA](https://github.com/fanrsd/LOKA) by Aufa Nirsad** (Apache-2.0), imported at upstream 0.9.5 (`8403987`). See [NOTICE](NOTICE) for what TCuFlow changed.
 
+## Install
+
+Download from the [site](https://tcuber11.github.io/tcu-flow/) or the [latest release](https://github.com/tcuber11/tcu-flow/releases/latest): macOS (universal dmg, signed and notarized), Windows (x64 and ARM64), Linux (deb, rpm, AppImage), Android (APK). Installed apps update themselves.
+
+From the command line, with this repository as the tap or bucket:
+
+```bash
+# macOS, Homebrew (brew trust: Homebrew 7 and later)
+brew tap tcuber11/tcuflow https://github.com/tcuber11/tcu-flow
+brew trust --tap tcuber11/tcuflow
+brew install --cask tcuflow
+
+# Windows, Scoop
+scoop bucket add tcuflow https://github.com/tcuber11/tcu-flow
+scoop install tcuflow
+```
+
+`scripts/release.mjs` points `Casks/tcuflow.rb` and `bucket/tcuflow.json` at each new release.
+
 ## Status
 
 | Platform | Status |
 |---|---|
-| Windows 10/11 | Installer from CI (`build.yml`); not yet verified on real hardware |
-| macOS | Universal dmg from CI; needs the **Accessibility** permission (and **Screen Recording** to share its screen). Not yet verified on real hardware |
+| Windows 10/11 | x64 and ARM64 installers from CI (`build.yml`), not code-signed yet (SmartScreen asks once); not yet verified on real hardware |
+| macOS | Universal dmg from CI, Developer ID signed and notarized; needs the **Accessibility** permission (and **Screen Recording** to share its screen). Verified on macOS 27: install, in-app update, permissions, screen capture |
 | Linux (x86-64) | deb / rpm / AppImage from CI; X11 or XWayland; `tcuflow --allow-input` once to be controlled. Inherited code, untested |
 | Android 10+ | Signed APK from CI (`scripts/android-keystore.md`): touchpad, clipboard, files; being controlled needs the one-time Wireless-debugging setup in the app. Inherited code, untested |
-| iOS / iPadOS | Project in `src-tauri/gen/apple`: touchpad and file sending only (iOS lets no app inject input). Needs an Apple Developer account to ship (TestFlight / App Store); see `docs/guides/ios.md` |
+| iOS / iPadOS | Project in `src-tauri/gen/apple`: touchpad, clipboard and file sending (iOS lets no app inject input). Built by CI; shipping goes through TestFlight / App Store (`docs/guides/apple-signing.md`, `docs/guides/ios.md`) |
 
 Not offered in TCuFlow (refused by the backend, hidden in the UI): remote terminal, shared folder as a drive, sound, microphone and notification sharing.
 
@@ -39,7 +58,7 @@ npm run tauri build      # installers in src-tauri/target/release/bundle
 cargo test --manifest-path src-tauri/Cargo.toml
 ```
 
-In-app updates read `latest.json` from this repository's releases and still carry LOKA's updater public key. Generate your own key (`npx tauri signer generate`) and put its public key in `src-tauri/tauri.conf.json` before publishing a release.
+In-app updates read `latest.json` from this repository's releases; `scripts/release.mjs` signs it with TCuFlow's own updater key, whose public half is in `src-tauri/tauri.conf.json`. A fork needs its own (`npx tauri signer generate`).
 
 ## Documentation
 
