@@ -31,6 +31,7 @@ const TARGETS = [
 ];
 const gh = (...args) => execFileSync("gh", [...args, "-R", REPO], { encoding: "utf8", stdio: ["ignore", "pipe", "inherit"] });
 const dir = mkdtempSync(join(tmpdir(), "tcuflow-release-"));
+await (async () => {
 try {
   // The Mac updater installs from a tarball of the .app, not the dmg: pack the universal build if it is here.
   const macApp = "src-tauri/target/universal-apple-darwin/release/bundle/macos/TCuFlow.app";
@@ -39,6 +40,19 @@ try {
     execFileSync("tar", ["czf", tgz, "-C", join(macApp, ".."), "TCuFlow.app"], { stdio: "inherit" });
     gh("release", "upload", tag, tgz, "--clobber");
     console.log(`uploaded ${tgz}`);
+  }
+  // CI attaches the installers to the release (build.yml); if its run is still going, wait for it
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  for (let waited = 0; ; waited += 30) {
+    const runs = JSON.parse(gh("run", "list", "--workflow", "build.yml", "--event", "release", "--limit", "3", "--json", "status,conclusion,headBranch"));
+    const run = runs.find((r) => r.headBranch === tag);
+    if (!run || run.status === "completed") {
+      if (run?.conclusion && run.conclusion !== "success") console.warn(`build.yml for ${tag}: ${run.conclusion}; signing what is there`);
+      break;
+    }
+    if (waited >= 45 * 60) throw new Error(`build.yml for ${tag} still running after 45 min`);
+    if (waited === 0) console.log(`waiting for build.yml to attach the installers to ${tag}…`);
+    await sleep(30_000);
   }
   const release = JSON.parse(gh("release", "view", tag, "--json", "body,publishedAt"));
   gh("release", "download", tag, "-D", dir, ...TARGETS.flatMap(([suffix]) => ["-p", `*${suffix}`]));
@@ -64,3 +78,4 @@ try {
 } finally {
   rmSync(dir, { recursive: true, force: true });
 }
+})();
