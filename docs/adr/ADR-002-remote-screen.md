@@ -22,8 +22,9 @@ A `Screen` service (`kvm::Service::Screen = 7`) on the KVM endpoint, refused unl
 - A "being viewed" banner on the shared side (`screen-viewed` event) with **Stop sharing**, which ends every stream (`screen::stop_sharing`), as does turning the toggle off.
 - Keys and buttons the viewer holds are released when its stream ends.
 
-### Slice 3 (next)
-- Multi-display choice; clipboard sync inside the viewer; hardware encoders.
+### Slice 3
+- Multi-display (done): the capture backend lists its displays with their physical bounds (ScreenCaptureKit + CoreGraphics on macOS, `GetMonitorInfoW` on Windows); tag 2 carries the list, the viewer shows a picker when there is more than one, input frame 7 switches the shared display mid-stream (the encoder restarts on the new size).
+- Next: clipboard sync inside the viewer; hardware encoders.
 
 ### Outside the network
 Not a TCuFlow relay. Tailscale (or any VPN) makes the linked computer reachable: add its Tailscale IP under **Add by IP** on both sides. Documented in `docs/guides/remote-mac-from-iphone.md`; an iPhone viewer would be a separate project (ADR-001 scope note).

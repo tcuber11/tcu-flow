@@ -603,6 +603,20 @@ unsafe fn to_points(x: f64, y: f64) -> CGPoint {
     CGPoint { x: x / s, y: y / s }
 }
 
+/// Bounds of display `id` in physical pixels, as tao reports monitors (points × backing scale).
+pub fn display_bounds_px(id: u32) -> super::Rect {
+    // SAFETY: CoreGraphics display queries take any display id and answer an empty rect for a bad one
+    unsafe {
+        let b = CGDisplayBounds(id);
+        let s = display_scale(id);
+        super::Rect { x: b.origin.x * s, y: b.origin.y * s, w: b.size.width * s, h: b.size.height * s }
+    }
+}
+
+pub fn main_display_id() -> u32 {
+    unsafe { CGMainDisplayID() }
+}
+
 unsafe fn display_scale(id: u32) -> f64 {
     let mode = CGDisplayCopyDisplayMode(id);
     if mode.is_null() {

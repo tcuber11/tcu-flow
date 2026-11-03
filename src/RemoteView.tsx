@@ -13,6 +13,8 @@ export function RemoteView() {
   const idRef = useRef<number | null>(null);
   const [state, setState] = useState<{ at: "connecting" } | { at: "live"; fps: number; kb: number } | { at: "ended"; why: string }>({ at: "connecting" });
   const [inside, setInside] = useState(false);
+  // every display the other computer has, and which one is shown (a picker when there is more than one)
+  const [displays, setDisplays] = useState<{ list: { w: number; h: number; primary: boolean }[]; shown: number }>({ list: [], shown: 0 });
   // the drawn image's rectangle inside the canvas, for mapping pointer positions
   const fit = useRef({ x: 0, y: 0, w: 1, h: 1 });
   const size = useRef({ w: 0, h: 0 });
@@ -140,6 +142,15 @@ export function RemoteView() {
       } else if (tag === 2 && body.length >= 8) {
         const v = new DataView(body.buffer, body.byteOffset);
         size.current = { w: v.getUint32(0, true), h: v.getUint32(4, true) };
+        if (body.length >= 10) {
+          const n = Math.min(body[9], Math.floor((body.length - 10) / 9));
+          const list = [];
+          for (let i = 0; i < n; i++) {
+            const at = 10 + i * 9;
+            list.push({ w: v.getUint32(at, true), h: v.getUint32(at + 4, true), primary: body[at + 8] === 1 });
+          }
+          setDisplays({ list, shown: body[8] });
+        }
       } else if (tag === 3) {
         gone = true;
         setState({ at: "ended", why: new TextDecoder().decode(body) });
@@ -260,6 +271,21 @@ export function RemoteView() {
           <Badge tone="accent">Connecting…</Badge>
         ) : (
           <Badge tone="danger">Ended</Badge>
+        )}
+        {displays.list.length > 1 && (
+          <span className="flex items-center gap-1" role="group" aria-label="Which display to show">
+            {displays.list.map((d, i) => (
+              <button
+                key={i}
+                onClick={() => send(frame(7, (v) => v.setUint8(1, i)))}
+                aria-pressed={i === displays.shown}
+                title={`${d.w}×${d.h}${d.primary ? " · main" : ""}`}
+                className={`rounded-md px-2 py-0.5 ${i === displays.shown ? "bg-accent text-white" : "bg-tint/10 text-muted hover:text-fg"}`}
+              >
+                {i + 1}
+              </button>
+            ))}
+          </span>
         )}
         <span className="ml-auto">{inside ? "Keyboard goes to " + alias + " · move the pointer off the screen to type here" : "Move the pointer over the screen to control it"}</span>
       </div>

@@ -78,7 +78,7 @@ Linking never starts with the computer or shares anything on its own; it only al
 
 1. On the computer to be viewed: **This computer shares → Its screen** on. macOS asks for Screen Recording the first time a viewer connects; until it is granted the viewer sees the refusal with the setting to open.
 2. On the viewing computer: **View screen** on the linked device's row (or its context menu). A window titled with the device's name opens.
-3. The window shows the other computer's primary display (H.264; JPEG on a webview without video decoding). While the pointer is over the image, mouse, wheel and keyboard go there; moving the pointer off the image gives the keyboard back. The status bar shows fps and KB/s.
+3. The window shows the other computer's main display (H.264; JPEG on a webview without video decoding); with several displays, numbered buttons in the status bar switch between them. While the pointer is over the image, mouse, wheel and keyboard go there; moving the pointer off the image gives the keyboard back. The status bar shows fps and KB/s.
 4. The computer being viewed shows a banner "⟨device⟩ is viewing and controlling this screen" with **Stop sharing**.
 5. Closing the window, Stop sharing, turning the toggle off, or losing the link ends the stream; keys and buttons the viewer held are released there.
 
