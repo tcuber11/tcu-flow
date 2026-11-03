@@ -57,9 +57,11 @@ pub struct Settings {
     path: PathBuf,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(default, rename_all = "camelCase")]
 pub struct Sharing {
+    /// the clipboard (text, pictures, copied files) crosses with the cursor; on unless turned off (FR-014)
+    pub clipboard: bool,
     pub terminal: bool,
     /// the folder paired devices can open as a network drive
     pub folder: Option<PathBuf>,
@@ -68,6 +70,12 @@ pub struct Sharing {
     pub mic: bool,
     /// paired devices may view and control this computer's screen (TCuFlow)
     pub screen: bool,
+}
+
+impl Default for Sharing {
+    fn default() -> Self {
+        Self { clipboard: true, terminal: false, folder: None, sound: false, notifications: false, mic: false, screen: false }
+    }
 }
 
 impl Settings {

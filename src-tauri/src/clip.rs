@@ -25,7 +25,7 @@ pub enum Outgoing {
 /// This computer's clipboard picture or files if they changed since the last exchange. Blocking: reads
 /// the clipboard and encodes PNG.
 pub fn outgoing() -> Option<Outgoing> {
-    if platform::clipboard_concealed() {
+    if !platform::clipboard_shared() || platform::clipboard_concealed() {
         return None;
     }
     let files = platform::clipboard_files();
@@ -51,6 +51,9 @@ pub fn outgoing() -> Option<Outgoing> {
 
 /// A picture from the other device: onto this clipboard, remembered so it doesn't go back.
 pub fn apply_image(png: &[u8]) {
+    if !platform::clipboard_shared() {
+        return;
+    }
     let Ok(img) = image::load_from_memory_with_format(png, image::ImageFormat::Png) else { return };
     let img = img.into_rgba8();
     let (w, h) = (img.width() as usize, img.height() as usize);
@@ -61,6 +64,9 @@ pub fn apply_image(png: &[u8]) {
 
 /// Files from the other device, already saved locally: onto this clipboard for a normal paste.
 pub fn apply_files(paths: &[PathBuf]) {
+    if !platform::clipboard_shared() {
+        return;
+    }
     *LAST_FILES.lock().unwrap() = Some(files_hash(paths));
     platform::set_clipboard_files(paths);
 }

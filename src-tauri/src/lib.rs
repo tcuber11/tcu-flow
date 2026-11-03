@@ -403,6 +403,7 @@ pub(crate) fn received_dir(app: &AppHandle) -> PathBuf {
 
 #[tauri::command]
 fn set_sharing(app: AppHandle, state: State<AppState>, sharing: settings::Sharing) {
+    platform::set_clipboard_shared(sharing.clipboard);
     let mut s = state.lock().unwrap();
     s.settings.sharing = sharing;
     s.settings.save();
@@ -1039,10 +1040,12 @@ impl kvm::Sink for EngineSink {
         self.engine.inject(e);
     }
     fn clipboard(&self) -> Option<String> {
-        platform::clipboard_text()
+        platform::clipboard_shared().then(platform::clipboard_text).flatten()
     }
     fn set_clipboard(&mut self, text: String) {
-        platform::set_clipboard_text(&text);
+        if platform::clipboard_shared() {
+            platform::set_clipboard_text(&text);
+        }
     }
     fn drag(&mut self, batch: u64) {
         hold_drag(&self.app, BAND, batch);
@@ -1268,6 +1271,7 @@ pub fn run() {
                 controllable: !cfg!(target_os = "android"),
                 text: true,
             };
+            platform::set_clipboard_shared(settings.sharing.clipboard);
             let state: AppState = Arc::new(Mutex::new(Shared {
                 settings,
                 peers: HashMap::new(),

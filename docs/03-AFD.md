@@ -19,7 +19,7 @@ One window (the same on macOS and Windows) plus the tray menu.
 - Where your devices sit: screens map, device placement, glow colour and style.
 - How it feels over there: pointer speed, edge delay, Ctrl/⌘ swap (when a linked device is selected).
 - Test connection / Troubleshoot (selected device).
-- This computer shares: screen (off by default); Received files: destination folder.
+- This computer shares: clipboard (on by default), screen (off by default); Received files: destination folder.
 - Recent clipboard; transfer toasts.
 
 **Tray menu:** Control a placed device, Disconnect, Start with computer, About, Quit.
@@ -65,7 +65,7 @@ Linking never starts with the computer or shares anything on its own; it only al
 - Copy on one computer, move the cursor over, paste on the other: text, pictures (including screenshots) and copied files, in both directions.
 - Secrets marked by password managers stay home; nothing is stored on disk.
 - **Recent clipboard** lists the last 12 copies for re-copying.
-- There is no on/off toggle yet (PRD FR-014 gap).
+- **This computer shares → Its clipboard** (on by default) turns it off for this computer in both directions; Recent clipboard keeps working.
 
 ## 8. File transfer
 
@@ -108,6 +108,5 @@ Linking never starts with the computer or shares anything on its own; it only al
 
 ## 12. Open UX questions
 
-- Clipboard on/off toggle (FR-014) and where it lives.
 - Whether incoming files should ask before landing for unknown file types.
 - A visible indicator on the driven computer that it is being controlled.

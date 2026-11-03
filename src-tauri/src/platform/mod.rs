@@ -213,6 +213,18 @@ fn with_clipboard<T>(f: impl FnOnce(&mut arboard::Clipboard) -> Result<T, arboar
     f(&mut arboard::Clipboard::new()?)
 }
 
+/// "Its clipboard" in Sharing (FR-014): off keeps this device's clipboard home and ignores what arrives.
+/// Only the sharing paths consult it; the local Recent-clipboard history keeps working.
+static CLIPBOARD_SHARED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(true);
+
+pub fn clipboard_shared() -> bool {
+    CLIPBOARD_SHARED.load(std::sync::atomic::Ordering::Relaxed)
+}
+
+pub fn set_clipboard_shared(on: bool) {
+    CLIPBOARD_SHARED.store(on, std::sync::atomic::Ordering::Relaxed);
+}
+
 /// Plain-text clipboard. `None` when empty, not text, secret, or held by another app.
 pub fn clipboard_text() -> Option<String> {
     #[cfg(desktop)]

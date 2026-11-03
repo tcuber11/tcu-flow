@@ -702,10 +702,11 @@ pub async fn send_session(
                 Ok(Msg::Drag { batch }) => drag = Some(batch),
                 Ok(Msg::Refuse(r)) => return Err(io::Error::new(io::ErrorKind::PermissionDenied, r)),
                 Ok(Msg::Clipboard { len }) => match read_clipboard(&mut rd, len).await {
-                    Ok(Some(text)) => {
+                    Ok(Some(text)) if crate::platform::clipboard_shared() => {
                         set_clipboard_text(&text);
                         *LAST_SHARED.lock().unwrap() = Some(text);
                     }
+                    Ok(Some(_)) => {}
                     Ok(None) => {}
                     Err(e) => return Err(closed(e)),
                 },
@@ -724,7 +725,7 @@ pub async fn send_session(
             timeout(WRITE_TIMEOUT, send(&mut wr, Msg::Drag { batch })).await??;
         }
         // after capture is on: reading the clipboard (it may wait for a picture being read) never holds the cursor at the edge
-        let fresh = clipboard_text().filter(|t| LAST_SHARED.lock().unwrap().as_ref() != Some(t));
+        let fresh = crate::platform::clipboard_shared().then(clipboard_text).flatten().filter(|t| LAST_SHARED.lock().unwrap().as_ref() != Some(t));
         timeout(WRITE_TIMEOUT, write_clipboard(&mut wr, fresh.clone())).await??;
         if fresh.is_some() {
             *LAST_SHARED.lock().unwrap() = fresh;

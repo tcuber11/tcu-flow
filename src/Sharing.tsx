@@ -39,7 +39,13 @@ export function Sharing({ initial, received, mac, onChange }: { initial: Sharing
         This computer shares
       </h2>
       <p className="mt-1 text-sm text-muted">Only with linked computers, over their encrypted link.</p>
-      <div className="mt-5">
+      <div className="mt-5 flex flex-col gap-4">
+        <Toggle
+          on={s.clipboard}
+          onChange={(clipboard) => change({ clipboard })}
+          label="Its clipboard"
+          hint="Text, pictures and copied files cross with the cursor, both ways. Off keeps this computer's clipboard home and ignores what arrives."
+        />
         <Toggle
           on={s.screen}
           onChange={(screen) => change({ screen })}

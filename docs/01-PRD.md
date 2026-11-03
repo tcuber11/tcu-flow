@@ -130,7 +130,7 @@ A person who owns and uses both a Mac and a Windows laptop at the same desk and 
 | FR-011 | Restore local input on return transition, disconnect or emergency shortcut | P0 |
 | FR-012 | Synchronize clipboard text, pictures and copied files in both directions | P0 |
 | FR-013 | Prevent clipboard echo/loop and duplicate updates | P0 |
-| FR-014 | Enable/disable clipboard sharing | P0 — **gap:** no toggle yet; clipboard follows the cursor when it crosses |
+| FR-014 | Enable/disable clipboard sharing | P0 — done: "Its clipboard" under This computer shares, on by default |
 | FR-015 | Transfer selected files in both directions | P0 |
 | FR-016 | Show progress, speed, completion and failure states | P0 |
 | FR-017 | Validate received content using SHA-256 | P0 — **gap:** transport (QUIC/TLS) integrity only |
