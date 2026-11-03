@@ -1,15 +1,18 @@
 //! Remote screen: a paired device's primary display streamed over the pinned link, with the viewer's mouse
 //! and keyboard sent back and injected there. Opt-in on the shared side ("Share my screen"), refused
-//! otherwise like every service. First slice: JPEG frames at up to 20 fps, downscaled to 1600 px wide;
-//! a hardware video codec can replace the encoder without touching the wire framing.
+//! otherwise like every service. Frames are downscaled to at most 1600 px wide and sent at up to 20 fps:
+//! as H.264 (OpenH264, screen-content mode, ~3 Mbit/s) once the viewer says it can decode video (its
+//! webview's WebCodecs), as JPEG until then and for a viewer that can't. Hardware encoders can replace
+//! OpenH264 behind `H264` without touching the wire.
 //!
 //! Wire after the service handshake (little-endian):
 //! - server → client: `tag: u8 | len: u32 | len bytes`. Tag 1: a JPEG frame. Tag 2: info, `w: u32, h: u32`,
-//!   the shared display in physical pixels. Tag 3: UTF-8 error text, after which the stream closes.
+//!   the shared display in physical pixels. Tag 3: UTF-8 error text, after which the stream closes. Tag 4: an
+//!   H.264 access unit, `key: u8 | w: u16 | h: u16 | Annex B NAL units` (SPS/PPS ride along with every key frame).
 //! - client → server: fixed 9-byte frames `tag: u8 | 8 payload bytes`: 1 move `nx: f32, ny: f32` (0..1 of the
 //!   shared display), 2 button `button: u8, down: u8` (1 left, 2 right, 3 middle), 3 wheel `dx: i32, dy: i32`
 //!   (120 per notch, up is positive), 4 key `scan: u16, down: u8` (set-1 scancode); 5 text `len: u32` then
-//!   `len` bytes of UTF-8 typed at the cursor.
+//!   `len` bytes of UTF-8 typed at the cursor; 6 codec `video: u8` (1: send H.264, 0: back to JPEG).
 //! Any malformed client frame ends the session, and so does the viewer going away: the capture stops with it.
 
 use std::collections::HashMap;
@@ -29,6 +32,9 @@ use crate::platform::{Injected, Rect, SpatialPlatformEngine};
 const FRAME: u8 = 1;
 const INFO: u8 = 2;
 const ERROR: u8 = 3;
+const VIDEO: u8 = 4;
+/// H.264 target bit rate; screen content at 1600 px wide looks clean here and sits well below a Wi-Fi link
+const BITRATE: u32 = 3_000_000;
 /// frames are downscaled to at most this wide
 const MAX_WIDTH: u32 = 1600;
 const QUALITY: u8 = 70;
@@ -66,7 +72,8 @@ impl Slot {
 /// `MAX_WIDTH` wide. `stride` is the source row length in bytes.
 pub fn pack(src: &[u8], w: u32, h: u32, stride: usize, bgra: bool) -> Rgb {
     let f = w.div_ceil(MAX_WIDTH).max(1);
-    let (ow, oh) = (w / f, h / f);
+    // even sizes: H.264 works in 2×2 chroma blocks
+    let (ow, oh) = ((w / f) & !1, (h / f) & !1);
     let (r, b) = if bgra { (2usize, 0usize) } else { (0, 2) };
     let mut data = Vec::with_capacity((ow * oh * 3) as usize);
     let n = (f * f) as u32;
@@ -103,6 +110,47 @@ fn encode(rgb: &Rgb) -> io::Result<Vec<u8>> {
         .encode(&rgb.data, rgb.w, rgb.h, image::ExtendedColorType::Rgb8)
         .map_err(io::Error::other)?;
     Ok(out)
+}
+
+/// The H.264 encoder for one stream, remade when the frame size changes.
+struct H264 {
+    enc: openh264::encoder::Encoder,
+    yuv: openh264::formats::YUVBuffer,
+    w: u32,
+    h: u32,
+    started: std::time::Instant,
+}
+
+impl H264 {
+    fn new(w: u32, h: u32) -> io::Result<Self> {
+        use openh264::encoder::{BitRate, EncoderConfig, FrameRate, RateControlMode, UsageType};
+        let config = EncoderConfig::new()
+            .usage_type(UsageType::ScreenContentRealTime)
+            .rate_control_mode(RateControlMode::Bitrate)
+            .bitrate(BitRate::from_bps(BITRATE))
+            .max_frame_rate(FrameRate::from_hz(1000.0 / MIN_INTERVAL.as_millis() as f32))
+            .skip_frames(false);
+        let enc = openh264::encoder::Encoder::with_api_config(openh264::OpenH264API::from_source(), config).map_err(io::Error::other)?;
+        Ok(Self { enc, yuv: openh264::formats::YUVBuffer::new(w as usize, h as usize), w, h, started: std::time::Instant::now() })
+    }
+
+    /// `(key frame?, Annex B bytes)`, or `None` when the encoder skipped the frame.
+    fn encode(&mut self, rgb: &Rgb) -> io::Result<Option<(bool, Vec<u8>)>> {
+        use openh264::encoder::FrameType;
+        self.yuv.read_rgb8(openh264::formats::RgbSliceU8::new(&rgb.data, (rgb.w as usize, rgb.h as usize)));
+        let at = openh264::Timestamp::from_millis(self.started.elapsed().as_millis() as u64);
+        let out = self.enc.encode_at(&self.yuv, at).map_err(io::Error::other)?;
+        let key = match out.frame_type() {
+            FrameType::Skip | FrameType::Invalid => return Ok(None),
+            FrameType::IDR | FrameType::I => true,
+            _ => false,
+        };
+        let mut body = vec![key as u8];
+        body.extend_from_slice(&(rgb.w as u16).to_le_bytes());
+        body.extend_from_slice(&(rgb.h as u16).to_le_bytes());
+        out.write_vec(&mut body);
+        Ok(Some((key, body)))
+    }
 }
 
 /// A running capture of the primary display; dropping it stops the capture.
@@ -238,24 +286,51 @@ pub async fn serve(stream: Stream, engine: Arc<dyn SpatialPlatformEngine>, scree
     info.extend_from_slice(&(display.h as u32).to_le_bytes());
     say(&mut wr, INFO, &info).await?;
 
-    // encoder thread → bounded queue → writer; a full queue drops the frame (the next one is newer anyway)
-    let (tx, mut rx) = mpsc::channel::<Vec<u8>>(2);
+    // encoder thread → bounded queue → writer; a full queue drops the frame (the next one is newer anyway).
+    // JPEG until the viewer asks for video (`want_video`); the H.264 encoder is made on that first frame.
+    let (tx, mut rx) = mpsc::channel::<(u8, Vec<u8>)>(2);
     let encoding = Arc::new(AtomicBool::new(true));
-    let (slot2, enc2) = (slot.clone(), encoding.clone());
+    let want_video = Arc::new(AtomicBool::new(false));
+    let (slot2, enc2, video2) = (slot.clone(), encoding.clone(), want_video.clone());
     std::thread::Builder::new()
         .name("tcuflow-encode".into())
         .spawn(move || {
             let mut last = 0u64;
+            let mut h264: Option<H264> = None;
             while enc2.load(Ordering::Relaxed) {
                 let Some(rgb) = slot2.take(Duration::from_millis(500)) else { continue };
                 let fp = fingerprint(&rgb);
                 if fp == last {
                     continue;
                 }
+                if video2.load(Ordering::Relaxed) {
+                    if h264.as_ref().is_none_or(|h| (h.w, h.h) != (rgb.w, rgb.h)) {
+                        match H264::new(rgb.w, rgb.h) {
+                            Ok(h) => h264 = Some(h),
+                            Err(e) => {
+                                journal!("H.264 unavailable, staying with JPEG: {e}");
+                                video2.store(false, Ordering::Relaxed);
+                            }
+                        }
+                    }
+                    if let Some(h) = h264.as_mut() {
+                        match h.encode(&rgb) {
+                            Ok(Some((_, body))) => {
+                                last = fp;
+                                let _ = tx.try_send((VIDEO, body));
+                            }
+                            Ok(None) => {}
+                            Err(e) => journal!("screen encode (h264): {e}"),
+                        }
+                        continue;
+                    }
+                } else if h264.is_some() {
+                    h264 = None; // the viewer went back to JPEG
+                }
                 match encode(&rgb) {
                     Ok(jpeg) => {
                         last = fp;
-                        let _ = tx.try_send(jpeg);
+                        let _ = tx.try_send((FRAME, jpeg));
                     }
                     Err(e) => journal!("screen encode: {e}"),
                 }
@@ -263,8 +338,8 @@ pub async fn serve(stream: Stream, engine: Arc<dyn SpatialPlatformEngine>, scree
         })
         .map_err(io::Error::other)?;
     let writer = async move {
-        while let Some(jpeg) = rx.recv().await {
-            say(&mut wr, FRAME, &jpeg).await?;
+        while let Some((tag, body)) = rx.recv().await {
+            say(&mut wr, tag, &body).await?;
         }
         Ok::<(), io::Error>(())
     };
@@ -290,6 +365,10 @@ pub async fn serve(stream: Stream, engine: Arc<dyn SpatialPlatformEngine>, scree
                     let mut text = vec![0u8; len as usize];
                     rd.read_exact(&mut text).await?;
                     Injected::Text { text: String::from_utf8_lossy(&text).into_owned() }
+                }
+                6 => {
+                    want_video.store(b[1] == 1, Ordering::Relaxed);
+                    continue;
                 }
                 _ => return Err(io::Error::new(io::ErrorKind::InvalidData, "bad input frame")),
             };
@@ -543,17 +622,39 @@ mod tests {
     use super::*;
 
     #[test]
+    fn h264_frames_start_with_a_key_frame_and_carry_their_size() {
+        let (w, h) = (320u32, 200u32);
+        let mut rgb = Rgb { w, h, data: vec![0; (w * h * 3) as usize] };
+        let mut enc = H264::new(w, h).unwrap();
+        let (key, body) = enc.encode(&rgb).unwrap().expect("first frame");
+        assert!(key, "the first frame is an IDR");
+        assert_eq!(&body[..5], &[1, 64, 1, 200, 0], "key flag, width 320, height 200");
+        assert_eq!(&body[5..9], &[0, 0, 0, 1], "Annex B start code");
+        assert!(body.len() > 9);
+        // a change makes a (smaller) delta frame
+        for px in rgb.data.chunks_mut(3).take(5000) {
+            px[0] = 200;
+        }
+        let (key2, body2) = enc.encode(&rgb).unwrap().expect("second frame");
+        assert!(!key2);
+        assert!(body2.len() < body.len());
+    }
+
+    #[test]
     fn pack_converts_bgra_and_downscales_by_whole_pixels() {
-        // 2x1 BGRA image, stride with padding
-        let src = [10u8, 20, 30, 255, 40, 50, 60, 255, 0, 0, 0, 0];
-        let rgb = pack(&src, 2, 1, 12, true);
-        assert_eq!((rgb.w, rgb.h), (2, 1));
-        assert_eq!(rgb.data, vec![30, 20, 10, 60, 50, 40]);
-        // 4000 px wide → factor 3 → 1333 wide, each output pixel the mean of a 3x3 block
+        // 2x2 BGRA image, stride with padding
+        let src = [10u8, 20, 30, 255, 40, 50, 60, 255, 0, 0, 0, 0, 10, 20, 30, 255, 40, 50, 60, 255, 0, 0, 0, 0];
+        let rgb = pack(&src, 2, 2, 12, true);
+        assert_eq!((rgb.w, rgb.h), (2, 2));
+        assert_eq!(rgb.data, vec![30, 20, 10, 60, 50, 40, 30, 20, 10, 60, 50, 40]);
+        // 4000 px wide → factor 3 → 1333 wide, rounded down to even for H.264, each output pixel the mean of a 3x3 block
         let w = 4000u32;
         let src = vec![100u8; (w * 3 * 4) as usize];
         let rgb = pack(&src, w, 3, (w * 4) as usize, false);
-        assert_eq!((rgb.w, rgb.h), (1333, 1));
+        assert_eq!((rgb.w, rgb.h), (1332, 0), "an odd height rounds to even too");
+        let src = vec![100u8; (w * 6 * 4) as usize];
+        let rgb = pack(&src, w, 6, (w * 4) as usize, false);
+        assert_eq!((rgb.w, rgb.h), (1332, 2));
         assert!(rgb.data.iter().all(|&b| b == 100));
     }
 

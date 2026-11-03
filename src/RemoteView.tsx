@@ -26,11 +26,40 @@ export function RemoteView() {
     let bytes = 0;
     let drawing = false;
     let latest: Blob | null = null;
+    // H.264 through the webview's WebCodecs when it has them (WebKit 16.4+, WebView2); JPEG otherwise
+    const canVideo = typeof VideoDecoder !== "undefined";
+    let decoder: VideoDecoder | null = null;
+    let latestFrame: VideoFrame | null = null;
+    let decoderBroken = false;
     const meter = setInterval(() => {
       if (!gone) setState((s) => (s.at === "live" || s.at === "connecting" ? { at: "live", fps: frames, kb: Math.round(bytes / 1024) } : s));
       frames = 0;
       bytes = 0;
     }, 1000);
+
+    /** Fits `img` (a decoded JPEG or a video frame) into the canvas, remembering where it sits for input. */
+    const paint = (img: ImageBitmap | VideoFrame, iw: number, ih: number) => {
+      const c = canvas.current;
+      if (!c) return;
+      const dpr = devicePixelRatio || 1;
+      const cw = Math.round(c.clientWidth * dpr);
+      const ch = Math.round(c.clientHeight * dpr);
+      if (c.width !== cw || c.height !== ch) {
+        c.width = cw;
+        c.height = ch;
+      }
+      const scale = Math.min(cw / iw, ch / ih);
+      const w = Math.round(iw * scale);
+      const h = Math.round(ih * scale);
+      const x = Math.round((cw - w) / 2);
+      const y = Math.round((ch - h) / 2);
+      fit.current = { x: x / dpr, y: y / dpr, w: w / dpr, h: h / dpr };
+      const ctx = c.getContext("2d")!;
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, cw, ch);
+      ctx.drawImage(img, x, y, w, h);
+      frames++;
+    };
 
     const draw = async () => {
       if (drawing || !latest) return;
@@ -39,27 +68,7 @@ export function RemoteView() {
       latest = null;
       try {
         const bmp = await createImageBitmap(blob);
-        const c = canvas.current;
-        if (c) {
-          const dpr = devicePixelRatio || 1;
-          const cw = Math.round(c.clientWidth * dpr);
-          const ch = Math.round(c.clientHeight * dpr);
-          if (c.width !== cw || c.height !== ch) {
-            c.width = cw;
-            c.height = ch;
-          }
-          const scale = Math.min(cw / bmp.width, ch / bmp.height);
-          const w = Math.round(bmp.width * scale);
-          const h = Math.round(bmp.height * scale);
-          const x = Math.round((cw - w) / 2);
-          const y = Math.round((ch - h) / 2);
-          fit.current = { x: x / dpr, y: y / dpr, w: w / dpr, h: h / dpr };
-          const ctx = c.getContext("2d")!;
-          ctx.fillStyle = "#000";
-          ctx.fillRect(0, 0, cw, ch);
-          ctx.drawImage(bmp, x, y, w, h);
-          frames++;
-        }
+        paint(bmp, bmp.width, bmp.height);
         bmp.close();
       } finally {
         drawing = false;
@@ -67,11 +76,67 @@ export function RemoteView() {
       }
     };
 
+    // the newest decoded frame wins; older ones that were still queued are dropped unseen
+    const drawFrame = () => {
+      const f = latestFrame;
+      if (!f) return;
+      latestFrame = null;
+      paint(f, f.displayWidth, f.displayHeight);
+      f.close();
+    };
+
+    const sendCodec = (video: boolean) => {
+      if (idRef.current === null) return;
+      const b = new Uint8Array(9);
+      b[0] = 6;
+      b[1] = video ? 1 : 0;
+      invoke("remote_input", { id: idRef.current, data: Array.from(b) });
+    };
+
+    /** Falls back to JPEG for the rest of the session when decoding fails. */
+    const videoFailed = (e: unknown) => {
+      if (decoderBroken) return;
+      decoderBroken = true;
+      console.warn("remote screen: video decode failed, back to JPEG", e);
+      try {
+        decoder?.close();
+      } catch {}
+      decoder = null;
+      sendCodec(false);
+    };
+
+    const ensureDecoder = () => {
+      if (decoder && decoder.state === "configured") return decoder;
+      decoder = new VideoDecoder({
+        output: (f) => {
+          latestFrame?.close();
+          latestFrame = f;
+          drawFrame();
+        },
+        error: videoFailed,
+      });
+      // Annex B stream (no description): SPS/PPS come with every key frame; constrained baseline, level 4
+      decoder.configure({ codec: "avc1.42E028", optimizeForLatency: true });
+      return decoder;
+    };
+
     const handle = (tag: number, body: Uint8Array) => {
       if (tag === 1) {
         bytes += body.length;
         latest = new Blob([body.slice()], { type: "image/jpeg" });
         void draw();
+      } else if (tag === 4 && body.length > 5) {
+        bytes += body.length;
+        if (decoderBroken) return;
+        const key = body[0] === 1;
+        try {
+          const d = ensureDecoder();
+          // a decoder can only start on a key frame; the server sends one first, and after every size change
+          if (d.decodeQueueSize > 4 && !key) return; // behind: let it catch up on the next key frame
+          d.decode(new EncodedVideoChunk({ type: key ? "key" : "delta", timestamp: Math.round(performance.now() * 1000), data: body.slice(5) }));
+        } catch (e) {
+          videoFailed(e);
+        }
       } else if (tag === 2 && body.length >= 8) {
         const v = new DataView(body.buffer, body.byteOffset);
         size.current = { w: v.getUint32(0, true), h: v.getUint32(4, true) };
@@ -112,6 +177,7 @@ export function RemoteView() {
         id = i;
         idRef.current = i;
         if (gone) invoke("remote_close", { id: i });
+        else if (canVideo) sendCodec(true);
       },
       (e) => {
         gone = true;
@@ -120,6 +186,10 @@ export function RemoteView() {
     );
     return () => {
       clearInterval(meter);
+      latestFrame?.close();
+      try {
+        decoder?.close();
+      } catch {}
       if (id !== null) invoke("remote_close", { id });
     };
   }, [fingerprint, alias]);
