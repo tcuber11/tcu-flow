@@ -108,6 +108,34 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
+  windows-arm64:
+    # Surface and other Snapdragon laptops; GitHub's public arm64 Windows runner
+    runs-on: windows-11-arm
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-pc-windows-msvc
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - run: npm ci
+      - run: npx tauri build --bundles nsis --target aarch64-pc-windows-msvc
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TCuFlow-windows-arm64
+          path: src-tauri/target/aarch64-pc-windows-msvc/release/bundle/nsis/*-setup.exe
+          if-no-files-found: error
+      - if: github.event_name == 'release'
+        shell: bash
+        run: gh release upload "$GITHUB_REF_NAME" src-tauri/target/aarch64-pc-windows-msvc/release/bundle/nsis/*-setup.exe --clobber
+        env:
+          GH_TOKEN: ${{ github.token }}
+
   linux:
     runs-on: ubuntu-22.04
     steps:

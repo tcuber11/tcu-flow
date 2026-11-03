@@ -21,6 +21,7 @@ const password = process.env.TAURI_SIGNING_PRIVATE_KEY_PASSWORD ?? (existsSync(`
 
 // asset suffix → the updater targets it serves (`{os}-{arch}-{bundle}` first, then `{os}-{arch}` for unknown bundles)
 const TARGETS = [
+  ["_arm64-setup.exe", ["windows-aarch64-nsis", "windows-aarch64"]],
   ["-setup.exe", ["windows-x86_64-nsis", "windows-x86_64"]],
   [".msi", ["windows-x86_64-msi"]],
   [".AppImage", ["linux-x86_64-appimage", "linux-x86_64"]],

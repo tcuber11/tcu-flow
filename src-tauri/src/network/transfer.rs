@@ -364,6 +364,7 @@ async fn receive(mut s: impl AsyncRead + Unpin, dir: &Path, clip_dir: &Path, bat
     .await;
     match r {
         Ok(()) => {
+            quarantine(&path);
             on_event(TransferEvent::File { id, path: path.clone() });
             if let Some(b) = h.clip {
                 let done = {
@@ -392,6 +393,27 @@ async fn receive(mut s: impl AsyncRead + Unpin, dir: &Path, clip_dir: &Path, bat
         }
     }
     Ok(())
+}
+
+/// Marks a received file as downloaded from elsewhere, so the OS's own checks apply when it is opened
+/// (Gatekeeper on macOS, SmartScreen on Windows): a received installer or script asks before it runs,
+/// like one saved by a browser. The file still lands without a prompt. No-op elsewhere.
+fn quarantine(path: &Path) {
+    #[cfg(target_os = "macos")]
+    {
+        // agent flags;timestamp;agent name;UUID — the form Safari and Finder write
+        let stamp = format!("0083;{:x};TCuFlow;", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0));
+        let _ = std::process::Command::new("xattr").args(["-w", "com.apple.quarantine", &stamp]).arg(path).output();
+    }
+    #[cfg(target_os = "windows")]
+    {
+        // Mark-of-the-Web: an alternate data stream with the Internet zone
+        let mut ads = path.as_os_str().to_os_string();
+        ads.push(":Zone.Identifier");
+        let _ = std::fs::write(ads, "[ZoneTransfer]\r\nZoneId=3\r\n");
+    }
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+    let _ = path;
 }
 
 fn drag_dir(clip_dir: &Path, batch: u64) -> PathBuf {

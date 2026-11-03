@@ -1053,6 +1053,7 @@ impl Drop for EngineSink {
             }
             gone.and_then(|(fp, _)| s.addr(&fp, |i| i.transfer_port).map(|a| (a, fp)))
         };
+        let _ = self.app.emit("driven", serde_json::json!({ "on": false }));
         refresh_tray(&self.app);
         #[cfg(desktop)]
         if let Some((addr, fp)) = to {
@@ -1883,9 +1884,11 @@ fn spawn_kvm_receiver(app: AppHandle, engine: Arc<dyn SpatialPlatformEngine>, st
             let band = Portal { edge, monitor, start: 0.0, end: 1.0, reach: 120.0 };
             let state = app.state::<AppState>();
             let mut s = state.lock().unwrap();
-            journal!("driven by {}, entering at the {edge:?} edge", s.who(fp).0);
+            let alias = s.who(fp).0;
+            journal!("driven by {alias}, entering at the {edge:?} edge");
             s.session = Some((fp.to_string(), band));
             drop(s);
+            let _ = app.emit("driven", serde_json::json!({ "on": true, "alias": alias, "fingerprint": fp }));
             engine.show_cursor(true);
             Some(EngineSink { engine: engine.clone(), screens, app: app.clone() })
         };
@@ -1897,13 +1900,16 @@ fn spawn_kvm_receiver(app: AppHandle, engine: Arc<dyn SpatialPlatformEngine>, st
             }
             // the whole entry edge leads back to the driver: files dragged there and dropped go to it (reach = Calibrate's REACH)
             let band = Portal { edge, monitor: kvm::bounds(&screens), start: 0.0, end: 1.0, reach: 120.0 };
-            let placed = {
+            let (placed, alias) = {
                 let state = app.state::<AppState>();
                 let mut s = state.lock().unwrap();
                 s.session = Some((fp.to_string(), band));
-                journal!("driven by {}, entering at the {edge:?} edge of {screens:?}", s.who(fp).0);
-                s.settings.portals.contains_key(fp)
+                let alias = s.who(fp).0;
+                journal!("driven by {alias}, entering at the {edge:?} edge of {screens:?}");
+                (s.settings.portals.contains_key(fp), alias)
             };
+            // the main window shows who is at the keyboard, with a way to take it back
+            let _ = app.emit("driven", serde_json::json!({ "on": true, "alias": alias, "fingerprint": fp }));
             // no way to the driver yet: it goes on the entry edge, editable in the layout
             if !placed {
                 mirror_portal(&app, fp, Some(edge));

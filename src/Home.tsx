@@ -146,12 +146,15 @@ function Devices({ device, peers, onChange }: { device: Device; peers: Peer[]; o
   const [selected, setSelected] = useState<string | null>(() => localStorage.getItem(SELECTED_KEY));
   const [pairing, setPairing] = useState<Record<string, PairState>>({});
   const [kvm, setKvm] = useState<{ active: boolean; error?: string | null; device?: string }>({ active: false });
+  // who is driving this computer through the edge right now
+  const [driver, setDriver] = useState<{ alias: string; fingerprint: string } | null>(null);
   const [locked, setLocked] = useState(false);
   const mac = device.info.os === "macos";
 
   useEffect(() => {
     const un = listen<{ active: boolean; error?: string | null; device?: string }>("kvm", (e) => setKvm(e.payload));
     const unLock = listen<boolean>("lock", (e) => setLocked(e.payload));
+    const unDriven = listen<{ on: boolean; alias?: string; fingerprint?: string }>("driven", ({ payload }) => setDriver(payload.on && payload.alias && payload.fingerprint ? { alias: payload.alias, fingerprint: payload.fingerprint } : null));
     // the requester's half of the pairing code arrives once both nonces are exchanged
     const unCode = listen<{ fingerprint: string; code: string }>("pair-code", ({ payload: { fingerprint: f, code } }) =>
       setPairing((s) => (s[f]?.state === "waiting" ? { ...s, [f]: { state: "waiting", code } } : s)),
@@ -159,6 +162,7 @@ function Devices({ device, peers, onChange }: { device: Device; peers: Peer[]; o
     return () => {
       un.then((f) => f());
       unLock.then((f) => f());
+      unDriven.then((f) => f());
       unCode.then((f) => f());
     };
   }, []);
@@ -462,6 +466,22 @@ function Devices({ device, peers, onChange }: { device: Device; peers: Peer[]; o
         </div>
       )}
 
+      {/* another computer's cursor is here: say so, with a way to take the keyboard back */}
+      {driver && !kvm.active && (
+        <div
+          role="status"
+          className="fixed bottom-5 left-1/2 z-20 flex w-max max-w-[calc(100%-2.5rem)] -translate-x-1/2 items-center gap-3 rounded-full bg-raised py-2 pl-2 pr-2 text-sm shadow-[0_8px_28px_rgb(0_0_0/0.18)]"
+          style={{ animation: "sheet-in 0.4s var(--ease-out-expo)" }}
+        >
+          <Face seed={driver.fingerprint} size={26} mood="happy" />
+          <span>
+            <span className="font-semibold">{driver.alias}</span> is using this computer
+          </span>
+          <button onClick={() => invoke("disconnect")} className={quietButton + " ml-1 min-h-8 ring-1 ring-line"}>
+            Take back
+          </button>
+        </div>
+      )}
       {/* status toast while input is on another device, locked, or why it couldn't move */}
       {(kvm.active || kvm.error || locked) && (
         <div
