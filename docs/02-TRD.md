@@ -160,7 +160,7 @@ TCuFlow adds one service of its own: **Screen** (`screen.rs`, [ADR-002](adr/ADR-
 
 - `cargo test` (53 tests): pairing code, identity persistence, transfers, clipboard batches, settings, path safety. One transfer test is occasionally flaky under parallel load.
 - `npm run build`: TypeScript typecheck and bundle.
-- CI on Windows runners for every push; the **Build Windows installer** workflow produces the NSIS installer as an artifact.
+- CI on Windows runners for every push; the **Build installers** workflow (`build.yml`) produces every installer (macOS dmg + updater tarball, Windows NSIS, Linux deb/rpm/AppImage, Android APK, iOS to TestFlight when the Apple secrets are set) as artifacts, and attaches them to a published GitHub release.
 - Real-hardware verification of input, clipboard and transfers between a Mac and a Windows PC is still pending.
 
 ## 14. Packaging and updates

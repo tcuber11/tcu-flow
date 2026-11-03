@@ -22,7 +22,7 @@ tcu-flow/
 │   └── tauri.conf.json
 ├── docs/                   # this pack, adr/, phase-0/, diagrams/
 ├── scripts/release.mjs     # signs installers into latest.json
-├── .github/workflows/      # ci.yml (tests on Windows), build-windows.yml (installer artifact)
+├── .github/workflows/      # ci.yml (tests on Windows), build.yml (every installer; attaches them to releases), pages.yml (site)
 ├── DESIGN.md · PRODUCT.md · NOTICE · LICENSE
 └── package.json
 ```
@@ -57,7 +57,8 @@ npm install
 npm run tauri dev                               # run locally
 npm run tauri build                             # installers in src-tauri/target/release/bundle
 cargo test --manifest-path src-tauri/Cargo.toml # backend tests
-gh workflow run "Build Windows installer"       # Windows installer artifact on GitHub
+gh workflow run "Build installers"              # every installer as artifacts on GitHub
+# release: node scripts/bump.mjs X.Y.Z → commit → gh release create vX.Y.Z --generate-notes → (CI attaches) → node scripts/release.mjs vX.Y.Z
 ```
 
 Both computers must run builds from the same protocol version (`kvm::PROTOCOL`).
