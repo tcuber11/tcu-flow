@@ -33,6 +33,20 @@ export function RemoteView() {
     let decoder: VideoDecoder | null = null;
     let latestFrame: VideoFrame | null = null;
     let decoderBroken = false;
+    // clipboard both ways: what this computer copies goes over while the window is open, and back
+    let lastClip: string | null = null;
+    const clipPoll = setInterval(async () => {
+      if (gone || idRef.current === null || document.hidden) return;
+      const text = await invoke<string | null>("remote_clipboard_get").catch(() => null);
+      if (!text || text === lastClip) return;
+      lastClip = text;
+      const bytes = new TextEncoder().encode(text);
+      if (bytes.length > 1 << 20) return;
+      const head = new Uint8Array(9);
+      head[0] = 8;
+      new DataView(head.buffer).setUint32(1, bytes.length, true);
+      invoke("remote_input", { id: idRef.current, data: [...head, ...bytes] });
+    }, 1000);
     const meter = setInterval(() => {
       if (!gone) setState((s) => (s.at === "live" || s.at === "connecting" ? { at: "live", fps: frames, kb: Math.round(bytes / 1024) } : s));
       frames = 0;
@@ -139,6 +153,11 @@ export function RemoteView() {
         } catch (e) {
           videoFailed(e);
         }
+      } else if (tag === 5) {
+        // copied over there: onto this clipboard, remembered so the poll below doesn't send it back
+        const text = new TextDecoder().decode(body);
+        lastClip = text;
+        invoke("remote_clipboard_set", { text });
       } else if (tag === 2 && body.length >= 8) {
         const v = new DataView(body.buffer, body.byteOffset);
         size.current = { w: v.getUint32(0, true), h: v.getUint32(4, true) };
@@ -197,6 +216,7 @@ export function RemoteView() {
     );
     return () => {
       clearInterval(meter);
+      clearInterval(clipPoll);
       latestFrame?.close();
       try {
         decoder?.close();

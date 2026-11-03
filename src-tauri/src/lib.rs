@@ -1258,6 +1258,10 @@ pub fn run() {
             #[cfg(desktop)]
             screen::open_remote_window,
             #[cfg(desktop)]
+            screen::remote_clipboard_get,
+            #[cfg(desktop)]
+            screen::remote_clipboard_set,
+            #[cfg(desktop)]
             update::install_update,
             notify::set_mirroring
         ])

@@ -24,7 +24,8 @@ A `Screen` service (`kvm::Service::Screen = 7`) on the KVM endpoint, refused unl
 
 ### Slice 3
 - Multi-display (done): the capture backend lists its displays with their physical bounds (ScreenCaptureKit + CoreGraphics on macOS, `GetMonitorInfoW` on Windows); tag 2 carries the list, the viewer shows a picker when there is more than one, input frame 7 switches the shared display mid-stream (the encoder restarts on the new size).
-- Next: clipboard sync inside the viewer; hardware encoders.
+- Clipboard inside the viewer (done): text copied on either side while the window is open lands on the other (tag 5 down, input frame 8 up, both honouring "Its clipboard"), so copy there / paste here works without an edge crossing.
+- Next: hardware encoders (VideoToolbox / Media Foundation) behind `screen::H264`.
 
 ### Outside the network
 Not a TCuFlow relay. Tailscale (or any VPN) makes the linked computer reachable: add its Tailscale IP under **Add by IP** on both sides. Documented in `docs/guides/remote-mac-from-iphone.md`; an iPhone viewer would be a separate project (ADR-001 scope note).

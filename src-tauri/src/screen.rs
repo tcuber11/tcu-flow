@@ -9,13 +9,15 @@
 //! - server → client: `tag: u8 | len: u32 | len bytes`. Tag 1: a JPEG frame. Tag 2: info, `w: u32, h: u32`
 //!   of the shown display in physical pixels, then `shown: u8, n: u8` and `n` × `w: u32, h: u32, primary: u8`
 //!   (every display, for a picker); sent again when the shown display changes. Tag 3: UTF-8 error text, after
-//!   which the stream closes. Tag 4: an
+//!   which the stream closes. Tag 5: clipboard text copied on the shared computer while it is viewed (UTF-8,
+//!   ≤ 1 MiB), for the viewer's clipboard. Tag 4: an
 //!   H.264 access unit, `key: u8 | w: u16 | h: u16 | Annex B NAL units` (SPS/PPS ride along with every key frame).
 //! - client → server: fixed 9-byte frames `tag: u8 | 8 payload bytes`: 1 move `nx: f32, ny: f32` (0..1 of the
 //!   shared display), 2 button `button: u8, down: u8` (1 left, 2 right, 3 middle), 3 wheel `dx: i32, dy: i32`
 //!   (120 per notch, up is positive), 4 key `scan: u16, down: u8` (set-1 scancode); 5 text `len: u32` then
 //!   `len` bytes of UTF-8 typed at the cursor; 6 codec `video: u8` (1: send H.264, 0: back to JPEG); 7 display
-//!   `index: u8` into the info list: show that one instead.
+//!   `index: u8` into the info list: show that one instead; 8 clipboard `len: u32` then `len` bytes of UTF-8
+//!   copied on the viewer, for the shared computer's clipboard. Both directions obey "Its clipboard" there.
 //! Any malformed client frame ends the session, and so does the viewer going away: the capture stops with it.
 
 use std::collections::HashMap;
@@ -36,6 +38,9 @@ const FRAME: u8 = 1;
 const INFO: u8 = 2;
 const ERROR: u8 = 3;
 const VIDEO: u8 = 4;
+const CLIP: u8 = 5;
+/// clipboard text either way is capped here, like the edge session's
+const MAX_CLIP: usize = 1 << 20;
 /// H.264 target bit rate; screen content at 1600 px wide looks clean here and sits well below a Wi-Fi link
 const BITRATE: u32 = 3_000_000;
 /// frames are downscaled to at most this wide
@@ -329,7 +334,7 @@ pub async fn serve(stream: Stream, engine: Arc<dyn SpatialPlatformEngine>, scree
     // encoder thread → bounded queue → writer; a full queue drops the frame (the next one is newer anyway).
     // JPEG until the viewer asks for video (`want_video`); the H.264 encoder is made on that first frame.
     let (tx, mut rx) = mpsc::channel::<(u8, Vec<u8>)>(2);
-    let tx_info = tx.clone();
+    let (tx_info, tx_clip) = (tx.clone(), tx.clone());
     let encoding = Arc::new(AtomicBool::new(true));
     let want_video = Arc::new(AtomicBool::new(false));
     let (slot2, enc2, video2) = (slot.clone(), encoding.clone(), want_video.clone());
@@ -388,6 +393,34 @@ pub async fn serve(stream: Stream, engine: Arc<dyn SpatialPlatformEngine>, scree
     let held: Arc<Mutex<(std::collections::HashSet<u16>, std::collections::HashSet<u8>)>> = Arc::default();
     let (held2, engine2) = (held.clone(), engine.clone());
     let (capture_r, display_r, slot_r) = (capture.clone(), display.clone(), slot.clone());
+    // text copied here while viewed goes to the viewer; what it sends must not bounce straight back
+    let last_clip: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(crate::platform::clipboard_text()));
+    let clip_watch = {
+        let (tx, last) = (tx_clip, last_clip.clone());
+        async move {
+            let mut tick = tokio::time::interval(Duration::from_millis(500));
+            loop {
+                tick.tick().await;
+                if !crate::platform::clipboard_shared() {
+                    continue;
+                }
+                let now = tokio::task::spawn_blocking(crate::platform::clipboard_text).await.ok().flatten();
+                let fresh = {
+                    let mut l = last.lock().unwrap();
+                    (now.is_some() && now != *l).then(|| {
+                        *l = now.clone();
+                        now.unwrap()
+                    })
+                };
+                if let Some(text) = fresh.filter(|t| t.len() <= MAX_CLIP) {
+                    if tx.send((CLIP, text.into_bytes())).await.is_err() {
+                        break;
+                    }
+                }
+            }
+            Ok::<(), io::Error>(())
+        }
+    };
     // the viewer's input, injected on this computer
     let reader = async move {
         let mut b = [0u8; 9];
@@ -429,6 +462,20 @@ pub async fn serve(stream: Stream, engine: Arc<dyn SpatialPlatformEngine>, scree
                     want_video.store(b[1] == 1, Ordering::Relaxed);
                     continue;
                 }
+                8 => {
+                    let len = u32::from_le_bytes(b[1..5].try_into().unwrap()) as usize;
+                    if len > MAX_CLIP {
+                        return Err(io::Error::new(io::ErrorKind::InvalidData, "clipboard too long"));
+                    }
+                    let mut text = vec![0u8; len];
+                    rd.read_exact(&mut text).await?;
+                    if crate::platform::clipboard_shared() {
+                        let text = String::from_utf8_lossy(&text).into_owned();
+                        *last_clip.lock().unwrap() = Some(text.clone());
+                        tokio::task::spawn_blocking(move || crate::platform::set_clipboard_text(&text)).await.ok();
+                    }
+                    continue;
+                }
                 7 => {
                     let want = b[1] as usize;
                     if want < displays.len() && want != shown {
@@ -457,6 +504,7 @@ pub async fn serve(stream: Stream, engine: Arc<dyn SpatialPlatformEngine>, scree
     let r = tokio::select! {
         r = writer => r,
         r = reader => r,
+        r = clip_watch => r,
         () = stopped => Ok(()),
     };
     encoding.store(false, Ordering::Relaxed);
@@ -526,6 +574,20 @@ pub async fn remote_open(app: AppHandle, fingerprint: String, on_data: Channel<I
 pub fn remote_input(id: u64, data: Vec<u8>) {
     if let Some(tx) = sessions().as_ref().unwrap().get(&id) {
         let _ = tx.send(data);
+    }
+}
+
+/// The viewer window's own clipboard text (desktop): sent to the shared computer when it changes.
+#[tauri::command]
+pub fn remote_clipboard_get() -> Option<String> {
+    crate::platform::clipboard_shared().then(crate::platform::clipboard_text).flatten()
+}
+
+/// Text copied on the shared computer, onto the viewer's clipboard.
+#[tauri::command]
+pub fn remote_clipboard_set(text: String) {
+    if crate::platform::clipboard_shared() {
+        crate::platform::set_clipboard_text(&text);
     }
 }
 
