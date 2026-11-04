@@ -124,7 +124,7 @@ impl Service {
             Service::Notifications => "the other computer isn't sharing its notifications",
             Service::Mic => "the other computer isn't sharing its microphone",
             Service::Diagnostics => "the other device didn't send its report",
-            Service::Screen => "the other computer isn't sharing its screen: turn on \"Share my screen\" there",
+            Service::Screen => "the other computer isn't sharing its screen: turn on \"Its screen\" under \"This computer shares\" there",
             Service::Glow => "the other device didn't take the glow key",
         }
     }

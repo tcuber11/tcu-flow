@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { RemoteView } from "./RemoteView";
 import { Wizard, useControl, type Control } from "./Control";
 import { Face, type Mood } from "./Face";
 import { AddHost } from "./Home";
@@ -20,6 +21,8 @@ export function Mobile() {
   const [peers, setPeers] = useState<Peer[]>([]);
   const [pairing, setPairing] = useState<Record<string, Pairing>>({});
   const [driving, setDriving] = useState<Peer | null>(null);
+  // the computer whose screen is shown full screen here
+  const [viewing, setViewing] = useState<Peer | null>(null);
   const [screen, setScreen] = useState<"home" | "wizard" | "settings">("home");
   const [about, setAbout] = useState(false);
   // a computer was just paired: point at the setup that lets it move in
@@ -60,6 +63,7 @@ export function Mobile() {
 
   if (!device) return null;
   if (driving) return <Touchpad peer={driving} onClose={() => setDriving(null)} />;
+  if (viewing) return <RemoteView fingerprint={viewing.info.fingerprint} alias={viewing.info.alias} touch onClose={() => setViewing(null)} />;
   const first = device.paired[0]?.alias ?? "your computer";
   if (screen === "wizard")
     return (
@@ -187,9 +191,12 @@ export function Mobile() {
                 <StateBadge state={state} />
               </div>
               {reason && <p className="mt-3 text-sm leading-relaxed text-muted">{reason}.</p>}
-              <div className="mt-4 flex gap-2">
-                <button disabled={state !== "ready"} onClick={() => peer && setDriving(peer)} className={primaryButton + " min-h-11 flex-1"}>
-                  Use as touchpad
+              <button disabled={state !== "ready"} onClick={() => peer && setDriving(peer)} className={primaryButton + " mt-4 min-h-11 w-full"}>
+                Use as touchpad
+              </button>
+              <div className="mt-2 flex gap-2">
+                <button disabled={!usable} onClick={() => peer && setViewing(peer)} className={quietButton + " min-h-11 flex-1 ring-1 ring-line disabled:opacity-50"}>
+                  View screen
                 </button>
                 <button
                   disabled={!usable}
@@ -197,7 +204,7 @@ export function Mobile() {
                     sendTo.current = d.fingerprint;
                     files.current?.click();
                   }}
-                  className={quietButton + " min-h-11 ring-1 ring-line disabled:opacity-50"}
+                  className={quietButton + " min-h-11 flex-1 ring-1 ring-line disabled:opacity-50"}
                 >
                   Send files
                 </button>

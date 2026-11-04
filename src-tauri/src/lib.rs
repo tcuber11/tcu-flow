@@ -25,6 +25,7 @@ mod shell;
 mod sim;
 #[cfg(desktop)]
 mod update;
+mod viewer;
 
 use network::{
     discovery::{self, DeviceInfo, DeviceType, Peer},
@@ -1311,18 +1312,13 @@ pub fn run() {
             audio::set_mic,
             #[cfg(desktop)]
             update::check_update,
-            #[cfg(desktop)]
-            screen::remote_open,
-            #[cfg(desktop)]
-            screen::remote_input,
-            #[cfg(desktop)]
-            screen::remote_close,
+            viewer::remote_open,
+            viewer::remote_input,
+            viewer::remote_close,
+            viewer::remote_clipboard_get,
+            viewer::remote_clipboard_set,
             #[cfg(desktop)]
             screen::open_remote_window,
-            #[cfg(desktop)]
-            screen::remote_clipboard_get,
-            #[cfg(desktop)]
-            screen::remote_clipboard_set,
             #[cfg(desktop)]
             update::install_update,
             notify::set_mirroring

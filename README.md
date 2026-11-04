@@ -43,7 +43,7 @@ sha256sum --ignore-missing -c SHA256SUMS               # macOS: shasum -a 256 --
 | macOS | Universal dmg from CI, Developer ID signed and notarized; needs the **Accessibility** permission (and **Screen Recording** to share its screen). Verified on macOS 27: install, in-app update, permissions, screen capture |
 | Linux (x86-64) | deb / rpm / AppImage from CI; X11 or XWayland; `tcuflow --allow-input` once to be controlled. Inherited code, untested |
 | Android 10+ | Signed APK from CI (`scripts/android-keystore.md`): touchpad, clipboard, files; being controlled needs the one-time Wireless-debugging setup in the app. Inherited code, untested |
-| iOS / iPadOS | Project in `src-tauri/gen/apple`: touchpad, clipboard and file sending (iOS lets no app inject input). Built by CI; shipping goes through TestFlight / App Store (`docs/guides/apple-signing.md`, `docs/guides/ios.md`) |
+| iOS / iPadOS | Project in `src-tauri/gen/apple`: touchpad, clipboard, file sending and viewing a computer's screen (iOS lets no app inject input, so it can't be controlled itself). Built by CI; shipping goes through TestFlight / App Store (`docs/guides/apple-signing.md`, `docs/guides/ios.md`) |
 
 Also shared on request, each off until switched on under **This computer shares** (only with paired computers): a folder (opens as a drive), sound, microphone, notifications, and a terminal (runs commands as you; meant for your own computers only).
 

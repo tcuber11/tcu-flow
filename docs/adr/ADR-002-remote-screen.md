@@ -29,8 +29,11 @@ A `Screen` service (`kvm::Service::Screen = 7`) on the KVM endpoint, refused unl
 - Video is never dropped once encoded (the encoder thread waits for the link; the capture slot drops raw frames meanwhile). A viewer whose decoder falls behind or fails asks for a key frame (input frame 9) and skips deltas until it arrives; the shared side re-sends a still screen as that key frame, and forces one again when the encoder dropped it. The viewer asks each second; after five unanswered asks, or a second decode failure in a row, it goes back to JPEG.
 - Mixed versions: input frames 7–9 are new in 0.9.10, and an older shared side ends the session on a frame it doesn't know. The viewer sends them only once tag 2 has carried the display list (0.9.10 and later); with an older one it falls back to JPEG instead of asking for key frames.
 
+### Phone and tablet viewer
+The viewer side (`viewer.rs`: open the stream, send input frames, the clipboard) builds on every platform; capturing stays desktop-only. On iOS and Android, **View screen** on a paired computer opens `RemoteView` full screen in touch mode: a tap clicks, a long press right-clicks, one finger drags, two fingers scroll, a pinch zooms the picture (two fingers pan while zoomed), and the phone's keyboard types (text frames, Return and Backspace as keys). The clipboard never polls there, since iOS asks the user each time an app reads it: **Paste there** sends it once, and text copied over there still lands on the phone.
+
 ### Outside the network
-Not a TCuFlow relay. Tailscale (or any VPN) makes the linked computer reachable: add its Tailscale IP under **Add by IP** on both sides. Documented in `docs/guides/remote-mac-from-iphone.md`; an iPhone viewer would be a separate project (ADR-001 scope note).
+Not a TCuFlow relay. Tailscale (or any VPN) makes the linked computer reachable: add its Tailscale IP under **Add by IP** on both sides. Documented in `docs/guides/remote-mac-from-iphone.md`; the iPhone/iPad viewer is below.
 
 ## Consequences
 

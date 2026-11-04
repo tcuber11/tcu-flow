@@ -1,14 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Channel, invoke } from "@tauri-apps/api/core";
 import { scanOf } from "./scancodes";
-import { Badge } from "./Pairing";
+import { Badge, quietButton } from "./Pairing";
 
-/** The remote screen window (label `remote-*`): the other computer's display, and this computer's mouse and
- *  keyboard sent there while the pointer is over it. Wire format: `screen.rs`. */
-export function RemoteView() {
-  const q = new URLSearchParams(location.search);
-  const fingerprint = q.get("remote") ?? "";
-  const alias = q.get("alias") ?? "the other computer";
+/** The other computer's display, with input sent there. On a computer (window `remote-*`) its mouse and keyboard
+ *  while the pointer is over the picture; on a phone or tablet (`touch`, full screen, `onClose` goes back) a tap
+ *  clicks, a long press right-clicks, one finger drags, two scroll, a pinch zooms the picture, and its keyboard
+ *  types. Wire format: `screen.rs`. */
+export function RemoteView({ fingerprint, alias, touch = false, onClose }: { fingerprint: string; alias: string; touch?: boolean; onClose?: () => void }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const idRef = useRef<number | null>(null);
   const [state, setState] = useState<{ at: "connecting" } | { at: "live"; fps: number; kb: number } | { at: "ended"; why: string }>({ at: "connecting" });
@@ -20,7 +19,7 @@ export function RemoteView() {
   const size = useRef({ w: 0, h: 0 });
 
   useEffect(() => {
-    document.title = `${alias} — TCuFlow`;
+    if (!touch) document.title = `${alias} — TCuFlow`;
     let id: number | null = null;
     let gone = false;
     let pending = new Uint8Array(0);
@@ -46,10 +45,11 @@ export function RemoteView() {
     let latestFrame: VideoFrame | null = null;
     let decoderBroken = false;
     // clipboard both ways: what this computer copies goes over while the window is open, and back. `null` until
-    // the session opens, with what is on this clipboard then, which stays here
+    // the session opens, with what is on this clipboard then, which stays here. A phone doesn't poll: iOS asks the
+    // user each time an app reads the clipboard, so there it goes over only from its button (sendClipboard).
     let lastClip: string | null = null;
     const clipPoll = setInterval(async () => {
-      if (gone || idRef.current === null || document.hidden || !modern || lastClip === null) return;
+      if (touch || gone || idRef.current === null || document.hidden || !modern || lastClip === null) return;
       const text = await invoke<string | null>("remote_clipboard_get").catch(() => null);
       if (!text || text === lastClip) return;
       lastClip = text;
@@ -253,6 +253,7 @@ export function RemoteView() {
         idRef.current = i;
         if (gone) invoke("remote_close", { id: i });
         else void canVideo.then((ok) => ok && !gone && sendCodec(true));
+        if (touch) return;
         invoke<string | null>("remote_clipboard_get").then(
           (t) => {
             if (lastClip === null) lastClip = t ?? "";
@@ -276,7 +277,7 @@ export function RemoteView() {
       } catch {}
       if (id !== null) invoke("remote_close", { id });
     };
-  }, [fingerprint, alias]);
+  }, [fingerprint, alias, touch]);
 
   // ---- input → the other computer
   const send = (bytes: number[]) => idRef.current !== null && invoke("remote_input", { id: idRef.current, data: bytes });
@@ -328,6 +329,253 @@ export function RemoteView() {
       send([5, ...Array.from(new Uint8Array(new Uint32Array([text.length]).buffer)), 0, 0, 0, 0, ...Array.from(text)]);
     }
   };
+
+  // ---- touch (phone, tablet): gestures on the picture, a keyboard, the clipboard on request
+  // the picture's zoom and offset inside its box; a pinch changes them, two fingers pan while zoomed in
+  const [view, setView] = useState({ z: 1, x: 0, y: 0 });
+  const viewRef = useRef(view);
+  viewRef.current = view;
+  const box = useRef<HTMLDivElement>(null);
+  const fingers = useRef(new Map<number, { x: number; y: number }>());
+  type Gesture =
+    | { kind: "none" | "done" }
+    | { kind: "one" | "drag"; x0: number; y0: number; timer: number }
+    | { kind: "two" | "zoom"; mid: { x: number; y: number }; last: { x: number; y: number }; dist: number; z0: number; v0: { x: number; y: number } };
+  const gesture = useRef<Gesture>({ kind: "none" });
+  const scrollRest = useRef(0);
+  /** A screen point → where on the other computer's display, or null off the picture. */
+  const spot = (clientX: number, clientY: number) => {
+    const f = fit.current;
+    const r = canvas.current!.getBoundingClientRect();
+    const z = viewRef.current.z;
+    const nx = ((clientX - r.left) / z - f.x) / f.w;
+    const ny = ((clientY - r.top) / z - f.y) / f.h;
+    return nx >= 0 && nx <= 1 && ny >= 0 && ny <= 1 ? { nx, ny } : null;
+  };
+  const moveTo = (clientX: number, clientY: number) => {
+    const p = spot(clientX, clientY);
+    if (p) send(frame(1, (v) => (v.setFloat32(1, p.nx, true), v.setFloat32(5, p.ny, true))));
+    return !!p;
+  };
+  const press = (b: number, down: boolean) => send(frame(2, (v) => (v.setUint8(1, b), v.setUint8(2, down ? 1 : 0))));
+  const clickAt = (clientX: number, clientY: number, b: number) => {
+    if (!moveTo(clientX, clientY)) return;
+    press(b, true);
+    press(b, false);
+  };
+  /** Keeps the zoomed picture covering its box. */
+  const clampView = (z: number, x: number, y: number) => {
+    const r = box.current!.getBoundingClientRect();
+    return { z, x: Math.min(0, Math.max(r.width - r.width * z, x)), y: Math.min(0, Math.max(r.height - r.height * z, y)) };
+  };
+
+  const tDown = (e: React.PointerEvent) => {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    fingers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const all = [...fingers.current.values()];
+    const g = gesture.current;
+    if ("timer" in g) clearTimeout(g.timer);
+    if (all.length === 1) {
+      // held still: a right click where the finger rests
+      const timer = window.setTimeout(() => {
+        const now = gesture.current;
+        if (now.kind !== "one") return;
+        clickAt(now.x0, now.y0, 2);
+        gesture.current = { kind: "done" };
+      }, 550);
+      gesture.current = { kind: "one", x0: e.clientX, y0: e.clientY, timer };
+    } else if (all.length === 2) {
+      if (g.kind === "drag") press(1, false);
+      const [a, b] = all;
+      const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+      const v = viewRef.current;
+      gesture.current = { kind: "two", mid, last: mid, dist: Math.hypot(a.x - b.x, a.y - b.y) || 1, z0: v.z, v0: { x: v.x, y: v.y } };
+    }
+  };
+
+  const tMove = (e: React.PointerEvent) => {
+    if (!fingers.current.has(e.pointerId)) return;
+    fingers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const all = [...fingers.current.values()];
+    const g = gesture.current;
+    if ((g.kind === "one" || g.kind === "drag") && all.length === 1) {
+      if (g.kind === "one") {
+        if (Math.hypot(e.clientX - g.x0, e.clientY - g.y0) < 8) return;
+        clearTimeout(g.timer);
+        if (!moveTo(g.x0, g.y0)) return void (gesture.current = { kind: "done" });
+        press(1, true); // a drag: held from where the finger started
+        gesture.current = { ...g, kind: "drag" };
+      }
+      const now = performance.now();
+      if (now - moveAt.current < 16) return;
+      moveAt.current = now;
+      moveTo(e.clientX, e.clientY);
+    } else if ((g.kind === "two" || g.kind === "zoom") && all.length === 2) {
+      const [a, b] = all;
+      const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+      const scale = Math.hypot(a.x - b.x, a.y - b.y) / g.dist;
+      if (g.kind === "two" && Math.abs(scale - 1) > 0.08) g.kind = "zoom";
+      const r = box.current!.getBoundingClientRect();
+      if (g.kind === "zoom") {
+        // the point under the fingers' first midpoint stays under their midpoint now
+        const z = Math.min(5, Math.max(1, g.z0 * scale));
+        const px = (g.mid.x - r.left - g.v0.x) / g.z0;
+        const py = (g.mid.y - r.top - g.v0.y) / g.z0;
+        setView(clampView(z, mid.x - r.left - px * z, mid.y - r.top - py * z));
+      } else if (viewRef.current.z > 1) {
+        const v = viewRef.current;
+        setView(clampView(v.z, v.x + mid.x - g.last.x, v.y + mid.y - g.last.y));
+      } else {
+        // fingers up move the page down, as on the phone itself
+        scrollRest.current += (mid.y - g.last.y) * 3;
+        const dy = Math.trunc(scrollRest.current);
+        scrollRest.current -= dy;
+        if (dy) send(frame(3, (v) => (v.setInt32(1, 0, true), v.setInt32(5, dy, true))));
+      }
+      g.last = mid;
+    }
+  };
+
+  const tUp = (e: React.PointerEvent) => {
+    fingers.current.delete(e.pointerId);
+    const g = gesture.current;
+    if (fingers.current.size > 0) {
+      if (g.kind === "two" || g.kind === "zoom") gesture.current = { kind: "done" }; // the rest of a two-finger gesture
+      return;
+    }
+    if (g.kind === "one") {
+      clearTimeout(g.timer);
+      clickAt(g.x0, g.y0, 1);
+    } else if (g.kind === "drag") press(1, false);
+    gesture.current = { kind: "none" };
+  };
+
+  // the phone's keyboard types into an off-screen box; what lands there goes over as text, Return and
+  // Backspace as keys. The box keeps one space so a Backspace on an empty line still registers.
+  const keys = useRef<HTMLTextAreaElement>(null);
+  const [typing, setTyping] = useState(false);
+  const tap = (code: string) => {
+    const scan = scanOf(code);
+    if (scan === undefined) return;
+    send(frame(4, (v) => (v.setUint16(1, scan, true), v.setUint8(3, 1))));
+    send(frame(4, (v) => (v.setUint16(1, scan, true), v.setUint8(3, 0))));
+  };
+  const sendText = (t: string) => {
+    if (!t) return;
+    const text = new TextEncoder().encode(t);
+    send([5, ...Array.from(new Uint8Array(new Uint32Array([text.length]).buffer)), 0, 0, 0, 0, ...Array.from(text)]);
+  };
+  const typed = () => {
+    const el = keys.current!;
+    const now = el.value;
+    if (now.length === 0) tap("Backspace");
+    else
+      for (const part of now.slice(1).split(/(\n)/))
+        if (part === "\n") tap("Enter");
+        else sendText(part);
+    el.value = " ";
+  };
+  const toggleKeys = () => {
+    const el = keys.current!;
+    if (typing) return el.blur();
+    el.value = " ";
+    el.focus();
+    setTyping(true);
+  };
+  const [clipNote, setClipNote] = useState("");
+  /** This device's clipboard text, once, to the other computer's clipboard (iOS asks the user first). */
+  const sendClipboard = async () => {
+    const text = await invoke<string | null>("remote_clipboard_get").catch(() => null);
+    if (!text) return setClipNote("Nothing to send");
+    const bytes = new TextEncoder().encode(text);
+    const head = new Uint8Array(9);
+    head[0] = 8;
+    new DataView(head.buffer).setUint32(1, bytes.length, true);
+    send([...head, ...bytes]);
+    setClipNote(`Copied to ${alias}`);
+    setTimeout(() => setClipNote(""), 2000);
+  };
+
+  if (touch)
+    return (
+      <div className="flex h-full flex-col bg-black text-fg">
+        <div className="flex shrink-0 items-center gap-2 bg-raised px-3 pb-2 pt-[max(env(safe-area-inset-top),0.5rem)] text-xs text-muted">
+          <button onClick={onClose} aria-label="Back" className={quietButton + " grid h-10 w-10 place-items-center p-0 text-lg"}>
+            ‹
+          </button>
+          <span className="min-w-0 truncate font-semibold text-fg">{alias}</span>
+          {state.at === "live" ? <Badge tone="success">Live</Badge> : state.at === "connecting" ? <Badge tone="accent">Connecting…</Badge> : <Badge tone="danger">Ended</Badge>}
+          {displays.list.length > 1 && (
+            <span className="flex items-center gap-1" role="group" aria-label="Which display to show">
+              {displays.list.map((d, i) => (
+                <button
+                  key={i}
+                  onClick={() => send(frame(7, (v) => v.setUint8(1, i)))}
+                  aria-pressed={i === displays.shown}
+                  aria-label={`Display ${i + 1}${d.primary ? ", main" : ""}`}
+                  className={`h-8 min-w-8 rounded-md px-2 ${i === displays.shown ? "bg-accent text-white" : "bg-tint/10 text-muted"}`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+            </span>
+          )}
+          <span className="ml-auto flex gap-1">
+            {view.z > 1 && (
+              <button onClick={() => setView({ z: 1, x: 0, y: 0 })} className={quietButton + " min-h-10 px-3"}>
+                Fit
+              </button>
+            )}
+            <button onClick={sendClipboard} className={quietButton + " min-h-10 px-3"}>
+              {clipNote || "Paste there"}
+            </button>
+            <button onClick={toggleKeys} aria-pressed={typing} className={quietButton + " min-h-10 px-3 aria-pressed:text-fg"}>
+              Keyboard
+            </button>
+          </span>
+        </div>
+        {state.at === "ended" ? (
+          <div className="grid flex-1 place-items-center p-8 text-center">
+            <div className="max-w-md">
+              <p className="text-lg font-semibold">Can't show {alias}'s screen</p>
+              <p className="mt-2 text-sm leading-relaxed text-muted">{state.why}</p>
+              {onClose && (
+                <button onClick={onClose} className={quietButton + " mt-5 min-h-11"}>
+                  Back
+                </button>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div ref={box} className="relative min-h-0 flex-1 touch-none overflow-hidden select-none">
+            <canvas
+              ref={canvas}
+              aria-label={`${alias}'s screen`}
+              className="absolute inset-0 h-full w-full origin-top-left"
+              style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.z})` }}
+              onPointerDown={tDown}
+              onPointerMove={tMove}
+              onPointerUp={tUp}
+              onPointerCancel={tUp}
+              onContextMenu={(e) => e.preventDefault()}
+            />
+          </div>
+        )}
+        <p className="shrink-0 bg-raised px-3 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 text-center text-xs text-faint">
+          Tap to click · hold to right-click · drag · two fingers scroll · pinch to zoom
+        </p>
+        <textarea
+          ref={keys}
+          onInput={typed}
+          onBlur={() => setTyping(false)}
+          aria-label={`Type on ${alias}`}
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
+          className="fixed -left-[200vw] top-1/2 h-10 w-40 opacity-0"
+        />
+      </div>
+    );
 
   return (
     <div className="flex h-full flex-col bg-black text-fg">

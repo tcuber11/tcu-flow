@@ -48,7 +48,10 @@ const overlay = label === "edge-overlay" || label.startsWith("portal-");
 function App() {
   if (overlay) return <Overlay />;
   if (label === "mobile-view") return <PhoneView />;
-  if (label.startsWith("remote-")) return <RemoteView />;
+  if (label.startsWith("remote-")) {
+    const q = new URLSearchParams(location.search);
+    return <RemoteView fingerprint={q.get("remote") ?? ""} alias={q.get("alias") ?? "the other computer"} />;
+  }
   if (isPhone) return <Mobile />;
   return (
     <div className="flex h-full flex-col">
