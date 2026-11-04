@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TCuFlow Code Signing</title>
+<meta name="description" content="How TCuFlow's installers are signed, by whom, and what the program sends over the network.">
+<link rel="icon" href="assets/icon.png">
+<style>
+:root{
+  --bg:#07090f;--panel:#0e1119;--line:rgb(255 255 255/.09);
+  --fg:#f2f4f8;--muted:#a3abbd;--blue-ink:#7fbcff;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono","Cascadia Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){--bg:#f6f7fa;--panel:#fff;--line:rgb(0 0 0/.08);--fg:#0b0d12;--muted:#4f5869;--blue-ink:#0a5fd6}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.65 var(--sans);-webkit-font-smoothing:antialiased}
+main{max-width:720px;margin:0 auto;padding:56px 16px 80px}
+a{color:var(--blue-ink)}
+h1{font-size:34px;line-height:1.15;letter-spacing:-.02em;margin:0}
+h2{font-size:19px;margin:36px 0 8px}
+p,li,td{color:var(--muted)}
+strong{color:var(--fg)}
+code{font-family:var(--mono);font-size:14px;color:var(--fg)}
+.lead{margin-top:24px;padding:18px 20px;border:1px solid var(--line);border-radius:16px;background:var(--panel);color:var(--fg)}
+table{border-collapse:collapse;width:100%;margin-top:8px}
+td{padding:8px 0;border-bottom:1px solid var(--line);vertical-align:top}
+td:first-child{color:var(--fg);width:38%;padding-right:12px}
+ul{padding-left:20px}
+</style>
+</head>
+<body>
+<main>
+  <p><a href="./">← TCuFlow</a></p>
+  <h1>Code signing policy</h1>
+
+  <p class="lead">Windows installers: free code signing provided by <a href="https://signpath.io">SignPath.io</a>, certificate by <a href="https://signpath.org">SignPath Foundation</a>.</p>
+
+  <h2>What is signed</h2>
+  <ul>
+    <li><strong>Windows</strong>: the TCuFlow program and its installers (x64 and ARM64), built from this project's source by GitHub Actions and signed there, never on a personal computer.</li>
+    <li><strong>macOS</strong>: Developer ID signed and notarized by Apple.</li>
+    <li><strong>Every release</strong>: a <code>SHA256SUMS</code> file signed with the TCuFlow release key (<a href="tcuflow-release-key.asc">public key</a>), and update files signed with TCuFlow's updater key, which the app checks before installing anything.</li>
+  </ul>
+  <p>Only builds of the source in <a href="https://github.com/tcuber11/tcu-flow">github.com/tcuber11/tcu-flow</a> are signed. Third-party components keep their own licenses and are not re-signed as TCuFlow's work.</p>
+
+  <h2>Team roles</h2>
+  <table>
+    <tr><td>Committers and reviewers</td><td><a href="https://github.com/tcuber11">tcuber11</a></td></tr>
+    <tr><td>Approvers</td><td><a href="https://github.com/tcuber11">tcuber11</a></td></tr>
+  </table>
+  <p>Every signing request is approved by hand for each release. Team members use multi-factor authentication on GitHub and SignPath.</p>
+
+  <h2>Privacy</h2>
+  <p>This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it, with one exception: it asks GitHub for the newest release, to offer updates. Everything else it sends goes only to devices you paired with yourself, on your own network. Details: <a href="privacy.html">privacy policy</a>.</p>
+</main>
+</body>
+</html>

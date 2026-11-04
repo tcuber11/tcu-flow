@@ -49,6 +49,9 @@ Not offered in TCuFlow (refused by the backend, hidden in the UI): remote termin
 
 ## Security
 
+Windows installers: free code signing provided by [SignPath.io](https://signpath.io), certificate by [SignPath Foundation](https://signpath.org) (once the project is accepted; see the [code signing policy](https://tcuber11.github.io/tcu-flow/code-signing.html)). Privacy: [privacy policy](https://tcuber11.github.io/tcu-flow/privacy.html).
+
+
 - Every link is QUIC over **TLS 1.3**; each device has its own self-signed certificate and is pinned by its SHA-256 fingerprint.
 - Pairing shows the same 6-digit code on both screens, derived from both fingerprints and a committed nonce from each side.
 - ALPN `tcuflow/1` and its own ports keep TCuFlow from pairing with LOKA.
