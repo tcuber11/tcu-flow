@@ -1994,20 +1994,20 @@ fn spawn_kvm_receiver(app: AppHandle, engine: Arc<dyn SpatialPlatformEngine>, st
             Some(EngineSink { engine: engine.clone(), screens, app: app.clone() })
         };
         let st = state.clone();
-        // TCuFlow: remote shell, shared folder, sound, mic and notification mirroring are out of MVP scope
-        // (PRD §6), so they are refused here regardless of saved settings; diagnostics stays, and the
-        // screen only when its user turned "Share my screen" on.
+        // each shared thing only for paired devices, and only while its switch under "This computer shares" is on
+        // (all off until turned on, except the clipboard); diagnostics and the telemetry key always
         let allow_service = move |service: kvm::Service, fp: &str| {
             let s = st.lock().unwrap();
+            let sh = &s.settings.sharing;
             s.settings.is_paired(fp)
                 && match service {
-                    kvm::Service::Shell
-                    | kvm::Service::Files
-                    | kvm::Service::Sound
-                    | kvm::Service::Notifications
-                    | kvm::Service::Mic => false,
+                    kvm::Service::Shell => cfg!(desktop) && sh.terminal,
+                    kvm::Service::Files => cfg!(desktop) && sh.folder.is_some(),
+                    kvm::Service::Sound => cfg!(desktop) && sh.sound,
+                    kvm::Service::Notifications => sh.notifications,
+                    kvm::Service::Mic => cfg!(desktop) && sh.mic,
                     kvm::Service::Diagnostics | kvm::Service::Glow => true,
-                    kvm::Service::Screen => cfg!(desktop) && s.settings.sharing.screen,
+                    kvm::Service::Screen => cfg!(desktop) && sh.screen,
                 }
         };
         let st = state.clone();

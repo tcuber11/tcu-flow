@@ -45,7 +45,7 @@ sha256sum --ignore-missing -c SHA256SUMS               # macOS: shasum -a 256 --
 | Android 10+ | Signed APK from CI (`scripts/android-keystore.md`): touchpad, clipboard, files; being controlled needs the one-time Wireless-debugging setup in the app. Inherited code, untested |
 | iOS / iPadOS | Project in `src-tauri/gen/apple`: touchpad, clipboard and file sending (iOS lets no app inject input). Built by CI; shipping goes through TestFlight / App Store (`docs/guides/apple-signing.md`, `docs/guides/ios.md`) |
 
-Not offered in TCuFlow (refused by the backend, hidden in the UI): remote terminal, shared folder as a drive, sound, microphone and notification sharing.
+Also shared on request, each off until switched on under **This computer shares** (only with paired computers): a folder (opens as a drive), sound, microphone, notifications, and a terminal (runs commands as you; meant for your own computers only).
 
 ## Security
 

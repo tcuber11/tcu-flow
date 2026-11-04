@@ -81,6 +81,38 @@ export function Sharing({ initial, received, mac, onChange }: { initial: Sharing
             </div>
           </div>
         )}
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <Toggle
+            on={!!s.folder}
+            label="A folder"
+            hint={s.folder ? `${folderName(s.folder)} opens as a drive on linked computers` : "Opens as a drive on linked computers"}
+            onChange={async (on) => {
+              if (!on) return change({ folder: null });
+              const folder = await pick();
+              if (folder) change({ folder });
+            }}
+          />
+          {s.folder && (
+            <button
+              className={quietButton}
+              onClick={async () => {
+                const folder = await pick();
+                if (folder) change({ folder });
+              }}
+            >
+              Change…
+            </button>
+          )}
+        </div>
+        <Toggle on={s.sound} onChange={(sound) => change({ sound })} label="Its sound" hint="Linked computers can play what this computer plays." />
+        <Toggle on={s.mic} onChange={(mic) => change({ mic })} label="Its microphone" hint="Linked computers can use it as their mic." />
+        <Toggle on={s.notifications} onChange={(notifications) => change({ notifications })} label="Its notifications" hint="Shown on linked computers that ask for them." />
+        <Toggle
+          on={s.terminal}
+          onChange={(terminal) => change({ terminal })}
+          label="A terminal"
+          hint="Linked computers can run any command here, as you. Turn on only between your own computers."
+        />
       </div>
       <p className="mt-6 text-[15px] font-semibold">Received files</p>
 

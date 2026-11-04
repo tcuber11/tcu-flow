@@ -16,6 +16,7 @@ import { emit } from "@tauri-apps/api/event";
 import { ClipHistory } from "./ClipHistory";
 import { Outbox } from "./Outbox";
 import { Pointer } from "./Pointer";
+import { Remote } from "./Remote";
 import { Sharing } from "./Sharing";
 import { Transfers } from "./Transfers";
 
@@ -466,6 +467,7 @@ function Devices({ device, peers, onChange }: { device: Device; peers: Peer[]; o
       {current && selected && (
         <>
           <Pointer initial={device.cursor} mac={mac} />
+          <Remote key={selected} fingerprint={selected} alias={current.info.alias} mac={mac} />
         </>
       )}
       {selected && isPaired(selected) && (
