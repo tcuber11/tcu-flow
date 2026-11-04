@@ -1,5 +1,5 @@
 // node scripts/appstore-screenshots.mjs   (with `npm run dev` serving the preview on :1420)
-// App Store screenshots of the phone UI from the design preview (.preview, mocked IPC): iPhone 6.9" (1320×2868)
+// App Store screenshots of the phone UI from the design preview (.preview, mocked IPC): iPhone 6.3" (1206×2622, the size App Store Connect asks for first)
 // and iPad 13" (2064×2752), through Chrome's DevTools protocol for exact device emulation, into docs/appstore/.
 import { spawn } from "node:child_process";
 import { mkdirSync, writeFileSync, mkdtempSync } from "node:fs";
@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 const OUT = fileURLToPath(new URL("../docs/appstore/", import.meta.url));
 const BASE = "http://localhost:1420/.preview/index.html?version=9.9.9&theme=dark";
 const DEVICES = [
-  { name: "iphone", phone: "ios", w: 440, h: 956, scale: 3, ua: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148" },
+  { name: "iphone", phone: "ios", w: 402, h: 874, scale: 3, ua: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148" },
   { name: "ipad", phone: "ipad", w: 1032, h: 1376, scale: 2, ua: "Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148" },
 ];
 const SCREENS = [
