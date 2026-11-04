@@ -141,9 +141,9 @@ export function Mobile() {
   };
 
   return (
-    <main className="min-h-full px-5 pb-10 pt-14">
+    <main className="mx-auto min-h-full w-full max-w-xl px-5 pb-10 pt-14">
       <header className="flex items-center gap-3">
-        <Face seed={device.info.fingerprint} size={40} />
+        <Face seed={device.info.fingerprint} size={40} kind="phone" />
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold">{device.info.alias}</p>
           <p className="text-xs text-muted">Visible on this Wi-Fi</p>
@@ -162,7 +162,7 @@ export function Mobile() {
 
       {device.paired.length === 0 && nearby.length === 0 && (
         <div className="mt-10 flex flex-col items-center text-center">
-          <Face seed={device.info.fingerprint} size={72} mood="searching" />
+          <Face seed={device.info.fingerprint} size={72} mood="searching" kind="phone" />
           <p className="mt-6 font-semibold">Looking for computers</p>
           <p className="mt-1 max-w-[30ch] text-sm leading-relaxed text-muted">Open TCuFlow on your computer, on the same Wi-Fi as this phone.</p>
         </div>
@@ -355,7 +355,7 @@ function Settings({ device, control, update, onSetup, onAbout, onClose, onChange
 }) {
   const s = control.status;
   return (
-    <main className="min-h-full px-5 pb-10 pt-12">
+    <main className="mx-auto min-h-full w-full max-w-xl px-5 pb-10 pt-12">
       <header className="flex items-center gap-2">
         <button onClick={onClose} aria-label="Back" className={quietButton + " grid h-11 w-11 place-items-center p-0 text-lg"}>
           ‹

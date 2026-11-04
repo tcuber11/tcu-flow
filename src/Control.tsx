@@ -113,7 +113,7 @@ export function Wizard({ computer, onClose }: { computer: string; onClose: () =>
   const samsung = s?.maker === "samsung";
 
   return (
-    <main className="flex min-h-full flex-col px-5 pb-8 pt-12">
+    <main className="mx-auto flex min-h-full w-full max-w-xl flex-col px-5 pb-8 pt-12">
       <header className="flex items-center gap-2">
         <button onClick={onClose} aria-label="Back" className={quietButton + " grid h-11 w-11 place-items-center p-0 text-lg"}>
           ‹
