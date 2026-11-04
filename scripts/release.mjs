@@ -8,6 +8,7 @@ import { mkdtempSync, readFileSync, readdirSync, writeFileSync, existsSync, rmSy
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { signChecksums } from "./checksums.mjs";
 
 const REPO = "tcuber11/tcu-flow";
 const tag = process.argv[2];
@@ -88,6 +89,7 @@ try {
   writeFileSync(join(dir, "latest.json"), JSON.stringify(latest, null, 2));
   gh("release", "upload", tag, join(dir, "latest.json"), "--clobber");
   console.log(`latest.json uploaded: ${Object.keys(platforms).length} targets`);
+  signChecksums(tag);
   packageManagers(version);
 } finally {
   rmSync(dir, { recursive: true, force: true });

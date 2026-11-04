@@ -25,6 +25,16 @@ scoop install tcuflow
 
 `scripts/release.mjs` points `Casks/tcuflow.rb` and `bucket/tcuflow.json` at each new release.
 
+### Verify a download
+
+Each release carries `SHA256SUMS`, signed with the TCuFlow release key (`78D3 E7DD EE9D 7980 DACB  FF13 AED8 0678 CD66 0CA6`, on the site as [tcuflow-release-key.asc](https://tcuber11.github.io/tcu-flow/tcuflow-release-key.asc)):
+
+```bash
+curl -LO https://tcuber11.github.io/tcu-flow/tcuflow-release-key.asc && gpg --import tcuflow-release-key.asc
+gpg --verify SHA256SUMS.asc SHA256SUMS                 # "Good signature from TCuFlow releases"
+sha256sum --ignore-missing -c SHA256SUMS               # macOS: shasum -a 256 --ignore-missing -c SHA256SUMS
+```
+
 ## Status
 
 | Platform | Status |

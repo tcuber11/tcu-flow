@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TCuFlow Privacy</title>
+<meta name="description" content="TCuFlow collects no personal data: no account, no analytics, nothing leaves your local network except update checks.">
+<link rel="icon" href="assets/icon.png">
+<style>
+:root{
+  --bg:#07090f;--panel:#0e1119;--line:rgb(255 255 255/.09);
+  --fg:#f2f4f8;--muted:#a3abbd;--blue-ink:#7fbcff;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){--bg:#f6f7fa;--panel:#fff;--line:rgb(0 0 0/.08);--fg:#0b0d12;--muted:#4f5869;--blue-ink:#0a5fd6}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.65 var(--sans);-webkit-font-smoothing:antialiased}
+main{max-width:720px;margin:0 auto;padding:56px 16px 80px}
+a{color:var(--blue-ink)}
+h1{font-size:34px;line-height:1.15;letter-spacing:-.02em;margin:0}
+h2{font-size:19px;margin:36px 0 8px}
+p,li{color:var(--muted)}
+strong{color:var(--fg)}
+.date{margin-top:8px;font-size:14px}
+.lead{margin-top:24px;padding:18px 20px;border:1px solid var(--line);border-radius:16px;background:var(--panel);color:var(--fg)}
+ul{padding-left:20px}
+</style>
+</head>
+<body>
+<main>
+  <p><a href="./">← TCuFlow</a></p>
+  <h1>Privacy</h1>
+  <p class="date">Last updated 4 November 2026</p>
+
+  <p class="lead">TCuFlow collects no personal data. There is no account, no advertising, no analytics and no tracking. What you share stays between your own devices on your local network.</p>
+
+  <h2>What moves between your devices</h2>
+  <p>Cursor movement, key presses, clipboard text, pictures and files, and, only when you turn it on, the picture of a screen. They go directly from one of your devices to another over your local network (or a VPN you choose), encrypted with TLS 1.3, and only to devices you paired by confirming the same 6-digit code on both screens. None of it passes through a server of ours; we don't run any.</p>
+
+  <h2>What stays on each device</h2>
+  <ul>
+    <li>The device's identity key (in the macOS Keychain, Windows data protection, or the app's private storage on Linux, Android and iOS) and the list of devices you paired with.</li>
+    <li>Your settings, and a small event log in the app's data folder. The log never leaves the device unless you copy it yourself (About → Copy diagnostics).</li>
+  </ul>
+
+  <h2>What reaches the internet</h2>
+  <p>Only the update check: TCuFlow asks GitHub (api.github.com and github.com) for the newest release and, when you update, downloads it from there. GitHub sees that request like any web request, including your IP address; <a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement">GitHub's privacy statement</a> applies to it. Links you open from the app open in your browser.</p>
+
+  <h2>Permissions</h2>
+  <ul>
+    <li><strong>Local network</strong>: to find your other devices and talk to them.</li>
+    <li><strong>Accessibility</strong> (macOS) or input access (Linux): so a linked device can move the cursor and type on this computer.</li>
+    <li><strong>Screen Recording</strong> (macOS): only if you let linked devices view this screen.</li>
+    <li><strong>Wireless debugging</strong> (Android): only if you set up the phone to be controlled by a computer.</li>
+  </ul>
+
+  <h2>Children</h2>
+  <p>TCuFlow collects no data from anyone, children included.</p>
+
+  <h2>Contact</h2>
+  <p>Questions or concerns: <a href="https://github.com/tcuber11/tcu-flow/issues">open an issue on GitHub</a>. Changes to this page are dated above and kept in the repository's history.</p>
+</main>
+</body>
+</html>
