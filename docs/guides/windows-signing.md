@@ -4,6 +4,11 @@ SignPath Foundation signs open-source Windows software for free: the certificate
 as publisher), the signing runs on SignPath, and each request comes from this repository's GitHub Actions, approved
 by hand. Signed installers lose "Unknown publisher"; SmartScreen may still warn until downloads build reputation.
 
+**Status (November 2026): declined.** The Foundation wants visible public adoption first (stars, forks,
+contributors, articles or discussions elsewhere) and invites a new application once the project has it. Until then
+Windows installers ship unsigned, with GPG-signed `SHA256SUMS`. Paths in the meantime: a paid SignPath subscription,
+or an individual open-source certificate (e.g. Certum) used through `bundle.windows.signCommand`.
+
 ## 1. Apply (once)
 
 At https://signpath.org → Apply. What they check, and where TCuFlow answers it:

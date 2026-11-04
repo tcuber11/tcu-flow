@@ -49,7 +49,7 @@ Also shared on request, each off until switched on under **This computer shares*
 
 ## Security
 
-Windows installers: free code signing provided by [SignPath.io](https://signpath.io), certificate by [SignPath Foundation](https://signpath.org) (once the project is accepted; see the [code signing policy](https://tcuber11.github.io/tcu-flow/code-signing.html)). Privacy: [privacy policy](https://tcuber11.github.io/tcu-flow/privacy.html).
+Signing: macOS builds are Developer ID signed and notarized; Windows installers are not code-signed yet (SmartScreen asks once); every release carries a GPG-signed `SHA256SUMS` ([code signing policy](https://tcuber11.github.io/tcu-flow/code-signing.html)). Privacy: [privacy policy](https://tcuber11.github.io/tcu-flow/privacy.html).
 
 
 - Every link is QUIC over **TLS 1.3**; each device has its own self-signed certificate and is pinned by its SHA-256 fingerprint.

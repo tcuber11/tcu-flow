@@ -37,11 +37,11 @@ ul{padding-left:20px}
   <p><a href="./">← TCuFlow</a></p>
   <h1>Code signing policy</h1>
 
-  <p class="lead">Windows installers: free code signing provided by <a href="https://signpath.io">SignPath.io</a>, certificate by <a href="https://signpath.org">SignPath Foundation</a>.</p>
+  <p class="lead">How TCuFlow's downloads are signed, by whom, and how to check one.</p>
 
   <h2>What is signed</h2>
   <ul>
-    <li><strong>Windows</strong>: the TCuFlow program and its installers (x64 and ARM64), built from this project's source by GitHub Actions and signed there, never on a personal computer.</li>
+    <li><strong>Windows</strong>: the installers (x64 and ARM64) are built from this project's source by GitHub Actions and are <strong>not code-signed yet</strong>, so SmartScreen asks once; check them against <code>SHA256SUMS</code> below.</li>
     <li><strong>macOS</strong>: Developer ID signed and notarized by Apple.</li>
     <li><strong>Every release</strong>: a <code>SHA256SUMS</code> file signed with the TCuFlow release key (<a href="tcuflow-release-key.asc">public key</a>), and update files signed with TCuFlow's updater key, which the app checks before installing anything.</li>
   </ul>
@@ -52,7 +52,7 @@ ul{padding-left:20px}
     <tr><td>Committers and reviewers</td><td><a href="https://github.com/tcuber11">tcuber11</a></td></tr>
     <tr><td>Approvers</td><td><a href="https://github.com/tcuber11">tcuber11</a></td></tr>
   </table>
-  <p>Every signing request is approved by hand for each release. Team members use multi-factor authentication on GitHub and SignPath.</p>
+  <p>Every release is made by hand from a tagged commit. Team members use multi-factor authentication on GitHub and Apple.</p>
 
   <h2>Privacy</h2>
   <p>This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it, with one exception: it asks GitHub for the newest release, to offer updates. Everything else it sends goes only to devices you paired with yourself, on your own network. Details: <a href="privacy.html">privacy policy</a>.</p>
