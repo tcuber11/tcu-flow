@@ -267,15 +267,15 @@ jobs:
           echo "$APPLE_API_KEY_B64" | base64 -d > ~/.appstoreconnect/private_keys/AuthKey_${APPLE_API_KEY}.p8
       # manual signing, set up by tauri itself: the Apple Distribution certificate (into a temporary keychain) and
       # the App Store profile; Xcode's automatic signing would need an Apple account signed in
-      - run: npx tauri ios build --export-method app-store-connect
+      # the run number makes each upload's build number new (0.9.11.<run>), which TestFlight requires
+      - run: npx tauri ios build --export-method app-store-connect --build-number ${{ github.run_number }}
         env:
           APPLE_DEVELOPMENT_TEAM: ${{ secrets.APPLE_TEAM_ID }}
           IOS_CERTIFICATE: ${{ secrets.IOS_CERTIFICATE }}
           IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
           IOS_MOBILE_PROVISION: ${{ secrets.IOS_PROVISIONING_PROFILE }}
-      # one upload per version: its build number is the version, and TestFlight refuses the same one twice, so
-      # pushes and manual runs only check that the signed build works
-      - if: github.event_name == 'release'
+      # to TestFlight on releases and manual runs (gh workflow run build.yml); pushes only check the signed build
+      - if: github.event_name != 'push'
         run: xcrun altool --upload-app --type ios --file src-tauri/gen/apple/build/arm64/tcuflow.ipa --apiKey "$APPLE_API_KEY" --apiIssuer "$APPLE_API_ISSUER"
         env:
           APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
