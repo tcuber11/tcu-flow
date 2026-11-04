@@ -27,6 +27,7 @@ Open it next to a computer running TCuFlow, pair once by checking that both scre
 
 • Touchpad: one finger moves the cursor, two fingers scroll, tap to click, with left and right buttons.
 • Keyboard: type on the computer from your phone.
+• Screen: see the computer's screen on your phone or iPad and work on it directly: tap to click, pinch to zoom, in portrait or landscape.
 • Clipboard: copy text on one device and paste it on the other.
 • Files: send photos and files from your phone to the computer.
 
@@ -72,6 +73,7 @@ To test:
 2. Open TCuFlow on the iPhone or iPad on the same Wi-Fi and allow Local Network access. The Mac appears under "Nearby, not paired" (or type the Mac's IP address, shown in the Mac app, under "Add by IP").
 3. Tap Pair; both screens show the same 6-digit code; accept on the Mac.
 4. Tap "Use as touchpad" and move the Mac's cursor; use Keyboard to type; use "Send files" to send a photo.
+5. To see the Mac's screen: on the Mac turn on "Its screen" under "This computer shares" (macOS asks for Screen Recording once), then tap "View screen" on the iPhone or iPad.
 
 The app collects no data and has no account. All traffic stays on the local network, encrypted with TLS 1.3.
 ```
@@ -97,6 +99,7 @@ Buka di dekat komputer yang menjalankan TCuFlow, pasangkan sekali dengan mencoco
 
 • Touchpad: satu jari menggerakkan kursor, dua jari menggulir, ketuk untuk klik, plus tombol kiri dan kanan.
 • Keyboard: mengetik di komputer dari HP.
+• Layar: lihat layar komputer di HP atau iPad dan langsung bekerja di sana: ketuk untuk klik, cubit untuk zoom, tegak atau mendatar.
 • Clipboard: salin teks di satu perangkat, tempel di perangkat lain.
 • File: kirim foto dan file dari HP ke komputer.
 
