@@ -99,7 +99,8 @@ try {
 /** Homebrew (Casks/) and Scoop (bucket/) install from this repository: point both at this release, with the
  *  checksums GitHub keeps for each file, and commit that (no CI run: nothing to build). */
 function packageManagers(version) {
-  const { assets } = JSON.parse(gh("api", `repos/${REPO}/releases/tags/${tag}`));
+  // gh api takes no -R (the gh helper adds it): the path names the repository
+  const { assets } = JSON.parse(execFileSync("gh", ["api", `repos/${REPO}/releases/tags/${tag}`], { encoding: "utf8" }));
   const sha = (suffix) => assets.find((a) => a.name.endsWith(suffix))?.digest?.replace(/^sha256:/, "");
   const sums = { dmg: sha("_universal.dmg"), x64: sha("_x64-setup.exe"), arm64: sha("_arm64-setup.exe") };
   if (!Object.values(sums).every(Boolean)) {
