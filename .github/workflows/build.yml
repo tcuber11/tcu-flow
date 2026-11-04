@@ -258,23 +258,21 @@ jobs:
         with:
           workspaces: src-tauri
       - run: npm ci
-      # Apple Distribution certificate into a throwaway keychain, the App Store provisioning profile where Xcode
-      # looks, and the App Store Connect API key for the upload
-      - uses: apple-actions/import-codesign-certs@v3
-        with:
-          p12-file-base64: ${{ secrets.IOS_CERTIFICATE }}
-          p12-password: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+      # the App Store Connect API key, for the upload
       - env:
-          PROFILE_B64: ${{ secrets.IOS_PROVISIONING_PROFILE }}
           APPLE_API_KEY_B64: ${{ secrets.APPLE_API_KEY_B64 }}
           APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
         run: |
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles ~/.appstoreconnect/private_keys
-          echo "$PROFILE_B64" | base64 -d > ~/Library/MobileDevice/Provisioning\ Profiles/tcuflow.mobileprovision
+          mkdir -p ~/.appstoreconnect/private_keys
           echo "$APPLE_API_KEY_B64" | base64 -d > ~/.appstoreconnect/private_keys/AuthKey_${APPLE_API_KEY}.p8
+      # manual signing, set up by tauri itself: the Apple Distribution certificate (into a temporary keychain) and
+      # the App Store profile; Xcode's automatic signing would need an Apple account signed in
       - run: npx tauri ios build --export-method app-store-connect
         env:
           APPLE_DEVELOPMENT_TEAM: ${{ secrets.APPLE_TEAM_ID }}
+          IOS_CERTIFICATE: ${{ secrets.IOS_CERTIFICATE }}
+          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          IOS_MOBILE_PROVISION: ${{ secrets.IOS_PROVISIONING_PROFILE }}
       # one upload per version: its build number is the version, and TestFlight refuses the same one twice, so
       # pushes and manual runs only check that the signed build works
       - if: github.event_name == 'release'
