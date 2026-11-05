@@ -23,15 +23,21 @@ export function isNewer(tag: string, current: string) {
   return false;
 }
 
+// an iPad reports itself as a Mac, but no Mac has a touch screen
+const IOS = /iPhone|iPad/i.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+/** The file whose presence says the release is finished for this platform. */
+const READY = /Android/i.test(navigator.userAgent) ? /\.apk$/ : /^latest\.json$/;
+
 async function fetchReleases(): Promise<Release[]> {
   const r = await fetch(`https://api.github.com/repos/${REPO}/releases?per_page=10`, { headers: { Accept: "application/vnd.github+json" } });
   // unauthenticated API: 60 requests/hour per IP, shared behind VPNs like Cloudflare WARP or office NAT
   if (r.status === 403 || r.status === 429) throw new Error("GitHub is limiting checks from this network right now. Try again later.");
   if (!r.ok) throw new Error(`GitHub answered ${r.status}.`);
-  const list: { tag_name: string; name: string | null; html_url: string; published_at: string; body: string | null; draft: boolean; prerelease: boolean; assets?: unknown[] }[] = await r.json();
+  const list: { tag_name: string; name: string | null; html_url: string; published_at: string; body: string | null; draft: boolean; prerelease: boolean; assets?: { name: string }[] }[] = await r.json();
   return list
-    // a release just published has no files until CI attaches them: not offered before there is something to get
-    .filter((x) => !x.draft && !x.prerelease && (x.assets?.length ?? 0) > 0)
+    // CI attaches files one by one and scripts/release.mjs signs latest.json last: a release is offered only once
+    // what this platform installs is there (an iPhone or iPad updates through the App Store, so never from here)
+    .filter((x) => !x.draft && !x.prerelease && !IOS && (x.assets ?? []).some((a) => READY.test(a.name)))
     .map((x) => ({ tag: x.tag_name, name: x.name || x.tag_name, url: x.html_url, date: x.published_at, notes: x.body ?? "" }));
 }
 
