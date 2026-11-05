@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { RemoteView } from "./RemoteView";
+import { DeskScene } from "./Illustration";
 import { Wizard, useControl, type Control } from "./Control";
 import { Face, clayOf, type Mood } from "./Face";
 import { ChevronLeftIcon, DisplayIcon, KeyboardIcon, LaptopIcon, PhoneIcon, SendIcon, TouchpadIcon } from "./icons";
@@ -176,8 +177,8 @@ export function Mobile() {
 
         {device.paired.length === 0 && nearby.length === 0 && (
           <div className="mt-14 flex flex-col items-center text-center">
-            <Face seed={device.info.fingerprint} size={84} mood="searching" kind="phone" />
-            <p className="mt-6 text-[20px] font-semibold">Looking for computers</p>
+            <DeskScene className="w-72 max-w-full" />
+            <p className="rounded-type mt-4 text-[22px] font-semibold">Looking for computers</p>
             <p className="mt-1.5 max-w-[30ch] text-[15px] leading-relaxed text-muted">Open TCuFlow on your Mac or PC, on the same Wi-Fi as this {device.info.os === "ios" ? "device" : "phone"}.</p>
           </div>
         )}
@@ -334,7 +335,7 @@ function ControlCard({ device, computer, control, fresh, onSetup, onChange }: { 
   };
   if (s.running)
     return (
-      <div className="mt-6 rounded-2xl bg-raised p-4 ring-1 ring-line">
+      <div className="mt-6 clay rounded-[24px] bg-raised p-4">
         <p className="text-sm text-muted">
           <span className="font-semibold text-fg">{alias} can move into this phone.</span> Push its cursor past the side this phone sits on.
         </p>
@@ -347,7 +348,7 @@ function ControlCard({ device, computer, control, fresh, onSetup, onChange }: { 
               key={w}
               aria-pressed={side === w}
               onClick={() => place(w)}
-              className={"min-h-11 rounded-full px-4 text-sm capitalize ring-1 ring-line transition-colors " + (side === w ? "bg-fg font-semibold text-ink" : "text-muted")}
+              className={"clay-key min-h-11 rounded-full px-4 text-sm capitalize transition-colors " + (side === w ? "bg-accent font-semibold text-on-accent" : "bg-raised text-fg")}
             >
               {w}
             </button>
@@ -362,20 +363,20 @@ function ControlCard({ device, computer, control, fresh, onSetup, onChange }: { 
   // iOS lets no app inject input, so there is no setup that would let a computer move in
   if (device.info.os === "ios")
     return (
-      <div className="mt-6 rounded-2xl bg-raised p-4 ring-1 ring-line">
+      <div className="mt-6 clay rounded-[24px] bg-raised p-4">
         <p className="font-semibold">{alias} can't move into this {device.info.deviceType === "mobile" ? "iPhone or iPad" : "device"}</p>
         <p className="mt-1 text-sm leading-relaxed text-muted">iOS doesn't let apps move the cursor or type. The touchpad, clipboard and Send files work.</p>
       </div>
     );
   return (
-    <div className={"mt-6 rounded-2xl bg-raised p-4 ring-1 transition-shadow " + (fresh ? "ring-2 ring-accent" : "ring-line")}>
+    <div className={"clay mt-6 rounded-[24px] bg-raised p-4 transition-shadow " + (fresh ? "outline-2 outline-accent" : "")}>
       <p className="font-semibold">{s.paired ? `${alias} can't move into this phone right now` : `${alias} can't move into this phone yet`}</p>
       <p className={"mt-1 text-sm leading-relaxed " + (control.error ? "text-danger" : "text-muted")}>
         {s.paired
           ? (control.error ?? "Starting…")
           : "Touchpad and Send files already work. To let its cursor move in past the screen edge, do the one-time setup in Android settings."}
       </p>
-      <button ref={setup} onClick={s.paired && control.error ? control.retry : onSetup} className={(fresh ? primaryButton : quietButton + " text-fg ring-1 ring-line") + " mt-3 min-h-11"}>
+      <button ref={setup} onClick={s.paired && control.error ? control.retry : onSetup} className={(fresh ? primaryButton : quietButton + " text-fg") + " mt-3 min-h-11"}>
         {s.paired && control.error ? "Try again" : "Set up"}
       </button>
       <Battery control={control} />
@@ -391,7 +392,7 @@ function Battery({ control, className = "mt-3 border-t border-line pt-3" }: { co
   return (
     <div className={"flex items-center gap-3 " + className}>
       <p className="flex-1 text-sm text-muted">Android may close TCuFlow in the background</p>
-      <button onClick={allow} className={quietButton + " min-h-11 text-fg ring-1 ring-line"}>
+      <button onClick={allow} className={quietButton + " min-h-11 text-fg"}>
         Allow
       </button>
     </div>
@@ -409,33 +410,33 @@ function Settings({ device, control, update, onSetup, onAbout, onClose, onChange
 }) {
   const s = control.status;
   return (
-    <main className="mx-auto min-h-full w-full max-w-xl px-5 pb-10 pt-12">
-      <header className="flex items-center gap-2">
-        <button onClick={onClose} aria-label="Back" className={quietButton + " grid h-11 w-11 place-items-center p-0 text-lg"}>
-          ‹
+    <main className="mx-auto min-h-full w-full max-w-xl px-5 pb-10 pt-[max(env(safe-area-inset-top),1rem)]">
+      <header className="flex items-center gap-3">
+        <button onClick={onClose} aria-label="Back" className="clay grid h-10 w-10 place-items-center rounded-full bg-raised text-fg active:scale-95">
+          <ChevronLeftIcon size={20} />
         </button>
-        <h1 className="font-semibold">Settings</h1>
+        <h1 className="text-[22px] font-bold tracking-[-0.01em]">Settings</h1>
       </header>
 
       <p className="mt-6 px-1 text-xs text-muted">Computers controlling this phone</p>
-      <div className="mt-2 flex items-center gap-3 rounded-xl bg-raised p-4 ring-1 ring-line">
+      <div className="mt-2 flex items-center gap-3 clay rounded-[20px] bg-raised p-4">
         <p className="flex-1 text-sm">
           {!s ? "Not available" : s.running ? "On: paired computers can move in" : s.paired ? (control.error ?? "Starting…") : "Not set up"}
         </p>
-        <button onClick={onSetup} className={quietButton + " min-h-11 ring-1 ring-line"}>
+        <button onClick={onSetup} className={quietButton + " min-h-11"}>
           {s?.paired ? "Set up again" : "Set up"}
         </button>
       </div>
-      <Battery control={control} className="mt-2 rounded-xl bg-raised p-4 ring-1 ring-line" />
+      <Battery control={control} className="mt-2 clay rounded-[20px] bg-raised p-4" />
 
       <p className="mt-6 px-1 text-xs text-muted">Received files</p>
-      <p className="mt-2 break-all rounded-xl bg-raised p-4 font-mono text-xs text-muted ring-1 ring-line">{device.received}</p>
+      <p className="mt-2 break-all clay-dip rounded-[20px] bg-sunken p-4 font-mono text-xs text-muted">{device.received}</p>
 
       <p className="mt-6 px-1 text-xs text-muted">Paired</p>
       {device.paired.length === 0 ? (
         <p className="mt-2 px-1 text-sm text-faint">No computers yet.</p>
       ) : (
-        <ul className="mt-2 divide-y divide-line rounded-xl bg-raised ring-1 ring-line">
+        <ul className="mt-2 divide-y divide-line clay overflow-hidden rounded-[20px] bg-raised">
           {device.paired.map((d) => (
             <li key={d.fingerprint} className="flex items-center gap-3 p-3 pl-4">
               <Face seed={d.fingerprint} size={32} />
@@ -450,7 +451,7 @@ function Settings({ device, control, update, onSetup, onAbout, onClose, onChange
 
       <button
         onClick={onAbout}
-        className="mt-6 flex min-h-11 w-full items-center gap-3 rounded-xl bg-raised p-4 text-left ring-1 ring-line transition-colors hover:bg-tint/[0.04] focus-visible:outline-2 focus-visible:outline-accent"
+        className="mt-6 flex min-h-11 w-full items-center gap-3 clay rounded-[20px] bg-raised p-4 text-left transition-colors hover:bg-tint/[0.04] focus-visible:outline-2 focus-visible:outline-accent"
       >
         <span className="flex-1 text-sm font-medium">About TCuFlow</span>
         {update.available && <span aria-hidden className="h-2 w-2 rounded-full bg-accent" />}

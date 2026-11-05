@@ -194,7 +194,7 @@ export function Calibrate({ device, peers, selected, onSelect, onPair, onChange 
   const selAlias = placed.find((i) => i.fingerprint === sel)?.alias;
 
   return (
-    <section aria-labelledby="cal-title" className="rise mt-5 rounded-2xl border border-line bg-raised p-5" style={{ "--i": 3 } as React.CSSProperties}>
+    <section aria-labelledby="cal-title" className="rise mt-5 clay rounded-[24px] bg-raised p-5" style={{ "--i": 3 } as React.CSSProperties}>
       <h2 id="cal-title" className="text-[17px] font-semibold tracking-[-0.01em]">
         Where your devices sit
       </h2>

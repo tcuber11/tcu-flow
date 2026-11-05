@@ -81,7 +81,7 @@ export function PhoneView() {
         )}
         <ul className="mt-4 space-y-2 overflow-y-auto pb-10">
           {items.map((t, i) => (
-            <li key={i} className="rise break-all rounded-2xl bg-raised p-3 text-xs ring-1 ring-line">
+            <li key={i} className="rise break-all clay rounded-[20px] bg-raised p-3 text-xs">
               {t}
             </li>
           ))}

@@ -8,7 +8,6 @@ import { About, useUpdate } from "./About";
 import { UpdatePrompt } from "./UpdatePrompt";
 import { Calibrate } from "./Calibrate";
 import { Face } from "./Face";
-import { Mascot } from "./Mascot";
 import { Badge, CodeBoxes, ConnectionCheck, StateBadge, StateNote, Troubleshoot, deviceState, linkButton, osLabel, primaryButton, quietButton, stateReason, usePairRequest, type Device, type Peer } from "./Pairing";
 import { CheckIcon, ClockIcon, CloseIcon, DisplayIcon, IncomingIcon, LinkIcon, MoonIcon, PlusCircleIcon, SunIcon, WavesIcon } from "./icons";
 import { THEMES, type Theme, loadTheme, saveTheme } from "./theme";
@@ -17,6 +16,7 @@ import { ClipHistory } from "./ClipHistory";
 import { Outbox } from "./Outbox";
 import { Pointer } from "./Pointer";
 import { Remote } from "./Remote";
+import { DeskScene } from "./Illustration";
 import { Sharing } from "./Sharing";
 import { Transfers } from "./Transfers";
 
@@ -113,19 +113,19 @@ export function Home() {
             macOS didn't let TCuFlow open its key in the keychain, so your linked devices won't know this Mac and pairing is off. Reopen TCuFlow and
             choose <span className="font-semibold">Always Allow</span> when macOS asks.
           </p>
-          <button onClick={() => invoke("reopen")} className={quietButton + " ring-1 ring-line"}>
+          <button onClick={() => invoke("reopen")} className={quietButton}>
             Reopen TCuFlow
           </button>
         </div>
       )}
       {viewer && (
-        <div role="status" className="rise mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-accent/40 bg-accent/10 px-5 py-4">
+        <div role="status" className="rise clay mt-5 flex flex-wrap items-center justify-between gap-3 rounded-[24px] bg-accent/10 px-5 py-4">
           <p className="text-sm">
             <span className="font-semibold text-fg">{viewer}</span> <span className="text-muted">is viewing and controlling this screen.</span>
           </p>
           <button
             onClick={() => invoke("set_sharing", { sharing: { ...device.sharing, screen: false } }).then(refreshDevice)}
-            className={quietButton + " ring-1 ring-line"}
+            className={quietButton}
           >
             Stop sharing
           </button>
@@ -290,7 +290,7 @@ function Devices({ device, peers, onChange }: { device: Device; peers: Peer[]; o
               : "Link another computer to share one keyboard, mouse and clipboard between them."}
         </p>
 
-        <div className="rise mt-5 rounded-2xl border border-line bg-raised p-5" style={{ "--i": 2 } as React.CSSProperties}>
+        <div className="rise mt-5 clay rounded-[24px] bg-raised p-5" style={{ "--i": 2 } as React.CSSProperties}>
           <h2 className="text-[17px] font-semibold tracking-[-0.01em]">Discovery</h2>
           <p className="mt-2 flex items-center gap-2 text-sm text-accent-ink">
             <span style={{ animation: "listen 2.4s ease-in-out infinite" }}>
@@ -301,7 +301,7 @@ function Devices({ device, peers, onChange }: { device: Device; peers: Peer[]; o
           {(incoming || waiting) && <p className="mt-4 text-sm font-medium text-muted">Make sure the security code matches on your other computer before accepting.</p>}
 
           {waiting && (
-            <div role="status" className="mt-3 rounded-xl border border-line p-4" style={{ animation: "sheet-in 0.3s var(--ease-out-soft)" }}>
+            <div role="status" className="clay-dip mt-3 rounded-[20px] bg-sunken p-4" style={{ animation: "sheet-in 0.3s var(--ease-out-soft)" }}>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-sm text-muted">Security code</span>
                 <span className="text-xs text-muted">{waitingCode ? `Accept on ${peers.find((p) => pairing[p.info.fingerprint]?.state === "waiting")?.info.alias ?? "the other computer"} if it shows this code` : `Asking ${peers.find((p) => pairing[p.info.fingerprint]?.state === "waiting")?.info.alias ?? "the other computer"}…`}</span>
@@ -317,7 +317,7 @@ function Devices({ device, peers, onChange }: { device: Device; peers: Peer[]; o
 
           <ul className="mt-3 flex flex-col gap-2.5">
             {incoming && (
-              <li className="rounded-xl border border-line p-4" style={{ animation: "sheet-in 0.3s var(--ease-out-soft)" }}>
+              <li className="clay-dip rounded-[20px] bg-sunken p-4" style={{ animation: "sheet-in 0.3s var(--ease-out-soft)" }}>
                 <div className="flex items-start gap-4">
                   <Face seed={incoming.peer.info.fingerprint} size={52} kind={kindOf(incoming.peer)} />
                   <div className="min-w-0 flex-1">
@@ -359,7 +359,7 @@ function Devices({ device, peers, onChange }: { device: Device; peers: Peer[]; o
                 <li
                   key={f}
                   onContextMenu={(e) => menu(e, peerMenu(p))}
-                  className={`rounded-xl border p-4 transition-[border-color,box-shadow] duration-200 ${active ? "border-accent shadow-[0_0_0_3px_color-mix(in_oklab,var(--color-accent)_18%,transparent)]" : "border-line"}`}
+                  className={`rounded-[20px] p-4 transition-[background-color,box-shadow] duration-200 ${active ? "clay bg-raised outline-2 outline-accent" : "clay-dip bg-sunken"}`}
                 >
                   <div className="flex items-center gap-4">
                     <Face seed={f} size={52} kind={kindOf(p)} mood={asking ? "waiting" : st || outdated(p) ? "sad" : "idle"} />
@@ -420,7 +420,7 @@ function Devices({ device, peers, onChange }: { device: Device; peers: Peer[]; o
                 onContextMenu={(e) =>
                   menu(e, [device.wakeable.includes(p.fingerprint) && { text: "Wake up", action: () => void invoke("wake", { fingerprint: p.fingerprint }) }, { text: "Forget", action: () => unpair(p.fingerprint) }])
                 }
-                className="flex items-center gap-4 rounded-xl border border-line p-4"
+                className="clay-dip flex items-center gap-4 rounded-[20px] bg-sunken p-4"
               >
                 <Face seed={p.fingerprint} size={52} mood="sad" kind={p.mobile ? "phone" : "computer"} />
                 <div className="min-w-0 flex-1">
@@ -442,12 +442,10 @@ function Devices({ device, peers, onChange }: { device: Device; peers: Peer[]; o
               </li>
             ))}
             {empty && (
-              <li className="flex items-center gap-4 rounded-xl border border-dashed border-line p-4">
-                <Mascot size={56} mood="searching" />
-                <div>
-                  <p className="text-[15px] font-semibold">No computers found yet</p>
-                  <p className="mt-0.5 text-sm text-muted">Open TCuFlow on the other computer, on the same network.</p>
-                </div>
+              <li className="clay-dip flex flex-col items-center gap-2 rounded-[20px] bg-sunken px-4 pb-6 pt-4 text-center">
+                <DeskScene className="w-64 max-w-full" />
+                <p className="text-[15px] font-semibold">No computers found yet</p>
+                <p className="text-sm text-muted">Open TCuFlow on the other computer, on the same network.</p>
               </li>
             )}
           </ul>
@@ -493,7 +491,7 @@ function Devices({ device, peers, onChange }: { device: Device; peers: Peer[]; o
           <span>
             <span className="font-semibold">{driver.alias}</span> is using this computer
           </span>
-          <button onClick={() => invoke("disconnect")} className={quietButton + " ml-1 min-h-8 ring-1 ring-line"}>
+          <button onClick={() => invoke("disconnect")} className={quietButton + " ml-1 min-h-8"}>
             Take back
           </button>
         </div>

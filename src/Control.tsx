@@ -1,5 +1,6 @@
 // Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
 import { useEffect, useState } from "react";
+import { ChevronLeftIcon } from "./icons";
 import { addPluginListener, invoke } from "@tauri-apps/api/core";
 import { Face } from "./Face";
 import { primaryButton, quietButton } from "./Pairing";
@@ -113,10 +114,10 @@ export function Wizard({ computer, onClose }: { computer: string; onClose: () =>
   const samsung = s?.maker === "samsung";
 
   return (
-    <main className="mx-auto flex min-h-full w-full max-w-xl flex-col px-5 pb-8 pt-12">
-      <header className="flex items-center gap-2">
-        <button onClick={onClose} aria-label="Back" className={quietButton + " grid h-11 w-11 place-items-center p-0 text-lg"}>
-          ‹
+    <main className="mx-auto flex min-h-full w-full max-w-xl flex-col px-5 pb-8 pt-[max(env(safe-area-inset-top),1rem)]">
+      <header className="flex items-center gap-3">
+        <button onClick={onClose} aria-label="Back" className="clay grid h-10 w-10 place-items-center rounded-full bg-raised text-fg active:scale-95">
+          <ChevronLeftIcon size={20} />
         </button>
         {step !== "intro" && step !== "done" && index >= 0 && (
           <>
@@ -207,14 +208,14 @@ export function Wizard({ computer, onClose }: { computer: string; onClose: () =>
               placeholder="123456"
               aria-invalid={!!codeError}
               aria-describedby={codeError ? "adb-code-error" : undefined}
-              className="mt-2 w-full rounded-2xl bg-raised px-4 py-3 text-center font-mono text-2xl tracking-[0.3em] text-fg ring-1 ring-line placeholder:text-faint focus-visible:outline-2 focus-visible:outline-accent"
+              className="mt-2 w-full clay-dip rounded-[20px] bg-sunken px-4 py-3 text-center font-mono text-2xl tracking-[0.3em] text-fg placeholder:text-faint focus-visible:outline-2 focus-visible:outline-accent"
             />
             {codeError && (
               <p id="adb-code-error" role="alert" className="mt-2 text-sm text-danger">
                 {codeError}
               </p>
             )}
-            <button type="submit" disabled={busy} className={quietButton + " mt-2 min-h-11 w-full ring-1 ring-line"}>
+            <button type="submit" disabled={busy} className={quietButton + " mt-2 min-h-11 w-full"}>
               {busy ? "Pairing…" : "Pair"}
             </button>
           </form>
@@ -285,7 +286,7 @@ function Body({ title, text, face, children }: { title: string; text: string; fa
 
 function Waiting({ children }: { children: React.ReactNode }) {
   return (
-    <p role="status" className="mt-6 flex items-center gap-3 rounded-2xl bg-raised p-4 text-sm text-muted ring-1 ring-line">
+    <p role="status" className="mt-6 flex items-center gap-3 clay rounded-[24px] bg-raised p-4 text-sm text-muted">
       <span aria-hidden className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-tint/20 border-t-accent" />
       {children}
     </p>

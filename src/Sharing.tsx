@@ -8,11 +8,11 @@ import { quietButton, type Sharing as SharingPrefs } from "./Pairing";
 export function Toggle({ on, onChange, label, hint, disabled }: { on: boolean; onChange: (on: boolean) => void; label: string; hint?: string; disabled?: boolean }) {
   return (
     <button role="switch" aria-checked={on} disabled={disabled} onClick={() => onChange(!on)} className="group flex items-start gap-3 text-left focus-visible:outline-none disabled:opacity-50">
-      <span className={`relative mt-0.5 h-6 w-10 shrink-0 rounded-full transition-colors duration-200 group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-accent ${on ? "bg-accent" : "bg-tint/15"}`}>
-        <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-fg transition-[left] duration-200 ease-[var(--ease-out-expo)] ${on ? "left-[18px]" : "left-0.5"}`} />
+      <span className={`clay-dip relative mt-0.5 h-7 w-12 shrink-0 rounded-full transition-colors duration-200 group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-accent ${on ? "bg-accent" : "bg-sunken"}`}>
+        <span className={`clay-key absolute top-0.5 h-6 w-6 rounded-full bg-white transition-[left] duration-200 ease-[var(--ease-out-expo)] ${on ? "left-[22px]" : "left-0.5"}`} />
       </span>
       <span>
-        <span className="block text-sm text-fg">{label}</span>
+        <span className="block text-sm font-medium text-fg">{label}</span>
         {hint && <span className="mt-0.5 block text-xs text-faint">{hint}</span>}
       </span>
     </button>
@@ -44,7 +44,7 @@ export function Sharing({ initial, received, mac, onChange }: { initial: Sharing
   const kbd = "rounded-md bg-tint/10 px-1.5 py-0.5 font-sans text-xs text-fg";
 
   return (
-    <section aria-labelledby="sharing-title" className="rise mt-5 rounded-2xl border border-line bg-raised p-5" style={{ "--i": 6 } as React.CSSProperties}>
+    <section aria-labelledby="sharing-title" className="rise mt-5 clay rounded-[24px] bg-raised p-5" style={{ "--i": 6 } as React.CSSProperties}>
       <h2 id="sharing-title" className="text-[17px] font-semibold tracking-[-0.01em]">
         This computer shares
       </h2>
@@ -66,7 +66,7 @@ export function Sharing({ initial, received, mac, onChange }: { initial: Sharing
           hint={mac ? "Linked computers can view and control this screen in a window. Needs Screen Recording permission the first time." : "Linked computers can view and control this screen in a window."}
         />
         {s.screen && recording === false && (
-          <div role="status" className="ml-[52px] -mt-1 rounded-xl bg-warning/12 px-3.5 py-3 text-xs leading-relaxed text-fg">
+          <div role="status" className="ml-[60px] -mt-1 rounded-[18px] bg-warning/12 px-3.5 py-3 text-xs leading-relaxed text-fg">
             <p>
               macOS isn't letting TCuFlow record this screen yet, so viewers would see nothing. Switch TCuFlow on under Screen &amp; System Audio Recording, then
               reopen TCuFlow. Already on there? Remove TCuFlow from that list with −, then open it again from here.

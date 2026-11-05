@@ -2,25 +2,27 @@
 name: TCuFlow
 description: One Workspace. Multiple Devices. Zero Friction.
 colors:
-  ink: "#ffffff"
+  ink: "#eceef6"
   raised: "#ffffff"
-  sunken: "#f5f5f7"
-  fg: "#1d1d1f"
-  muted: "#6e6e73"
-  faint: "#737378"
-  line: "rgb(0 0 0 / 0.1)"
-  accent: "#007aff"
+  sunken: "#f1f2f8"
+  fg: "#1c1f33"
+  muted: "#5f6580"
+  faint: "#686e88"
+  line: "rgb(30 40 90 / 0.1)"
+  accent: "#5b63f0"
+  warm: "#ee7a3e"
   on-accent: "#ffffff"
   danger: "#d70015"
   success: "#248a3d"
   warning: "#c45500"
-  ink-dark: "#1e1e20"
-  raised-dark: "#28282b"
-  sunken-dark: "#1a1a1c"
-  fg-dark: "#f5f5f7"
-  muted-dark: "#a1a1a6"
-  faint-dark: "#98989d"
-  line-dark: "rgb(255 255 255 / 0.1)"
+  ink-dark: "#14152a"
+  raised-dark: "#23254a"
+  sunken-dark: "#1b1d3a"
+  fg-dark: "#eef0ff"
+  muted-dark: "#a7abc9"
+  faint-dark: "#9a9ebd"
+  line-dark: "rgb(255 255 255 / 0.09)"
+  accent-dark: "#7b82ff"
   danger-dark: "#ff6961"
   success-dark: "#30d158"
   warning-dark: "#ffb340"
@@ -89,6 +91,15 @@ components:
     rounded: "{rounded.pill}"
     padding: "4px 10px"
 ---
+
+> **Soft clay (November 2026), on every platform.** Pillowy rounded surfaces lit from above: `.clay` (panels and
+> cards: highlight on top, shade below, soft drop), `.clay-key` (buttons and keys, pressed in on tap) and `.clay-dip`
+> (wells: fields, pads, trays), on a page shading from cool grey-blue to warm cream (`--page`). Periwinkle accent
+> (computers still take the user's glow colour), warm orange as the second colour, pastel device colours on phones
+> (`clayOf`: lavender, mint, pink, butter, peach, sky), headings in the rounded system face. Dark mode is deep
+> indigo with the same depth. The tokens below are the clay values; older notes further down that speak of the
+> macOS System Settings look describe the layout, which stays.
+
 
 # TCuFlow design system
 

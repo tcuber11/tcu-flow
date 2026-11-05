@@ -43,7 +43,7 @@ export function UpdatePrompt({ update, seed, downloadUrl, onClose }: { update: U
         aria-modal="true"
         aria-labelledby="update-title"
         onClick={(e) => e.stopPropagation()}
-        className="flex max-h-full w-full max-w-sm flex-col items-center rounded-2xl bg-raised px-7 pb-6 pt-8 text-center shadow-[0_12px_40px_rgb(0_0_0/0.25)]"
+        className="flex max-h-full w-full max-w-sm flex-col items-center clay rounded-[30px] bg-raised px-7 pb-6 pt-8 text-center"
         style={{ animation: "sheet-in 0.45s var(--ease-out-expo)" }}
       >
         {/* Oka hops on a pulse of the accent, like a crossing */}

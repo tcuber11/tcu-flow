@@ -88,7 +88,7 @@ export function Terminal({ fingerprint, alias, onClose }: { fingerprint: string;
           Close
         </button>
       </header>
-      <div className="mx-4 mb-4 min-h-0 flex-1 overflow-hidden rounded-2xl border border-line bg-raised p-3">
+      <div className="mx-4 mb-4 min-h-0 flex-1 overflow-hidden clay rounded-[24px] bg-raised p-3">
         <div ref={host} className="h-full w-full" />
       </div>
     </div>

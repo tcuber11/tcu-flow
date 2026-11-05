@@ -3,6 +3,7 @@ import { Channel, invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { scanOf } from "./scancodes";
 import { Badge, quietButton } from "./Pairing";
+import { ChevronLeftIcon } from "./icons";
 
 /** The other computer's display, with input sent there. On a computer (window `remote-*`) its mouse and keyboard
  *  while the pointer is over the picture; on a phone or tablet (`touch`, full screen, `onClose` goes back) a tap
@@ -501,8 +502,8 @@ export function RemoteView({ fingerprint, alias, touch = false, onClose }: { fin
     return (
       <div className="flex h-full flex-col bg-black text-fg">
         <div className="flex shrink-0 items-center gap-2 bg-raised px-3 pb-2 pt-[max(env(safe-area-inset-top),0.5rem)] text-xs text-muted">
-          <button onClick={onClose} aria-label="Back" className={quietButton + " grid h-10 w-10 place-items-center p-0 text-lg"}>
-            ‹
+          <button onClick={onClose} aria-label="Back" className="clay grid h-10 w-10 shrink-0 place-items-center rounded-full bg-raised text-fg active:scale-95">
+            <ChevronLeftIcon size={20} />
           </button>
           <span className="min-w-0 truncate font-semibold text-fg">{alias}</span>
           {state.at === "live" ? <Badge tone="success">Live</Badge> : state.at === "connecting" ? <Badge tone="accent">Connecting…</Badge> : <Badge tone="danger">Ended</Badge>}

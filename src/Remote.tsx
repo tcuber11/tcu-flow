@@ -62,7 +62,7 @@ export function Remote({ fingerprint, alias, mac }: { fingerprint: string; alias
   const cable = mac ? { name: "BlackHole", device: "BlackHole 2ch", url: "https://existential.audio/blackhole/" } : { name: "VB-CABLE", device: "CABLE Output", url: "https://vb-audio.com/Cable/" };
 
   return (
-    <section aria-labelledby="remote-title" className="rise mt-5 rounded-2xl border border-line bg-raised p-5" style={{ "--i": 5 } as React.CSSProperties}>
+    <section aria-labelledby="remote-title" className="rise mt-5 clay rounded-[24px] bg-raised p-5" style={{ "--i": 5 } as React.CSSProperties}>
       <h2 id="remote-title" className="text-[17px] font-semibold tracking-[-0.01em]">
         From {alias}
       </h2>

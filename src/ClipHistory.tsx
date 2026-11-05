@@ -31,7 +31,7 @@ export function ClipHistory() {
     );
 
   return (
-    <section aria-labelledby="clip-title" className="mt-5 rounded-2xl border border-line bg-raised p-5">
+    <section aria-labelledby="clip-title" className="mt-5 clay rounded-[24px] bg-raised p-5">
       <h2 id="clip-title" className="text-[17px] font-semibold tracking-[-0.01em]">Recent clipboard</h2>
       {list.length === 0 ? (
         <p className="mt-2 text-sm text-muted">Things you copy show up here.</p>

@@ -14,7 +14,7 @@ export function Pointer({ initial, mac }: { initial: CursorPrefs; mac: boolean }
   const kbd = "rounded-md bg-tint/10 px-1.5 py-0.5 font-sans text-xs text-fg";
 
   return (
-    <section aria-labelledby="pointer-title" className="rise mt-5 rounded-2xl border border-line bg-raised p-5" style={{ "--i": 4 } as React.CSSProperties}>
+    <section aria-labelledby="pointer-title" className="rise mt-5 clay rounded-[24px] bg-raised p-5" style={{ "--i": 4 } as React.CSSProperties}>
       <h2 id="pointer-title" className="text-[17px] font-semibold tracking-[-0.01em]">
         How it feels over there
       </h2>
@@ -66,9 +66,9 @@ export function Pointer({ initial, mac }: { initial: CursorPrefs; mac: boolean }
           className="group flex items-center gap-3 text-left focus-visible:outline-none"
         >
           <span
-            className={`relative h-6 w-10 shrink-0 rounded-full transition-colors duration-200 group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-accent ${p.swapCtrlCmd ? "bg-accent" : "bg-tint/15"}`}
+            className={`clay-dip relative h-7 w-12 shrink-0 rounded-full transition-colors duration-200 group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-accent ${p.swapCtrlCmd ? "bg-accent" : "bg-sunken"}`}
           >
-            <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-fg transition-[left] duration-200 ease-[var(--ease-out-expo)] ${p.swapCtrlCmd ? "left-[18px]" : "left-0.5"}`} />
+            <span className={`clay-key absolute top-0.5 h-6 w-6 rounded-full bg-white transition-[left] duration-200 ease-[var(--ease-out-expo)] ${p.swapCtrlCmd ? "left-[22px]" : "left-0.5"}`} />
           </span>
           <span id="swap-text" className="text-fg">
             {mac ? "⌘ acts as Ctrl on a PC" : "Ctrl acts as ⌘ on a Mac"}

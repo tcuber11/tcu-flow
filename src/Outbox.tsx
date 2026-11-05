@@ -30,7 +30,7 @@ export function Outbox({ device, peers }: { device: Device; peers: Peer[] }) {
 
   return (
     <div className="fixed inset-0 z-10 grid place-items-center bg-black/35 p-5" style={{ animation: "fade-in 0.2s ease-out" }}>
-      <div role="dialog" aria-modal="true" aria-labelledby="outbox-title" className="w-full max-w-sm rounded-2xl bg-raised p-5 border border-line" style={{ animation: "sheet-in 0.45s var(--ease-out-expo)" }}>
+      <div role="dialog" aria-modal="true" aria-labelledby="outbox-title" className="w-full max-w-sm clay rounded-[24px] bg-raised p-5" style={{ animation: "sheet-in 0.45s var(--ease-out-expo)" }}>
         <h2 id="outbox-title" className="text-xl font-semibold leading-tight tracking-[-0.015em]">
           Send {files.length === 1 ? name(files[0]) : `${files.length} items`} to…
         </h2>

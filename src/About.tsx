@@ -145,7 +145,7 @@ export function About({ update, seed, os, onClose, onUpdate, downloadUrl, extra 
         aria-modal="true"
         aria-labelledby="about-title"
         onClick={(e) => e.stopPropagation()}
-        className="flex max-h-full w-full max-w-md flex-col rounded-2xl bg-raised shadow-[0_12px_40px_rgb(0_0_0/0.25)]"
+        className="clay flex max-h-full w-full max-w-md flex-col rounded-[30px] bg-raised"
         style={{ animation: "sheet-in 0.45s var(--ease-out-expo)" }}
       >
         <header className="flex items-center gap-4 px-7 pt-7">

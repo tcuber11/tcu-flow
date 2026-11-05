@@ -108,14 +108,14 @@ export function CodeBoxes({ code, size = "lg" }: { code: string; size?: "lg" | "
   const digits = code.replace(/\s/g, "").split("");
   if (size === "sm")
     return (
-      <span aria-label={`Security code ${digits.join(" ")}`} className="rounded-full border border-line bg-raised px-3 py-1 text-sm font-semibold tabular-nums tracking-[0.08em] text-fg">
+      <span aria-label={`Security code ${digits.join(" ")}`} className="clay-key rounded-full bg-raised px-3 py-1 text-sm font-semibold tabular-nums tracking-[0.08em] text-fg">
         {digits.join("")}
       </span>
     );
   return (
     <div role="img" aria-label={`Security code ${digits.join(" ")}`} className="flex gap-2">
       {digits.map((d, i) => (
-        <span key={i} className="grid h-14 w-11 place-items-center rounded-xl border border-line bg-raised text-[28px] font-semibold tabular-nums text-fg" style={{ animation: `rise 0.4s ${i * 35}ms var(--ease-out-soft) both` }}>
+        <span key={i} className="clay-key grid h-14 w-11 place-items-center rounded-[14px] bg-raised text-[28px] font-semibold tabular-nums text-fg" style={{ animation: `rise 0.4s ${i * 35}ms var(--ease-out-soft) both` }}>
           {d}
         </span>
       ))}
@@ -151,7 +151,7 @@ export function StateNote({ state, alias, os, onWake }: { state: DeviceState; al
   const reason = stateReason(state, alias, os);
   if (!reason) return null;
   return (
-    <div role="status" className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-line bg-raised p-4 text-sm leading-relaxed">
+    <div role="status" className="clay flex flex-wrap items-center gap-x-3 gap-y-2 rounded-[20px] bg-raised p-4 text-sm leading-relaxed">
       <StateBadge state={state} />
       <p className="min-w-0 flex-1 text-muted">{reason}.</p>
       {state === "offline" && onWake && (
@@ -242,10 +242,10 @@ export function Troubleshoot({ fingerprint, alias }: { fingerprint: string; alia
 
 /** Primary action: system-blue filled button. */
 export const primaryButton =
-  "inline-flex min-h-8 items-center justify-center gap-1.5 rounded-lg bg-accent px-4 py-1.5 text-sm font-medium text-on-accent transition-[filter,transform] duration-150 ease-out hover:brightness-110 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-50";
+  "clay-key inline-flex min-h-9 items-center justify-center gap-1.5 rounded-full bg-accent px-5 py-1.5 text-sm font-semibold text-on-accent transition-[filter,transform] duration-150 ease-out hover:brightness-110 active:translate-y-px active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-50";
 /** Secondary action: neutral filled button (Reject, Change…, Test connection). */
 export const quietButton =
-  "inline-flex min-h-8 items-center justify-center gap-1.5 rounded-lg bg-tint/[0.07] px-4 py-1.5 text-sm font-medium text-fg transition-[background-color,transform] duration-150 hover:bg-tint/[0.11] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-50";
+  "clay-key inline-flex min-h-9 items-center justify-center gap-1.5 rounded-full bg-raised px-5 py-1.5 text-sm font-semibold text-fg transition-[filter,transform] duration-150 hover:brightness-[0.97] active:translate-y-px active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-50";
 /** Text action in the accent (Refresh, Wake up). */
 export const linkButton =
   "inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 text-sm font-medium text-accent-ink transition-colors hover:bg-accent/10 focus-visible:outline-2 focus-visible:outline-accent disabled:opacity-50";
@@ -263,7 +263,7 @@ export function PairPrompt({ selfSeed }: { selfSeed: string }) {
         aria-modal="true"
         aria-labelledby="pair-title"
         aria-describedby="pair-body"
-        className="w-full max-w-sm rounded-2xl bg-raised p-6 text-center shadow-[0_12px_40px_rgb(0_0_0/0.25)]"
+        className="clay w-full max-w-sm rounded-[30px] bg-raised p-6 text-center"
         style={{ animation: "sheet-in 0.35s var(--ease-out-soft)" }}
       >
         <div className="flex items-center justify-center gap-3">

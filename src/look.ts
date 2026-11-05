@@ -9,10 +9,10 @@ export type Look = { color: string; motion: Motion; opacity: number; width: numb
 
 const KEY = "tcuflow.look";
 // glow colours; as UI text the accent is darkened (light theme) or lightened (dark) through --color-accent-ink
-export const SWATCHES: Record<string, string> = { Blue: "#007aff", Cyan: "#4cc9ff", Mint: "#5ef0b0", Lime: "#c3f24a", Amber: "#ffb547", Pink: "#ff6fae", Violet: "#a98bff" };
+export const SWATCHES: Record<string, string> = { Periwinkle: "#5b63f0", Blue: "#007aff", Cyan: "#4cc9ff", Mint: "#5ef0b0", Lime: "#c3f24a", Amber: "#ffb547", Pink: "#ff6fae", Violet: "#a98bff" };
 export const MOTIONS: Motion[] = ["ripple", "pulse", "calm"];
 
-export const loadLook = (): Look => ({ color: SWATCHES.Blue, motion: "ripple", opacity: 1, width: 1, autoHide: false, ...JSON.parse(localStorage.getItem(KEY) ?? "{}") });
+export const loadLook = (): Look => ({ color: SWATCHES.Periwinkle, motion: "ripple", opacity: 1, width: 1, autoHide: false, ...JSON.parse(localStorage.getItem(KEY) ?? "{}") });
 
 /** the UI accent follows the glow, like a system accent colour */
 export const applyAccent = (color: string) => document.documentElement.style.setProperty("--color-accent", color);
