@@ -3,41 +3,45 @@
 <head>
 <meta charset="utf-8">
 <title>TCuFlow promo</title>
-<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800&display=swap" rel="stylesheet">
 <!--
   Deterministic 1920x1080 animation for the promo video: every visual is a pure function of `t` (seconds),
   read from ?t= for frame capture (scripts/render-promo.sh) or driven by a clock when opened in a browser.
   Scenes: 0 title · 5 crossing · 14 keyboard · 22 clipboard/file · 30 security · 38 download · 46 end.
 -->
 <style>
-:root{--bg:#07090f;--panel:#0e1119;--line:rgb(255 255 255/.1);--fg:#f2f4f8;--muted:#a3abbd;--blue:#2a8fff;--blue-ink:#7fbcff}
+:root{--bg:#eceef7;--page:linear-gradient(180deg,#eceef7 0%,#f3efe9 100%);--panel:#fff;--sunken:#f1f2f8;--line:rgb(30 40 90/.1);--fg:#1c1f33;--muted:#5f6580;--blue:#5b63f0;--blue-ink:#3f45c8;--warm:#ee7a3e;
+  --clay:inset 0 1.5px 0 rgb(255 255 255/.9),inset 0 -3px 0 rgb(40 50 110/.06),0 2px 4px -1px rgb(40 50 110/.08),0 16px 32px -16px rgb(40 50 110/.35);
+  --clay-key:inset 0 1.5px 0 rgb(255 255 255/.55),inset 0 -4px 0 rgb(0 0 0/.14),0 10px 18px -10px rgb(30 40 110/.55);
+  --clay-dip:inset 0 3px 8px rgb(40 50 110/.10),inset 0 -1px 0 rgb(255 255 255/.8);
+  --display:ui-rounded,"SF Pro Rounded","Nunito",-apple-system,BlinkMacSystemFont,"SF Pro Display",system-ui,sans-serif}
 html,body{margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif;overflow:hidden}
-#stage{position:relative;width:1920px;height:1080px;overflow:hidden;background:var(--bg)}
-.glow{position:absolute;inset:0;background:radial-gradient(45% 45% at 50% 40%,rgb(42 143 255/.18),transparent 70%)}
+#stage{position:relative;width:1920px;height:1080px;overflow:hidden;background:var(--page)}
+.glow{position:absolute;inset:0;background:radial-gradient(45% 45% at 50% 40%,rgb(91 99 240/.16),transparent 70%)}
 .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
-h1{font-family:Unbounded,sans-serif;font-weight:800;font-size:108px;line-height:1;letter-spacing:-.02em;margin:0}
+h1{font-family:var(--display);font-weight:800;font-size:108px;line-height:1;letter-spacing:-.02em;margin:0}
 h1 em{font-style:normal;color:var(--blue-ink)}
 .tag{font-size:34px;color:var(--muted);margin-top:28px}
-.brand{display:flex;align-items:center;gap:22px;font-family:Unbounded,sans-serif;font-weight:800;font-size:64px}
+.brand{display:flex;align-items:center;gap:22px;font-family:var(--display);font-weight:800;font-size:64px;letter-spacing:-.01em}
 .screens{position:absolute;left:120px;right:120px;top:200px;height:620px;display:grid;grid-template-columns:1fr 1fr;gap:60px}
-.screen{position:relative;background:var(--panel);border:2px solid var(--line);border-radius:28px;overflow:hidden;background-image:radial-gradient(rgb(255 255 255/.07) 1.5px,transparent 1.5px);background-size:30px 30px}
-.bar{height:46px;display:flex;align-items:center;gap:12px;padding:0 22px;border-bottom:1px solid var(--line);font-size:19px;color:var(--muted);background:rgb(255 255 255/.03)}
+.screen{position:relative;background:var(--panel);border-radius:28px;overflow:hidden;box-shadow:var(--clay);background-image:radial-gradient(rgb(30 40 90/.09) 1.5px,transparent 1.5px);background-size:30px 30px}
+.bar{height:46px;display:flex;align-items:center;gap:12px;padding:0 22px;border-bottom:1px solid var(--line);font-size:19px;color:var(--muted);background:rgb(255 255 255/.75)}
 .bar b{color:var(--fg)}
 .edge{position:absolute;top:24%;bottom:24%;width:7px;border-radius:99px;background:var(--blue)}
 .mac .edge{right:-2px}.win .edge{left:-2px}
 .flo{position:absolute;width:110px;height:110px;will-change:transform}
 .cap{position:absolute;left:0;right:0;bottom:120px;text-align:center;font-size:40px;font-weight:600;letter-spacing:-.01em}
 .cap small{display:block;margin-top:12px;font-size:24px;font-weight:400;color:var(--muted)}
-.doc{position:absolute;left:60px;top:90px;width:520px;background:#fff;color:#1d1d1f;border-radius:14px;padding:26px 30px;font-size:22px;line-height:1.5;box-shadow:0 20px 60px rgb(0 0 0/.4)}
-.doc .caret{display:inline-block;width:2px;height:24px;background:#1d1d1f;vertical-align:-4px;margin-left:1px}
+.doc{position:absolute;left:60px;top:90px;width:520px;background:var(--panel);color:var(--fg);border-radius:20px;padding:26px 30px;font-size:22px;line-height:1.5;box-shadow:var(--clay)}
+.doc .caret{display:inline-block;width:2px;height:24px;background:var(--fg);vertical-align:-4px;margin-left:1px}
 .file{position:absolute;display:flex;flex-direction:column;align-items:center;gap:8px;font-size:18px;color:var(--blue-ink);will-change:transform}
-.file .icon{width:64px;height:78px;border:3px solid var(--blue-ink);border-radius:10px;position:relative;background:rgb(42 143 255/.12)}
-.file .icon::after{content:"";position:absolute;right:-3px;top:-3px;width:22px;height:22px;background:var(--bg);border-left:3px solid var(--blue-ink);border-bottom:3px solid var(--blue-ink);border-radius:0 0 0 8px}
+.file .icon{width:64px;height:78px;border:3px solid var(--blue);border-radius:10px;position:relative;background:rgb(91 99 240/.12)}
+.file .icon::after{content:"";position:absolute;right:-3px;top:-3px;width:22px;height:22px;background:var(--panel);border-left:3px solid var(--blue);border-bottom:3px solid var(--blue);border-radius:0 0 0 8px}
 .code{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;gap:14px}
-.code span{display:grid;place-items:center;width:72px;height:92px;border-radius:16px;background:var(--bg);border:2px solid var(--line);font:800 40px Unbounded,sans-serif}
+.code span{display:grid;place-items:center;width:72px;height:92px;border-radius:20px;background:var(--panel);box-shadow:var(--clay-key);font:800 40px var(--display);color:var(--fg)}
 .lock{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:26px;color:var(--muted);text-align:center;width:80%}
 .ripple{position:absolute;border:4px solid var(--blue);border-radius:50%;will-change:transform,opacity}
-.cta{display:inline-flex;align-items:center;gap:14px;background:var(--blue);color:#fff;border-radius:99px;padding:22px 52px;font-size:34px;font-weight:600;margin-top:48px;box-shadow:0 20px 60px rgb(42 143 255/.35)}
+.cta{display:inline-flex;align-items:center;gap:14px;background:var(--blue);color:#fff;border-radius:99px;padding:22px 52px;font-size:34px;font-weight:600;margin-top:48px;box-shadow:var(--clay-key),0 20px 60px rgb(91 99 240/.3)}
 .checks{display:flex;gap:48px;margin-top:40px;font-size:26px;color:var(--muted)}
 .checks span::before{content:"✓";display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--blue);color:#fff;font-size:18px;margin-right:12px}
 </style>
@@ -45,9 +49,9 @@ h1 em{font-style:normal;color:var(--blue-ink)}
 <body>
 <div id="stage">
   <svg width="0" height="0" style="position:absolute"><defs>
-    <symbol id="flo" viewBox="0 0 100 100"><path d="M60 93 C 68 99, 78 97, 86 90" fill="none" stroke="#0a5fd6" stroke-width="4" stroke-linecap="round" opacity=".9"/><path d="M18 14 C 46 16, 86 34, 86 62 C 86 80, 72 92, 54 92 C 36 92, 22 80, 20 62 C 18 44, 14 28, 18 14 Z" fill="#fff"/><ellipse cx="38" cy="66" rx="4.5" ry="2.6" fill="#ff8aa0" opacity=".6"/><ellipse cx="70" cy="66" rx="4.5" ry="2.6" fill="#ff8aa0" opacity=".6"/><circle cx="46" cy="56" r="5.2" fill="#1d1d1f"/><circle cx="47.8" cy="54" r="1.7" fill="#fff"/><circle cx="62" cy="56" r="5.2" fill="#1d1d1f"/><circle cx="63.8" cy="54" r="1.7" fill="#fff"/><path d="M48 69 Q 54 74 60 69" fill="none" stroke="#1d1d1f" stroke-width="3" stroke-linecap="round"/></symbol>
-    <symbol id="flo-happy" viewBox="0 0 100 100"><path d="M60 93 C 68 99, 78 97, 86 90" fill="none" stroke="#0a5fd6" stroke-width="4" stroke-linecap="round" opacity=".9"/><path d="M18 14 C 46 16, 86 34, 86 62 C 86 80, 72 92, 54 92 C 36 92, 22 80, 20 62 C 18 44, 14 28, 18 14 Z" fill="#fff"/><ellipse cx="38" cy="66" rx="4.5" ry="2.6" fill="#ff8aa0" opacity=".6"/><ellipse cx="70" cy="66" rx="4.5" ry="2.6" fill="#ff8aa0" opacity=".6"/><path d="M41 58 Q 46 51 51 58 M57 58 Q 62 51 67 58" fill="none" stroke="#1d1d1f" stroke-width="3" stroke-linecap="round"/><path d="M46 68 Q 54 78 62 68 Z" fill="#1d1d1f"/></symbol>
-    <symbol id="flo-blue" viewBox="0 0 100 100"><path d="M60 93 C 68 99, 78 97, 86 90" fill="none" stroke="#0a5fd6" stroke-width="4" stroke-linecap="round" opacity=".9"/><path d="M18 14 C 46 16, 86 34, 86 62 C 86 80, 72 92, 54 92 C 36 92, 22 80, 20 62 C 18 44, 14 28, 18 14 Z" fill="#2a8fff"/><ellipse cx="38" cy="66" rx="4.5" ry="2.6" fill="#ff8aa0" opacity=".6"/><ellipse cx="70" cy="66" rx="4.5" ry="2.6" fill="#ff8aa0" opacity=".6"/><path d="M41 58 Q 46 51 51 58 M57 58 Q 62 51 67 58" fill="none" stroke="#1d1d1f" stroke-width="3" stroke-linecap="round"/><path d="M46 68 Q 54 78 62 68 Z" fill="#1d1d1f"/></symbol>
+    <symbol id="flo" viewBox="0 0 100 100"><path d="M60 93 C 68 99, 78 97, 86 90" fill="none" stroke="#5b63f0" stroke-width="4" stroke-linecap="round" opacity=".9"/><path d="M18 14 C 46 16, 86 34, 86 62 C 86 80, 72 92, 54 92 C 36 92, 22 80, 20 62 C 18 44, 14 28, 18 14 Z" fill="#fff"/><ellipse cx="38" cy="66" rx="4.5" ry="2.6" fill="#ff8aa0" opacity=".6"/><ellipse cx="70" cy="66" rx="4.5" ry="2.6" fill="#ff8aa0" opacity=".6"/><circle cx="46" cy="56" r="5.2" fill="#1d1d1f"/><circle cx="47.8" cy="54" r="1.7" fill="#fff"/><circle cx="62" cy="56" r="5.2" fill="#1d1d1f"/><circle cx="63.8" cy="54" r="1.7" fill="#fff"/><path d="M48 69 Q 54 74 60 69" fill="none" stroke="#1d1d1f" stroke-width="3" stroke-linecap="round"/></symbol>
+    <symbol id="flo-happy" viewBox="0 0 100 100"><path d="M60 93 C 68 99, 78 97, 86 90" fill="none" stroke="#5b63f0" stroke-width="4" stroke-linecap="round" opacity=".9"/><path d="M18 14 C 46 16, 86 34, 86 62 C 86 80, 72 92, 54 92 C 36 92, 22 80, 20 62 C 18 44, 14 28, 18 14 Z" fill="#fff"/><ellipse cx="38" cy="66" rx="4.5" ry="2.6" fill="#ff8aa0" opacity=".6"/><ellipse cx="70" cy="66" rx="4.5" ry="2.6" fill="#ff8aa0" opacity=".6"/><path d="M41 58 Q 46 51 51 58 M57 58 Q 62 51 67 58" fill="none" stroke="#1d1d1f" stroke-width="3" stroke-linecap="round"/><path d="M46 68 Q 54 78 62 68 Z" fill="#1d1d1f"/></symbol>
+    <symbol id="flo-blue" viewBox="0 0 100 100"><path d="M60 93 C 68 99, 78 97, 86 90" fill="none" stroke="#3f45c8" stroke-width="4" stroke-linecap="round" opacity=".9"/><path d="M18 14 C 46 16, 86 34, 86 62 C 86 80, 72 92, 54 92 C 36 92, 22 80, 20 62 C 18 44, 14 28, 18 14 Z" fill="#5b63f0"/><ellipse cx="38" cy="66" rx="4.5" ry="2.6" fill="#ff8aa0" opacity=".6"/><ellipse cx="70" cy="66" rx="4.5" ry="2.6" fill="#ff8aa0" opacity=".6"/><path d="M41 58 Q 46 51 51 58 M57 58 Q 62 51 67 58" fill="none" stroke="#1d1d1f" stroke-width="3" stroke-linecap="round"/><path d="M46 68 Q 54 78 62 68 Z" fill="#1d1d1f"/></symbol>
   </defs></svg>
   <div class="glow" id="glow"></div>
 
@@ -212,7 +216,7 @@ function render(t) {
   flo.style.transform = `translate(${fx}px, ${fy}px) rotate(${happy ? Math.sin(t * 6) * 4 : 0}deg)`;
   flo.querySelector("use").setAttribute("href", happy ? "#flo-happy" : "#flo");
   const glowStrength = breathe + near(fx) * 0.8;
-  for (const id of ["edge-mac", "edge-win"]) $(id).style.boxShadow = `0 0 ${18 + 14 * glowStrength}px ${4 + 4 * glowStrength}px rgb(42 143 255/${0.45 + 0.3 * glowStrength}), 0 0 ${60 + 40 * glowStrength}px ${14 + 10 * glowStrength}px rgb(42 143 255/${0.2 + 0.15 * glowStrength})`;
+  for (const id of ["edge-mac", "edge-win"]) $(id).style.boxShadow = `0 0 ${18 + 14 * glowStrength}px ${4 + 4 * glowStrength}px rgb(91 99 240/${0.45 + 0.3 * glowStrength}), 0 0 ${60 + 40 * glowStrength}px ${14 + 10 * glowStrength}px rgb(91 99 240/${0.2 + 0.15 * glowStrength})`;
   $("ripples").innerHTML = ripples.map(({ x, y, k }) => `<div class="ripple" style="left:${x - 60}px;top:${y - 60}px;width:120px;height:120px;transform:scale(${lerp(0.4, 2.2, ease(k))});opacity:${1 - k}"></div>`).join("");
   const capEl = $("cap");
   const capIn = t < 14 ? fade(t, 6, 6.8, 13.2, 14) : t < 22 ? fade(t, 14, 14.8, 21.2, 22) : t < 30 ? fade(t, 22, 22.8, 29.2, 30) : fade(t, 30, 30.8, 37, 37.6);
