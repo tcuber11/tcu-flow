@@ -1425,8 +1425,18 @@ mod tests {
         (Arc::new(Tls::new(&Identity::generate())), Tls::new(&Identity::generate()))
     }
 
+    /// Tries for a few seconds: `serve` runs on its own task and a loaded runner (Windows in CI) sometimes isn't
+    /// listening yet when the first handshake goes out, which the 3 s idle timeout then reports as unreachable.
     async fn dial(t: &Tls, port: u16) -> Stream {
-        t.connect(([127, 0, 0, 1], port).into(), None).await.unwrap().0
+        let mut last = None;
+        for _ in 0..5 {
+            match t.connect(([127, 0, 0, 1], port).into(), None).await {
+                Ok((s, _)) => return s,
+                Err(e) => last = Some(e),
+            }
+            tokio::time::sleep(Duration::from_millis(300)).await;
+        }
+        panic!("the test server on port {port} never answered: {}", last.unwrap());
     }
 
     #[tokio::test]
