@@ -97,7 +97,9 @@
   --clay-key: inset 0 1.5px 0 rgb(255 255 255 / 0.18), inset 0 -4px 0 rgb(0 0 0 / 0.3), 0 10px 18px -10px rgb(0 0 0 / 0.8);
   --clay-dip: inset 0 3px 8px rgb(0 0 0 / 0.35), inset 0 -1px 0 rgb(255 255 255 / 0.05);
 }
-:root.phone body { font-size: 17px; background: var(--page) fixed, var(--color-ink); }
+:root.phone body { font-size: 17px; background: var(--page) fixed, var(--color-ink); -webkit-text-size-adjust: 100%; }
+/* an app, not a page: no double-tap zoom (pinch is off in the viewport; the screen viewer zooms itself) */
+:root.phone { touch-action: manipulation; }
 .rounded-type { font-family: ui-rounded, "SF Pro Rounded", var(--font-display); }
 .clay { box-shadow: var(--clay); }
 .clay-key { box-shadow: var(--clay-key); }

@@ -554,8 +554,8 @@ export function AddHost({ hosts, ips, onChange, self = "This computer", bare }: 
 
   return (
     <div className={bare ? "text-[15px]" : "mt-5 border-t border-line pt-4 text-sm"}>
-      <form onSubmit={add} className="flex flex-wrap items-center gap-2">
-        <label htmlFor="add-ip" className="mr-1 text-muted">
+      <form onSubmit={add} className={bare ? "flex flex-wrap items-center gap-2.5" : "flex flex-wrap items-center gap-2"}>
+        <label htmlFor="add-ip" className={bare ? "w-full text-muted" : "mr-1 text-muted"}>
           Not showing up? Add by IP
         </label>
         <input
@@ -566,9 +566,18 @@ export function AddHost({ hosts, ips, onChange, self = "This computer", bare }: 
           inputMode="decimal"
           spellCheck={false}
           aria-describedby={error ? "add-ip-error" : undefined}
-          className="h-8 w-40 rounded-lg border border-line bg-sunken px-3 font-mono text-[13px] text-fg placeholder:text-faint focus-visible:border-accent focus-visible:outline-3 focus-visible:outline-accent/25"
+          className={
+            bare
+              ? // 16 px: iOS zooms the page into anything smaller when it gets focus
+                "clay-dip h-12 min-w-0 flex-1 rounded-full bg-sunken px-5 font-mono text-[16px] text-fg placeholder:text-faint focus-visible:outline-3 focus-visible:outline-accent/30"
+              : "h-8 w-40 rounded-lg border border-line bg-sunken px-3 font-mono text-[13px] text-fg placeholder:text-faint focus-visible:border-accent focus-visible:outline-3 focus-visible:outline-accent/25"
+          }
         />
-        <button type="submit" disabled={!ip.trim()} className={quietButton}>
+        <button
+          type="submit"
+          disabled={!ip.trim()}
+          className={bare ? "clay-key h-12 rounded-full bg-accent px-6 text-[16px] font-semibold text-on-accent transition-transform active:translate-y-0.5 disabled:opacity-40" : quietButton}
+        >
           Add
         </button>
       </form>
