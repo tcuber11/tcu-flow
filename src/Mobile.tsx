@@ -4,7 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { RemoteView } from "./RemoteView";
 import { Wizard, useControl, type Control } from "./Control";
-import { Face, hueOf, type Mood } from "./Face";
+import { Face, clayOf, type Mood } from "./Face";
 import { ChevronLeftIcon, DisplayIcon, KeyboardIcon, LaptopIcon, PhoneIcon, SendIcon, TouchpadIcon } from "./icons";
 import { AddHost } from "./Home";
 import { ConnectionCheck, PairPrompt, StateBadge, deviceState, osLabel, primaryButton, quietButton, stateReason, type Device, type PairedDevice, type Peer } from "./Pairing";
@@ -158,7 +158,7 @@ export function Mobile() {
             Visible on this Wi-Fi
           </p>
         </div>
-        <button onClick={() => setScreen("settings")} aria-label="Settings" className="grid h-9 w-9 place-items-center rounded-full bg-raised text-fg shadow-[0_1px_3px_rgb(0_0_0/0.08)] active:scale-95">
+        <button onClick={() => setScreen("settings")} aria-label="Settings" className="clay grid h-10 w-10 place-items-center rounded-full bg-raised text-fg active:scale-95">
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
             <circle cx="12" cy="12" r="3" />
             <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
@@ -167,7 +167,7 @@ export function Mobile() {
       </header>
 
       <div className="px-5">
-        <h1 className="mt-2 font-display text-[34px] font-bold leading-tight tracking-[-0.03em]">Computers</h1>
+        <h1 className="rounded-type mt-2 text-[36px] font-bold leading-tight tracking-[-0.02em]">Computers</h1>
         {device.paired.length > 0 && (
           <p className="mt-0.5 text-[15px] text-muted">{online === 0 ? "None of them is on this Wi-Fi right now" : online === 1 && device.paired.length === 1 ? "Ready when you are" : `${online} of ${device.paired.length} on this Wi-Fi`}</p>
         )}
@@ -188,20 +188,20 @@ export function Mobile() {
             const state = deviceState(peer, true, device.info);
             const usable = !!peer && state !== "update";
             const reason = state === "offline" ? null : stateReason(state, d.alias, peer?.info.os);
-            const hue = hueOf(d.fingerprint);
+            const { light, deep } = clayOf(d.fingerprint);
             return (
-              <li key={d.fingerprint} className="rise overflow-hidden rounded-[22px] bg-raised shadow-[0_1px_2px_rgb(0_0_0/0.05),0_10px_30px_-12px_rgb(0_0_0/0.18)]" style={{ "--i": i } as React.CSSProperties}>
-                {/* the computer's own colour, as on its avatar everywhere else */}
-                <div className="flex items-center gap-3.5 px-4 pb-3 pt-4" style={{ background: `linear-gradient(135deg, hsl(${hue} 90% 60% / 0.16), hsl(${(hue + 50) % 360} 90% 60% / 0.04) 70%)` }}>
+              <li key={d.fingerprint} className="rise clay overflow-hidden rounded-[28px] bg-raised" style={{ "--i": i } as React.CSSProperties}>
+                {/* the computer's own clay colour */}
+                <div className="flex items-center gap-3.5 px-4 pb-2 pt-4" style={{ background: `linear-gradient(165deg, ${light}66, transparent 75%)` }}>
                   <span
                     aria-hidden
-                    className="grid h-14 w-14 shrink-0 place-items-center rounded-[18px] text-white shadow-[0_6px_16px_-6px_rgb(0_0_0/0.35)]"
-                    style={{ background: `linear-gradient(140deg, hsl(${hue} 72% 58%), hsl(${(hue + 35) % 360} 68% 44%))`, filter: peer ? undefined : "saturate(0.15)" }}
+                    className="clay-key grid h-14 w-14 shrink-0 place-items-center rounded-[20px] text-white"
+                    style={{ background: `radial-gradient(120% 90% at 30% 15%, ${light}, ${deep})`, filter: peer ? undefined : "saturate(0.15)" }}
                   >
                     {d.mobile ? <PhoneIcon size={28} /> : <LaptopIcon size={30} />}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[19px] font-semibold tracking-[-0.01em]">{d.alias}</p>
+                    <p className="rounded-type truncate text-[20px] font-semibold">{d.alias}</p>
                     <p className="mt-0.5 flex items-center gap-1.5 text-[14px] text-muted">
                       <span aria-hidden className={`h-2 w-2 rounded-full ${!peer ? "bg-faint/60" : state === "update" ? "bg-warning" : "bg-success"}`} />
                       {!peer ? "Not on this Wi-Fi" : state === "update" ? "Needs a TCuFlow update" : `Online · ${osLabel(peer.info.os)}`}
@@ -210,10 +210,11 @@ export function Mobile() {
                   {state === "update" && <StateBadge state={state} />}
                 </div>
                 {reason && <p className="px-4 pt-1 text-[14px] leading-relaxed text-muted">{reason}.</p>}
-                <div className="grid grid-cols-3 gap-2 p-3">
-                  <Tile primary icon={<TouchpadIcon size={24} />} label="Touchpad" disabled={state !== "ready"} onClick={() => peer && setDriving(peer)} />
+                <div className="grid grid-cols-3 gap-2.5 p-3.5">
+                  <Tile tone="accent" icon={<TouchpadIcon size={24} />} label="Touchpad" disabled={state !== "ready"} onClick={() => peer && setDriving(peer)} />
                   <Tile icon={<DisplayIcon size={24} />} label="Screen" disabled={!usable} onClick={() => peer && setViewing(peer)} />
                   <Tile
+                    tone="warm"
                     icon={<SendIcon size={22} />}
                     label="Send files"
                     disabled={!usable}
@@ -244,7 +245,7 @@ export function Mobile() {
             <h2 id="nearby-title" className="px-4 text-[13px] font-normal uppercase tracking-wide text-muted">
               Nearby
             </h2>
-            <ul className="mt-2 divide-y divide-line overflow-hidden rounded-[14px] bg-raised">
+            <ul className="clay mt-2 divide-y divide-line overflow-hidden rounded-[24px] bg-raised">
               {nearby.map((p) => {
                 const s = pairing[p.info.fingerprint];
                 const mood: Mood = s?.state === "waiting" ? "waiting" : s ? "sad" : "idle";
@@ -259,7 +260,7 @@ export function Mobile() {
                     <button
                       disabled={outdated(p) || s?.state === "waiting"}
                       onClick={() => pair(p)}
-                      className="min-h-9 rounded-full bg-accent/15 px-4 text-[15px] font-semibold text-accent-ink transition-transform active:scale-95 disabled:opacity-40"
+                      className="clay-key min-h-9 rounded-full bg-accent px-4 text-[15px] font-semibold text-on-accent transition-transform active:scale-95 disabled:opacity-40"
                     >
                       Pair
                     </button>
@@ -275,7 +276,7 @@ export function Mobile() {
           <h2 id="by-ip-title" className="px-4 text-[13px] font-normal uppercase tracking-wide text-muted">
             Not listed?
           </h2>
-          <div className="mt-2 rounded-[14px] bg-raised px-4 py-3">
+          <div className="clay mt-2 rounded-[24px] bg-raised px-4 py-3.5">
             <AddHost hosts={device.hosts} ips={device.ips} onChange={refreshDevice} self={device.info.os === "ios" ? "This device" : "This phone"} bare />
           </div>
         </section>
@@ -286,15 +287,15 @@ export function Mobile() {
   );
 }
 
-/** One action on a computer's card: an icon over a short label, the main one filled with the accent. */
-function Tile({ icon, label, primary, disabled, onClick }: { icon: React.ReactNode; label: string; primary?: boolean; disabled?: boolean; onClick: () => void }) {
+/** One action on a computer's card, a clay key: an icon over a short label, in the accent, the warm orange or plain. */
+function Tile({ icon, label, tone, disabled, onClick }: { icon: React.ReactNode; label: string; tone?: "accent" | "warm"; disabled?: boolean; onClick: () => void }) {
   return (
     <button
       disabled={disabled}
       onClick={onClick}
       className={
-        "flex min-h-[78px] flex-col items-center justify-center gap-1.5 rounded-2xl text-[13px] font-semibold transition-[transform,opacity] duration-150 active:scale-[0.96] disabled:opacity-40 " +
-        (primary ? "bg-accent text-on-accent shadow-[0_8px_18px_-8px_var(--color-accent)]" : "bg-sunken text-fg")
+        "clay-key flex min-h-[80px] flex-col items-center justify-center gap-1.5 rounded-[20px] text-[13px] font-semibold transition-[transform,opacity] duration-150 active:translate-y-0.5 active:scale-[0.97] disabled:opacity-40 " +
+        (tone === "accent" ? "bg-accent text-on-accent" : tone === "warm" ? "bg-[var(--color-warm)] text-white" : "bg-sunken text-fg")
       }
     >
       {icon}
@@ -617,16 +618,16 @@ function Touchpad({ peer, onClose }: { peer: Peer; onClose: () => void }) {
   const status =
     session.state === "on" ? null : session.state === "connecting" ? "Connecting…" : session.state === "back" ? `${peer.info.alias} took its cursor back` : session.message;
 
-  const hue = hueOf(fp);
+  const { light } = clayOf(fp);
   const live = session.state === "on";
   return (
     <main className="flex h-full flex-col px-4 pb-[max(env(safe-area-inset-bottom),1rem)] pt-[max(env(safe-area-inset-top),1rem)]">
       <header className="flex items-center gap-3">
-        <button onClick={onClose} aria-label="Back" className="grid h-10 w-10 place-items-center rounded-full bg-raised text-fg shadow-[0_1px_3px_rgb(0_0_0/0.08)] active:scale-95">
+        <button onClick={onClose} aria-label="Back" className="clay grid h-10 w-10 place-items-center rounded-full bg-raised text-fg active:scale-95">
           <ChevronLeftIcon size={20} />
         </button>
         <div className="min-w-0 flex-1 leading-tight">
-          <p className="truncate text-[17px] font-semibold">{peer.info.alias}</p>
+          <p className="rounded-type truncate text-[18px] font-semibold">{peer.info.alias}</p>
           <p className="flex items-center gap-1.5 text-[13px] text-muted">
             <span aria-hidden className={`h-2 w-2 rounded-full ${live ? "bg-success" : session.state === "connecting" ? "animate-pulse bg-warning" : "bg-faint/60"}`} />
             {live ? "Connected" : session.state === "connecting" ? "Connecting…" : "Not connected"}
@@ -635,15 +636,16 @@ function Touchpad({ peer, onClose }: { peer: Peer; onClose: () => void }) {
       </header>
 
       {/* the pad and its two buttons, one piece, like a laptop's trackpad */}
-      <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[28px] bg-raised shadow-[0_1px_2px_rgb(0_0_0/0.05),0_18px_40px_-18px_rgb(0_0_0/0.35)]">
+      <div className="clay mt-4 flex min-h-0 flex-1 flex-col gap-2.5 rounded-[34px] bg-raised p-2.5">
         <div
           onPointerDown={down}
           onPointerMove={move}
           onPointerUp={up}
           onPointerCancel={up}
-          className="relative grid flex-1 touch-none select-none place-items-center"
+          className="clay-dip relative grid flex-1 touch-none select-none place-items-center rounded-[26px] bg-sunken"
           style={{
-            background: `radial-gradient(120% 90% at 50% 0%, hsl(${hue} 90% 60% / 0.14), transparent 70%), radial-gradient(circle, color-mix(in oklab, var(--color-fg) 9%, transparent) 1px, transparent 1.5px) 0 0 / 22px 22px`,
+            backgroundImage: `radial-gradient(110% 80% at 50% 0%, ${light}55, transparent 70%), radial-gradient(circle, color-mix(in oklab, var(--color-fg) 10%, transparent) 1px, transparent 1.5px)`,
+            backgroundSize: "auto, 22px 22px",
           }}
         >
           {status ? (
@@ -663,11 +665,11 @@ function Touchpad({ peer, onClose }: { peer: Peer; onClose: () => void }) {
             </ul>
           )}
         </div>
-        <div className="grid grid-cols-2 border-t border-line">
-          <button {...hold(1)} className="min-h-16 touch-none text-[15px] font-medium text-muted transition-colors active:bg-tint/10">
+        <div className="grid grid-cols-2 gap-2.5">
+          <button {...hold(1)} className="clay-key min-h-16 touch-none rounded-[22px] bg-raised text-[15px] font-semibold text-fg transition-transform active:translate-y-0.5">
             Left click
           </button>
-          <button {...hold(2)} className="min-h-16 touch-none border-l border-line text-[15px] font-medium text-muted transition-colors active:bg-tint/10">
+          <button {...hold(2)} className="clay-key min-h-16 touch-none rounded-[22px] bg-raised text-[15px] font-semibold text-fg transition-transform active:translate-y-0.5">
             Right click
           </button>
         </div>
@@ -677,12 +679,12 @@ function Touchpad({ peer, onClose }: { peer: Peer; onClose: () => void }) {
         <button
           onClick={toggleKeys}
           aria-pressed={typing}
-          className={"flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full text-[16px] font-semibold transition-colors " + (typing ? "bg-accent text-on-accent" : "bg-raised text-fg shadow-[0_1px_3px_rgb(0_0_0/0.08)]")}
+          className={"clay-key flex min-h-13 flex-1 items-center justify-center gap-2 rounded-full text-[16px] font-semibold transition-colors " + (typing ? "bg-accent text-on-accent" : "bg-raised text-fg")}
         >
           <KeyboardIcon size={20} />
           Keyboard
         </button>
-        <button onClick={onClose} className="min-h-12 rounded-full bg-danger/12 px-6 text-[16px] font-semibold text-danger">
+        <button onClick={onClose} className="clay-key min-h-13 rounded-full bg-[var(--color-warm)] px-7 text-[16px] font-semibold text-white">
           Stop
         </button>
       </div>

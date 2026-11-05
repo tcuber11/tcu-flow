@@ -65,13 +65,43 @@
   }
 }
 
-/* phones and tablets: iOS's grouped look, a grey page under white groups (black under dark grey in dark mode) */
-:root.phone { --color-ink: #f2f2f7; --color-raised: #ffffff; --color-sunken: #e9e9ee; }
-@media (prefers-color-scheme: dark) {
-  :root.phone:not([data-theme="light"]) { --color-ink: #000000; --color-raised: #1c1c1e; --color-sunken: #2c2c2e; }
+/* phones and tablets: soft clay. Pillowy rounded shapes in pastels on a cool, slightly warm page, a periwinkle
+   accent and a warm orange, each surface lit from above (a highlight on top, a shade below, a soft drop) */
+:root.phone {
+  --color-ink: #eceef6;
+  --color-raised: #ffffff;
+  --color-sunken: #f1f2f8;
+  --color-accent: #5b63f0;
+  --color-accent-ink: #4047c9;
+  --color-warm: #ee7a3e;
+  --page: linear-gradient(180deg, #eceef7 0%, #f3efe9 100%);
+  --clay: inset 0 1.5px 0 rgb(255 255 255 / 0.9), inset 0 -3px 0 rgb(40 50 110 / 0.06), 0 2px 4px -1px rgb(40 50 110 / 0.08), 0 16px 32px -16px rgb(40 50 110 / 0.35);
+  --clay-key: inset 0 1.5px 0 rgb(255 255 255 / 0.55), inset 0 -4px 0 rgb(0 0 0 / 0.14), 0 10px 18px -10px rgb(30 40 110 / 0.55);
+  --clay-dip: inset 0 3px 8px rgb(40 50 110 / 0.10), inset 0 -1px 0 rgb(255 255 255 / 0.8);
 }
-:root.phone[data-theme="dark"] { --color-ink: #000000; --color-raised: #1c1c1e; --color-sunken: #2c2c2e; }
-:root.phone body { font-size: 17px; }
+@media (prefers-color-scheme: dark) {
+  :root.phone:not([data-theme="light"]) {
+    --color-ink: #14152a; --color-raised: #23254a; --color-sunken: #1b1d3a;
+    --color-accent: #7b82ff; --color-accent-ink: #a9adff;
+    --page: linear-gradient(180deg, #14152a 0%, #1b1530 100%);
+    --clay: inset 0 1.5px 0 rgb(255 255 255 / 0.08), inset 0 -3px 0 rgb(0 0 0 / 0.25), 0 16px 32px -16px rgb(0 0 0 / 0.7);
+    --clay-key: inset 0 1.5px 0 rgb(255 255 255 / 0.18), inset 0 -4px 0 rgb(0 0 0 / 0.3), 0 10px 18px -10px rgb(0 0 0 / 0.8);
+    --clay-dip: inset 0 3px 8px rgb(0 0 0 / 0.35), inset 0 -1px 0 rgb(255 255 255 / 0.05);
+  }
+}
+:root.phone[data-theme="dark"] {
+  --color-ink: #14152a; --color-raised: #23254a; --color-sunken: #1b1d3a;
+  --color-accent: #7b82ff; --color-accent-ink: #a9adff;
+  --page: linear-gradient(180deg, #14152a 0%, #1b1530 100%);
+  --clay: inset 0 1.5px 0 rgb(255 255 255 / 0.08), inset 0 -3px 0 rgb(0 0 0 / 0.25), 0 16px 32px -16px rgb(0 0 0 / 0.7);
+  --clay-key: inset 0 1.5px 0 rgb(255 255 255 / 0.18), inset 0 -4px 0 rgb(0 0 0 / 0.3), 0 10px 18px -10px rgb(0 0 0 / 0.8);
+  --clay-dip: inset 0 3px 8px rgb(0 0 0 / 0.35), inset 0 -1px 0 rgb(255 255 255 / 0.05);
+}
+:root.phone body { font-size: 17px; background: var(--page) fixed, var(--color-ink); }
+.rounded-type { font-family: ui-rounded, "SF Pro Rounded", var(--font-display); }
+.clay { box-shadow: var(--clay); }
+.clay-key { box-shadow: var(--clay-key); }
+.clay-dip { box-shadow: var(--clay-dip); }
 
 html, body, #root { height: 100%; margin: 0; }
 /* own title bar: Windows' caption height; a Mac's traffic lights sit in 28 px */

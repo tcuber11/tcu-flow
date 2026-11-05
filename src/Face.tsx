@@ -14,6 +14,20 @@ export type Mood = "idle" | "waiting" | "happy" | "sad" | "searching";
 /** A device's own hue, 0–359, from its fingerprint: its avatar and, on phones, its card. */
 export const hueOf = (seed: string) => hash(seed) % 360;
 
+/** A device's clay colour on phones: one of a few pastels that sit together, with a deeper tone for depth. */
+const CLAYS = [
+  ["#b6a8f7", "#7d6ae6"], // lavender
+  ["#8fdccd", "#3fae9c"], // mint
+  ["#f6a9d4", "#e0679f"], // pink
+  ["#f3d77a", "#d9a92c"], // butter
+  ["#f6b083", "#e1743c"], // peach
+  ["#98c3f4", "#4f8be0"], // sky
+] as const;
+export const clayOf = (seed: string) => {
+  const [light, deep] = CLAYS[hash(seed) % CLAYS.length];
+  return { light, deep };
+};
+
 function hash(seed: string) {
   let h = 0;
   for (const c of seed) h = (h * 31 + c.charCodeAt(0)) >>> 0;
