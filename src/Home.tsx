@@ -422,7 +422,7 @@ function Devices({ device, peers, onChange }: { device: Device; peers: Peer[]; o
                 }
                 className="flex items-center gap-4 rounded-xl border border-line p-4"
               >
-                <Face seed={p.fingerprint} size={52} mood="sad" />
+                <Face seed={p.fingerprint} size={52} mood="sad" kind={p.mobile ? "phone" : "computer"} />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="truncate text-[17px] font-semibold text-muted">{p.alias}</p>

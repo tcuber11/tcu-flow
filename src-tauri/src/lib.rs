@@ -689,7 +689,7 @@ async fn pair(app: AppHandle, state: State<'_, AppState>, tls: State<'_, Arc<Tls
     };
     let answer = kvm::request_pair(&tls, SocketAddr::new(peer.addr, peer.info.kvm_port), &fingerprint, show).await.map_err(|e| explain(&app, &fingerprint, &e))?;
     if answer == kvm::PairAnswer::Accepted {
-        state.lock().unwrap().settings.pair(PairedDevice { fingerprint, alias: peer.info.alias });
+        state.lock().unwrap().settings.pair(PairedDevice { fingerprint, ..PairedDevice::of(&peer.info) });
         let _ = app.emit("paired", ());
         refresh_tray(&app);
     }
@@ -1467,6 +1467,14 @@ fn spawn_discovery(app: AppHandle, state: AppState, me: watch::Receiver<DeviceIn
         let r = discovery::run(me, hosts, |peer| {
             let previous = {
                 let mut s = state.lock().unwrap();
+                // a paired device's name and kind as it announces them now (it may have been renamed, or paired
+                // under an older build's name), so its row reads right after it goes away
+                let now = PairedDevice::of(&peer.info);
+                if let Some(d) = s.settings.paired.iter_mut().find(|d| d.fingerprint == now.fingerprint && **d != now) {
+                    *d = now;
+                    s.settings.save();
+                    let _ = app.emit("device", ());
+                }
                 // remember paired devices' hardware addresses while they're awake, to wake them later
                 if let (Some(mac), true) = (&peer.info.mac, s.settings.is_paired(&peer.info.fingerprint)) {
                     if s.settings.macs.get(&peer.info.fingerprint) != Some(mac) {
@@ -1939,7 +1947,7 @@ fn spawn_kvm_receiver(app: AppHandle, engine: Arc<dyn SpatialPlatformEngine>, st
                 }
                 let answer = ask_user(&app, &state, MAIN_WINDOW, &from, code).await;
                 if answer == kvm::PairAnswer::Accepted {
-                    state.lock().unwrap().settings.pair(PairedDevice { fingerprint: fp, alias: from.info.alias.clone() });
+                    state.lock().unwrap().settings.pair(PairedDevice { fingerprint: fp, ..PairedDevice::of(&from.info) });
                     let _ = app.emit("paired", ());
                     refresh_tray(&app);
                 }

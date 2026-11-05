@@ -135,7 +135,7 @@ async fn serve() {
                 Err(_) => kvm::PairAnswer::NoAnswer,
             };
             if answer == kvm::PairAnswer::Accepted {
-                settings.lock().unwrap().pair(PairedDevice { fingerprint: fp, alias: from.info.alias.clone() });
+                settings.lock().unwrap().pair(PairedDevice { fingerprint: fp, ..PairedDevice::of(&from.info) });
                 println!("Paired with {}.", from.info.alias);
             } else {
                 println!("Not paired.");

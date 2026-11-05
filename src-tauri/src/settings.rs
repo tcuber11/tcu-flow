@@ -14,7 +14,17 @@ use std::{
 pub struct PairedDevice {
     /// certificate fingerprint
     pub fingerprint: String,
+    /// its name as last announced (kept current by discovery, so it reads right while the device is away)
     pub alias: String,
+    /// a phone or tablet, as last announced: its row keeps a phone icon while it's offline
+    #[serde(default)]
+    pub mobile: bool,
+}
+
+impl PairedDevice {
+    pub fn of(info: &crate::network::discovery::DeviceInfo) -> Self {
+        Self { fingerprint: info.fingerprint.clone(), alias: info.alias.clone(), mobile: info.device_type == crate::network::discovery::DeviceType::Mobile }
+    }
 }
 
 /// How this computer's mouse and keyboard behave on the devices it drives.
@@ -122,17 +132,34 @@ mod tests {
     use crate::platform::{Edge, Rect};
 
     #[test]
+    fn pairings_saved_before_mobile_was_kept_still_load() {
+        let dir = std::env::temp_dir().join(format!("tcuflow-settings-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let mut s = Settings::load(&dir);
+        s.pair(PairedDevice { fingerprint: "a".into(), alias: "Laptop".into(), mobile: false });
+        s.save();
+        // the file as 0.9.13 and earlier wrote it: no "mobile" on a pairing
+        let mut old: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(dir.join("settings.json")).unwrap()).unwrap();
+        for d in old["paired"].as_array_mut().unwrap() {
+            d.as_object_mut().unwrap().remove("mobile").unwrap();
+        }
+        std::fs::write(dir.join("settings.json"), old.to_string()).unwrap();
+        assert_eq!(Settings::load(&dir).paired, vec![PairedDevice { fingerprint: "a".into(), alias: "Laptop".into(), mobile: false }]);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
     fn pairings_and_portals_survive_reload_and_go_together() {
         let dir = std::env::temp_dir().join(format!("tcuflow-settings-{}", uuid::Uuid::new_v4()));
         let mut s = Settings::load(&dir);
-        s.pair(PairedDevice { fingerprint: "a".into(), alias: "Laptop".into() });
-        s.pair(PairedDevice { fingerprint: "a".into(), alias: "Laptop renamed".into() });
+        s.pair(PairedDevice { fingerprint: "a".into(), alias: "Laptop".into(), mobile: false });
+        s.pair(PairedDevice { fingerprint: "a".into(), alias: "Laptop renamed".into(), mobile: false });
         let portal = Portal { edge: Edge::Left, monitor: Rect { x: 0.0, y: 0.0, w: 10.0, h: 10.0 }, start: 0.1, end: 0.5, reach: 120.0 };
         s.portals.insert("a".into(), portal);
         s.save();
 
         let mut r = Settings::load(&dir);
-        assert_eq!(r.paired, vec![PairedDevice { fingerprint: "a".into(), alias: "Laptop renamed".into() }]);
+        assert_eq!(r.paired, vec![PairedDevice { fingerprint: "a".into(), alias: "Laptop renamed".into(), mobile: false }]);
         assert_eq!(r.portals.get("a"), Some(&portal));
         r.unpair("a");
         assert!(Settings::load(&dir).portals.is_empty(), "unpairing removes the door too");

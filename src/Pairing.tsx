@@ -11,7 +11,7 @@ import { CheckIcon, CloseIcon, RetryIcon } from "./icons";
  *  `text`: it takes typed text whatever its keyboard layout (absent on older TCuFlow). */
 export type DeviceInfo = { alias: string; deviceType: "desktop" | "mobile"; os: string; fingerprint: string; proto: number; aspectRatio: number; controllable?: boolean; text?: boolean };
 export type Peer = { info: DeviceInfo; addr: string };
-export type PairedDevice = { fingerprint: string; alias: string };
+export type PairedDevice = { fingerprint: string; alias: string; mobile?: boolean };
 export type CursorPrefs = { speed: number; edgeDelayMs: number; swapCtrlCmd: boolean };
 export type Sharing = { clipboard: boolean; terminal: boolean; folder: string | null; sound: boolean; notifications: boolean; mic: boolean; screen: boolean };
 export type Device = {
