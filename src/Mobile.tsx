@@ -4,7 +4,8 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { RemoteView } from "./RemoteView";
 import { Wizard, useControl, type Control } from "./Control";
-import { Face, type Mood } from "./Face";
+import { Face, hueOf, type Mood } from "./Face";
+import { ChevronLeftIcon, DisplayIcon, KeyboardIcon, LaptopIcon, PhoneIcon, SendIcon, TouchpadIcon } from "./icons";
 import { AddHost } from "./Home";
 import { ConnectionCheck, PairPrompt, StateBadge, deviceState, osLabel, primaryButton, quietButton, stateReason, type Device, type PairedDevice, type Peer } from "./Pairing";
 import { REACH, opposite, type Edge, type Portal } from "./calibration";
@@ -144,116 +145,161 @@ export function Mobile() {
     }
   };
 
+  const online = device.paired.filter((d) => peers.some((p) => p.info.fingerprint === d.fingerprint)).length;
   return (
-    <main className="mx-auto min-h-full w-full max-w-xl px-5 pb-10 pt-14">
-      <header className="flex items-center gap-3">
-        <Face seed={device.info.fingerprint} size={40} kind="phone" />
-        <div className="min-w-0 flex-1">
-          <p className="truncate font-semibold">{device.info.alias}</p>
-          <p className="text-xs text-muted">Visible on this Wi-Fi</p>
+    <main className="mx-auto min-h-full w-full max-w-xl pb-12">
+      {/* iOS-style bar: this device's name, sticky and translucent over the list */}
+      <header className="sticky top-0 z-10 flex items-center gap-2.5 bg-ink/80 px-5 pb-2 pt-[max(env(safe-area-inset-top),1rem)] backdrop-blur-xl">
+        <Face seed={device.info.fingerprint} size={32} kind="phone" />
+        <div className="min-w-0 flex-1 leading-tight">
+          <p className="truncate text-[15px] font-semibold">{device.info.alias}</p>
+          <p className="flex items-center gap-1.5 text-[12px] text-muted">
+            <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-success" />
+            Visible on this Wi-Fi
+          </p>
         </div>
-        <button onClick={() => setScreen("settings")} aria-label="Settings" className={quietButton + " grid h-11 w-11 place-items-center p-0"}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+        <button onClick={() => setScreen("settings")} aria-label="Settings" className="grid h-9 w-9 place-items-center rounded-full bg-raised text-fg shadow-[0_1px_3px_rgb(0_0_0/0.08)] active:scale-95">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
             <circle cx="12" cy="12" r="3" />
             <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
           </svg>
         </button>
       </header>
 
-      {!running && controlCard}
+      <div className="px-5">
+        <h1 className="mt-2 font-display text-[34px] font-bold leading-tight tracking-[-0.03em]">Computers</h1>
+        {device.paired.length > 0 && (
+          <p className="mt-0.5 text-[15px] text-muted">{online === 0 ? "None of them is on this Wi-Fi right now" : online === 1 && device.paired.length === 1 ? "Ready when you are" : `${online} of ${device.paired.length} on this Wi-Fi`}</p>
+        )}
 
-      <h1 className="mt-8 font-display text-[32px] font-bold leading-none tracking-[-0.02em]">Your computers</h1>
+        {!running && controlCard}
 
-      {device.paired.length === 0 && nearby.length === 0 && (
-        <div className="mt-10 flex flex-col items-center text-center">
-          <Face seed={device.info.fingerprint} size={72} mood="searching" kind="phone" />
-          <p className="mt-6 font-semibold">Looking for computers</p>
-          <p className="mt-1 max-w-[30ch] text-sm leading-relaxed text-muted">Open TCuFlow on your computer, on the same Wi-Fi as this phone.</p>
-        </div>
-      )}
+        {device.paired.length === 0 && nearby.length === 0 && (
+          <div className="mt-14 flex flex-col items-center text-center">
+            <Face seed={device.info.fingerprint} size={84} mood="searching" kind="phone" />
+            <p className="mt-6 text-[20px] font-semibold">Looking for computers</p>
+            <p className="mt-1.5 max-w-[30ch] text-[15px] leading-relaxed text-muted">Open TCuFlow on your Mac or PC, on the same Wi-Fi as this {device.info.os === "ios" ? "device" : "phone"}.</p>
+          </div>
+        )}
 
-      <ul className="mt-6 space-y-3">
-        {device.paired.map((d, i) => {
-          const peer = peers.find((p) => p.info.fingerprint === d.fingerprint);
-          const state = deviceState(peer, true, device.info);
-          const usable = peer && state !== "update";
-          const reason = stateReason(state, d.alias, peer?.info.os);
-          return (
-            <li key={d.fingerprint} className="rise rounded-2xl bg-raised p-4 ring-1 ring-line" style={{ "--i": i } as React.CSSProperties}>
-              <div className="flex items-center gap-3">
-                <Face seed={d.fingerprint} size={44} mood={state === "ready" ? "idle" : "sad"} />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold">{d.alias}</p>
-                  <p className="text-xs text-muted">
-                    {!peer ? "Not on this Wi-Fi" : state === "update" ? osLabel(peer.info.os) : <><span className="text-accent-ink">Online</span> · {osLabel(peer.info.os)}</>}
-                  </p>
-                </div>
-                <StateBadge state={state} />
-              </div>
-              {reason && <p className="mt-3 text-sm leading-relaxed text-muted">{reason}.</p>}
-              <button disabled={state !== "ready"} onClick={() => peer && setDriving(peer)} className={primaryButton + " mt-4 min-h-11 w-full"}>
-                Use as touchpad
-              </button>
-              <div className="mt-2 flex gap-2">
-                <button disabled={!usable} onClick={() => peer && setViewing(peer)} className={quietButton + " min-h-11 flex-1 ring-1 ring-line disabled:opacity-50"}>
-                  View screen
-                </button>
-                <button
-                  disabled={!usable}
-                  onClick={() => {
-                    sendTo.current = d.fingerprint;
-                    files.current?.click();
-                  }}
-                  className={quietButton + " min-h-11 flex-1 ring-1 ring-line disabled:opacity-50"}
-                >
-                  Send files
-                </button>
-              </div>
-              <div className="mt-3">
-                <ConnectionCheck fingerprint={d.fingerprint} />
-              </div>
-            </li>
-          );
-        })}
-      </ul>
-      <input ref={files} type="file" multiple hidden onChange={(e) => send(e.currentTarget.files).finally(() => (e.target.value = ""))} />
-      {note && (
-        <p role="status" className="mt-3 px-1 text-sm text-muted">
-          {note}
-        </p>
-      )}
-
-      {running && controlCard}
-
-      {nearby.length > 0 && (
-        <>
-          <p className="mt-8 px-1 text-xs text-muted">Nearby, not paired</p>
-          <ul className="mt-2 space-y-2">
-            {nearby.map((p) => {
-              const s = pairing[p.info.fingerprint];
-              const mood: Mood = s?.state === "waiting" ? "waiting" : s ? "sad" : "idle";
-              const note = outdated(p) ? "Needs TCuFlow update" : s?.state === "waiting" ? (s.code ? `Code ${s.code}: check it matches` : "Asking…") : s ? s.note : osLabel(p.info.os);
-              return (
-                <li key={p.info.fingerprint} className="flex items-center gap-3 rounded-xl bg-raised p-3 pl-4 ring-1 ring-line">
-                  <Face seed={p.info.fingerprint} size={36} mood={mood} />
+        <ul className="mt-5 space-y-4">
+          {device.paired.map((d, i) => {
+            const peer = peers.find((p) => p.info.fingerprint === d.fingerprint);
+            const state = deviceState(peer, true, device.info);
+            const usable = !!peer && state !== "update";
+            const reason = state === "offline" ? null : stateReason(state, d.alias, peer?.info.os);
+            const hue = hueOf(d.fingerprint);
+            return (
+              <li key={d.fingerprint} className="rise overflow-hidden rounded-[22px] bg-raised shadow-[0_1px_2px_rgb(0_0_0/0.05),0_10px_30px_-12px_rgb(0_0_0/0.18)]" style={{ "--i": i } as React.CSSProperties}>
+                {/* the computer's own colour, as on its avatar everywhere else */}
+                <div className="flex items-center gap-3.5 px-4 pb-3 pt-4" style={{ background: `linear-gradient(135deg, hsl(${hue} 90% 60% / 0.16), hsl(${(hue + 50) % 360} 90% 60% / 0.04) 70%)` }}>
+                  <span
+                    aria-hidden
+                    className="grid h-14 w-14 shrink-0 place-items-center rounded-[18px] text-white shadow-[0_6px_16px_-6px_rgb(0_0_0/0.35)]"
+                    style={{ background: `linear-gradient(140deg, hsl(${hue} 72% 58%), hsl(${(hue + 35) % 360} 68% 44%))`, filter: peer ? undefined : "saturate(0.15)" }}
+                  >
+                    {d.mobile ? <PhoneIcon size={28} /> : <LaptopIcon size={30} />}
+                  </span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold">{p.info.alias}</p>
-                    <p className={"text-xs " + (s?.state === "failed" ? "text-danger" : "text-muted")}>{note}</p>
+                    <p className="truncate text-[19px] font-semibold tracking-[-0.01em]">{d.alias}</p>
+                    <p className="mt-0.5 flex items-center gap-1.5 text-[14px] text-muted">
+                      <span aria-hidden className={`h-2 w-2 rounded-full ${!peer ? "bg-faint/60" : state === "update" ? "bg-warning" : "bg-success"}`} />
+                      {!peer ? "Not on this Wi-Fi" : state === "update" ? "Needs a TCuFlow update" : `Online · ${osLabel(peer.info.os)}`}
+                    </p>
                   </div>
-                  <button disabled={outdated(p) || s?.state === "waiting"} onClick={() => pair(p)} className={quietButton + " min-h-11 ring-1 ring-line disabled:opacity-50"}>
-                    Pair
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </>
-      )}
+                  {state === "update" && <StateBadge state={state} />}
+                </div>
+                {reason && <p className="px-4 pt-1 text-[14px] leading-relaxed text-muted">{reason}.</p>}
+                <div className="grid grid-cols-3 gap-2 p-3">
+                  <Tile primary icon={<TouchpadIcon size={24} />} label="Touchpad" disabled={state !== "ready"} onClick={() => peer && setDriving(peer)} />
+                  <Tile icon={<DisplayIcon size={24} />} label="Screen" disabled={!usable} onClick={() => peer && setViewing(peer)} />
+                  <Tile
+                    icon={<SendIcon size={22} />}
+                    label="Send files"
+                    disabled={!usable}
+                    onClick={() => {
+                      sendTo.current = d.fingerprint;
+                      files.current?.click();
+                    }}
+                  />
+                </div>
+                <div className="border-t border-line px-4 py-1 text-[15px]">
+                  <ConnectionCheck fingerprint={d.fingerprint} link />
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+        <input ref={files} type="file" multiple hidden onChange={(e) => send(e.currentTarget.files).finally(() => (e.target.value = ""))} />
+        {note && (
+          <p role="status" className="mt-3 px-1 text-[14px] text-muted">
+            {note}
+          </p>
+        )}
 
-      <AddHost hosts={device.hosts} ips={device.ips} onChange={refreshDevice} />
+        {running && controlCard}
+
+        {nearby.length > 0 && (
+          <section aria-labelledby="nearby-title" className="mt-9">
+            <h2 id="nearby-title" className="px-4 text-[13px] font-normal uppercase tracking-wide text-muted">
+              Nearby
+            </h2>
+            <ul className="mt-2 divide-y divide-line overflow-hidden rounded-[14px] bg-raised">
+              {nearby.map((p) => {
+                const s = pairing[p.info.fingerprint];
+                const mood: Mood = s?.state === "waiting" ? "waiting" : s ? "sad" : "idle";
+                const note = outdated(p) ? "Needs TCuFlow update" : s?.state === "waiting" ? (s.code ? `Code ${s.code}: check it matches` : "Asking…") : s ? s.note : osLabel(p.info.os);
+                return (
+                  <li key={p.info.fingerprint} className="flex min-h-[60px] items-center gap-3 px-4 py-2.5">
+                    <Face seed={p.info.fingerprint} size={36} mood={mood} kind={p.info.deviceType === "mobile" ? "phone" : "computer"} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[17px]">{p.info.alias}</p>
+                      <p className={"text-[13px] " + (s?.state === "failed" ? "text-danger" : "text-muted")}>{note}</p>
+                    </div>
+                    <button
+                      disabled={outdated(p) || s?.state === "waiting"}
+                      onClick={() => pair(p)}
+                      className="min-h-9 rounded-full bg-accent/15 px-4 text-[15px] font-semibold text-accent-ink transition-transform active:scale-95 disabled:opacity-40"
+                    >
+                      Pair
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            <p className="mt-2 px-4 text-[13px] leading-snug text-muted">Computers running TCuFlow on this Wi-Fi. Pairing asks for the same code on both screens.</p>
+          </section>
+        )}
+
+        <section aria-labelledby="by-ip-title" className="mt-9">
+          <h2 id="by-ip-title" className="px-4 text-[13px] font-normal uppercase tracking-wide text-muted">
+            Not listed?
+          </h2>
+          <div className="mt-2 rounded-[14px] bg-raised px-4 py-3">
+            <AddHost hosts={device.hosts} ips={device.ips} onChange={refreshDevice} self={device.info.os === "ios" ? "This device" : "This phone"} bare />
+          </div>
+        </section>
+      </div>
       <PairPrompt selfSeed={device.info.fingerprint} />
       {prompt && update.available && <UpdatePrompt update={update} seed={device.info.fingerprint} downloadUrl={apk} onClose={() => setPrompt(false)} />}
     </main>
+  );
+}
+
+/** One action on a computer's card: an icon over a short label, the main one filled with the accent. */
+function Tile({ icon, label, primary, disabled, onClick }: { icon: React.ReactNode; label: string; primary?: boolean; disabled?: boolean; onClick: () => void }) {
+  return (
+    <button
+      disabled={disabled}
+      onClick={onClick}
+      className={
+        "flex min-h-[78px] flex-col items-center justify-center gap-1.5 rounded-2xl text-[13px] font-semibold transition-[transform,opacity] duration-150 active:scale-[0.96] disabled:opacity-40 " +
+        (primary ? "bg-accent text-on-accent shadow-[0_8px_18px_-8px_var(--color-accent)]" : "bg-sunken text-fg")
+      }
+    >
+      {icon}
+      <span>{label}</span>
+    </button>
   );
 }
 
@@ -571,56 +617,72 @@ function Touchpad({ peer, onClose }: { peer: Peer; onClose: () => void }) {
   const status =
     session.state === "on" ? null : session.state === "connecting" ? "Connecting…" : session.state === "back" ? `${peer.info.alias} took its cursor back` : session.message;
 
+  const hue = hueOf(fp);
+  const live = session.state === "on";
   return (
-    <main className="flex h-full flex-col px-4 pb-6 pt-12">
-      <header className="flex items-center gap-2">
-        <button onClick={onClose} aria-label="Back" className={quietButton + " grid h-11 w-11 place-items-center p-0 text-lg"}>
-          ‹
+    <main className="flex h-full flex-col px-4 pb-[max(env(safe-area-inset-bottom),1rem)] pt-[max(env(safe-area-inset-top),1rem)]">
+      <header className="flex items-center gap-3">
+        <button onClick={onClose} aria-label="Back" className="grid h-10 w-10 place-items-center rounded-full bg-raised text-fg shadow-[0_1px_3px_rgb(0_0_0/0.08)] active:scale-95">
+          <ChevronLeftIcon size={20} />
         </button>
-        <Face seed={fp} size={28} mood={session.state === "on" ? "happy" : session.state === "connecting" ? "waiting" : "sad"} />
-        <p className="truncate font-semibold">{peer.info.alias}</p>
+        <div className="min-w-0 flex-1 leading-tight">
+          <p className="truncate text-[17px] font-semibold">{peer.info.alias}</p>
+          <p className="flex items-center gap-1.5 text-[13px] text-muted">
+            <span aria-hidden className={`h-2 w-2 rounded-full ${live ? "bg-success" : session.state === "connecting" ? "animate-pulse bg-warning" : "bg-faint/60"}`} />
+            {live ? "Connected" : session.state === "connecting" ? "Connecting…" : "Not connected"}
+          </p>
+        </div>
       </header>
 
-      <div
-        onPointerDown={down}
-        onPointerMove={move}
-        onPointerUp={up}
-        onPointerCancel={up}
-        className="relative mt-3 grid flex-1 touch-none select-none place-items-center rounded-2xl bg-raised shadow-[0_12px_40px_rgb(0_0_0/0.25)]"
-      >
-        {status ? (
-          <div className="px-8 text-center" role="status">
-            <p className={session.state === "error" ? "text-danger" : "text-muted"}>{status}</p>
-            {session.state !== "connecting" && (
-              <button onPointerDown={(e) => e.stopPropagation()} onClick={start} className={primaryButton + " mt-4 min-h-11"}>
-                Control again
-              </button>
-            )}
-          </div>
-        ) : (
-          <p className="pointer-events-none text-center text-sm leading-relaxed text-faint">
-            One finger moves
-            <br />
-            Two fingers scroll
-            <br />
-            Tap to click
-          </p>
-        )}
+      {/* the pad and its two buttons, one piece, like a laptop's trackpad */}
+      <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[28px] bg-raised shadow-[0_1px_2px_rgb(0_0_0/0.05),0_18px_40px_-18px_rgb(0_0_0/0.35)]">
+        <div
+          onPointerDown={down}
+          onPointerMove={move}
+          onPointerUp={up}
+          onPointerCancel={up}
+          className="relative grid flex-1 touch-none select-none place-items-center"
+          style={{
+            background: `radial-gradient(120% 90% at 50% 0%, hsl(${hue} 90% 60% / 0.14), transparent 70%), radial-gradient(circle, color-mix(in oklab, var(--color-fg) 9%, transparent) 1px, transparent 1.5px) 0 0 / 22px 22px`,
+          }}
+        >
+          {status ? (
+            <div className="px-8 text-center" role="status">
+              <p className={"text-[17px] " + (session.state === "error" ? "text-danger" : "text-muted")}>{status}</p>
+              {session.state !== "connecting" && (
+                <button onPointerDown={(e) => e.stopPropagation()} onClick={start} className={primaryButton + " mt-4 min-h-11 rounded-full px-6"}>
+                  Control again
+                </button>
+              )}
+            </div>
+          ) : (
+            <ul className="pointer-events-none space-y-2 text-center text-[15px] text-faint">
+              <li>One finger moves</li>
+              <li>Two fingers scroll</li>
+              <li>Tap to click</li>
+            </ul>
+          )}
+        </div>
+        <div className="grid grid-cols-2 border-t border-line">
+          <button {...hold(1)} className="min-h-16 touch-none text-[15px] font-medium text-muted transition-colors active:bg-tint/10">
+            Left click
+          </button>
+          <button {...hold(2)} className="min-h-16 touch-none border-l border-line text-[15px] font-medium text-muted transition-colors active:bg-tint/10">
+            Right click
+          </button>
+        </div>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-3">
-        <button {...hold(1)} className="min-h-14 touch-none rounded-xl bg-raised text-sm text-muted ring-1 ring-line active:bg-tint/10">
-          Left
-        </button>
-        <button {...hold(2)} className="min-h-14 touch-none rounded-xl bg-raised text-sm text-muted ring-1 ring-line active:bg-tint/10">
-          Right
-        </button>
-      </div>
-      <div className="mt-2 flex justify-center gap-2">
-        <button onClick={toggleKeys} aria-pressed={typing} className={quietButton + " min-h-11 aria-pressed:text-fg"}>
+      <div className="mt-4 flex gap-3">
+        <button
+          onClick={toggleKeys}
+          aria-pressed={typing}
+          className={"flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full text-[16px] font-semibold transition-colors " + (typing ? "bg-accent text-on-accent" : "bg-raised text-fg shadow-[0_1px_3px_rgb(0_0_0/0.08)]")}
+        >
+          <KeyboardIcon size={20} />
           Keyboard
         </button>
-        <button onClick={onClose} className={quietButton + " min-h-11"}>
+        <button onClick={onClose} className="min-h-12 rounded-full bg-danger/12 px-6 text-[16px] font-semibold text-danger">
           Stop
         </button>
       </div>

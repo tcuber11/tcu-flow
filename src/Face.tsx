@@ -11,6 +11,9 @@ import { LaptopIcon, PhoneIcon } from "./icons";
  */
 export type Mood = "idle" | "waiting" | "happy" | "sad" | "searching";
 
+/** A device's own hue, 0–359, from its fingerprint: its avatar and, on phones, its card. */
+export const hueOf = (seed: string) => hash(seed) % 360;
+
 function hash(seed: string) {
   let h = 0;
   for (const c of seed) h = (h * 31 + c.charCodeAt(0)) >>> 0;

@@ -101,3 +101,30 @@ export const DisplayIcon = (p: IconProps) => (
     <path d="M7.5 16.5h5M10 13.5v3" />
   </Icon>
 );
+
+/** the touchpad: a pointer over a pad */
+export const TouchpadIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="2.5" y="4" width="15" height="12" rx="2.4" />
+    <path d="M8.2 7.2l4.6 2.1-2 .6-.7 2z" fill="currentColor" />
+  </Icon>
+);
+
+export const SendIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M17 3 8.5 11.5M17 3l-5.2 14-3.3-5.5L3 8.2z" />
+  </Icon>
+);
+
+export const KeyboardIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="2" y="5" width="16" height="10" rx="1.8" />
+    <path d="M5 8h.01M8 8h.01M11 8h.01M14 8h.01M5.5 11.5h.01M14.5 11.5h.01M8 11.5h4" />
+  </Icon>
+);
+
+export const ChevronLeftIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12.5 4 6.5 10l6 6" />
+  </Icon>
+);

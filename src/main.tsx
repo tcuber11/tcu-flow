@@ -17,6 +17,7 @@ import "./index.css";
 
 const label = getCurrentWindow().label;
 const isPhone = /Android|iPhone|iPad/i.test(navigator.userAgent);
+if (isPhone) document.documentElement.classList.add("phone");
 applyAccent(loadLook().color);
 listen<Look>("look", (e) => applyAccent(e.payload.color));
 applyTheme(loadTheme());

@@ -534,7 +534,9 @@ function Devices({ device, peers, onChange }: { device: Device; peers: Peer[]; o
 }
 
 /** Fallback for networks that drop discovery (guest Wi-Fi, client isolation): reach a device by its address. */
-export function AddHost({ hosts, ips, onChange }: { hosts: string[]; ips: string[]; onChange: () => void }) {
+/** `self`: what to call this device next to its own addresses ("This computer" by default). */
+/** `bare`: no rule and gap above (it sits in its own group on phones). */
+export function AddHost({ hosts, ips, onChange, self = "This computer", bare }: { hosts: string[]; ips: string[]; onChange: () => void; self?: string; bare?: boolean }) {
   const [ip, setIp] = useState("");
   const [error, setError] = useState("");
 
@@ -551,7 +553,7 @@ export function AddHost({ hosts, ips, onChange }: { hosts: string[]; ips: string
   };
 
   return (
-    <div className="mt-5 border-t border-line pt-4 text-sm">
+    <div className={bare ? "text-[15px]" : "mt-5 border-t border-line pt-4 text-sm"}>
       <form onSubmit={add} className="flex flex-wrap items-center gap-2">
         <label htmlFor="add-ip" className="mr-1 text-muted">
           Not showing up? Add by IP
@@ -572,7 +574,7 @@ export function AddHost({ hosts, ips, onChange }: { hosts: string[]; ips: string
       </form>
       {ips.length > 0 && (
         <p className="mt-2 text-xs text-faint">
-          This computer's address: <span className="select-text font-mono text-fg">{ips.join(", ")}</span>
+          {self}'s address: <span className="select-text font-mono text-fg">{ips.join(", ")}</span>
         </p>
       )}
       {error && (

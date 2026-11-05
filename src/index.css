@@ -65,6 +65,14 @@
   }
 }
 
+/* phones and tablets: iOS's grouped look, a grey page under white groups (black under dark grey in dark mode) */
+:root.phone { --color-ink: #f2f2f7; --color-raised: #ffffff; --color-sunken: #e9e9ee; }
+@media (prefers-color-scheme: dark) {
+  :root.phone:not([data-theme="light"]) { --color-ink: #000000; --color-raised: #1c1c1e; --color-sunken: #2c2c2e; }
+}
+:root.phone[data-theme="dark"] { --color-ink: #000000; --color-raised: #1c1c1e; --color-sunken: #2c2c2e; }
+:root.phone body { font-size: 17px; }
+
 html, body, #root { height: 100%; margin: 0; }
 /* own title bar: Windows' caption height; a Mac's traffic lights sit in 28 px */
 :root { --titlebar: 32px; }

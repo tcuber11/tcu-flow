@@ -170,7 +170,7 @@ export type Check = { kvm: Probe; transfer: Probe; hint: string | null };
 const probe = (name: string, p: Probe) => `${name}: ${p.ok ? `reached${p.ms != null ? ` in ${Math.round(p.ms)} ms` : ""}` : `not reached${p.error ? ` (${p.error})` : ""}`}`;
 
 /** "Test connection" for a paired device: whether mouse/keyboard and files get through, and the likely fix when not. */
-export function ConnectionCheck({ fingerprint }: { fingerprint: string }) {
+export function ConnectionCheck({ fingerprint, link }: { fingerprint: string; link?: boolean }) {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<Check | string | null>(null);
   const run = () => {
@@ -181,7 +181,7 @@ export function ConnectionCheck({ fingerprint }: { fingerprint: string }) {
   };
   return (
     <div className="min-w-0">
-      <button onClick={run} disabled={busy} className={quietButton}>
+      <button onClick={run} disabled={busy} className={link ? "min-h-9 font-medium text-accent-ink disabled:opacity-50" : quietButton}>
         {busy ? "Testing…" : "Test connection"}
       </button>
       <div role="status" className="px-1 text-xs leading-relaxed text-muted">
