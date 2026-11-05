@@ -474,6 +474,17 @@ mod tests {
     use crate::network::secure::Identity;
     use std::sync::Mutex;
 
+    /// Waits (up to 5 s) until the events seen so far satisfy `done`. The receiver runs on its own task; a fixed pause
+    /// is too short when the whole suite runs at once on a busy runner, which made these tests flaky.
+    async fn settled(events: &Mutex<Vec<TransferEvent>>, done: impl Fn(&[TransferEvent]) -> bool) {
+        for _ in 0..100 {
+            if done(&events.lock().unwrap()) {
+                return;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+        }
+    }
+
     #[tokio::test]
     async fn file_and_text_roundtrip_with_safe_names() {
         let dir = std::env::temp_dir().join(format!("tcuflow-test-{}", uuid::Uuid::new_v4()));
@@ -516,7 +527,12 @@ mod tests {
         send_text(&me, to, &fp, Kind::Url, "https://example.com").await.unwrap();
         // an unpaired device's file never lands
         let _ = send_text(&stranger, to, &fp, Kind::Text, "spam").await;
-        tokio::time::sleep(std::time::Duration::from_millis(300)).await;
+        settled(&events, |got| {
+            got.iter().any(|e| matches!(e, TransferEvent::Text { kind: Kind::Url, .. })) && got.iter().any(|e| matches!(e, TransferEvent::Failed { outgoing: false, error, .. } if error.contains("checksum")))
+        })
+        .await;
+        // the refused ones leave no event: a moment for them to have been dropped
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
 
         assert_eq!(last, data.len() as u64);
         let src_name = src.file_name().unwrap().to_str().unwrap();
@@ -573,7 +589,7 @@ mod tests {
         assert_eq!(roots(&events.lock().unwrap()), None, "not on the clipboard until every file arrived");
         send_file(&me, to, &fp, &files[1].0, files[1].1.clone(), Some(batch), next_id(), |_, _| {}).await.unwrap();
         send_bytes(&me, to, &fp, Kind::Image, b"\x89PNG fake").await.unwrap();
-        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+        settled(&events, |got| got.iter().any(|e| matches!(e, TransferEvent::ClipFiles { .. })) && got.iter().any(|e| matches!(e, TransferEvent::ClipImage { .. }))).await;
 
         let got = events.lock().unwrap();
         let b = dir.join("clip").join("7");
@@ -609,7 +625,7 @@ mod tests {
         send_manifest(&me, to, &fp, batch, &files).await.unwrap();
         // a manifest outside a drag batch is refused
         let _ = send_manifest(&me, to, &fp, ClipBatch { id: 98, files: 2, drag: false }, &files).await;
-        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+        settled(&events, |got| got.iter().any(|e| matches!(e, TransferEvent::Manifest { .. }))).await;
         let base = dir.join("clip").join("drag-99");
         let want = vec![
             Promised { name: "Folder/in.txt".into(), path: base.join("Folder").join("in.txt"), size: 6 },
@@ -626,7 +642,7 @@ mod tests {
         for (path, name) in &files {
             send_file(&me, to, &fp, path, name.clone(), Some(batch), next_id(), |_, _| {}).await.unwrap();
         }
-        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+        settled(&events, |got| got.iter().any(|e| matches!(e, TransferEvent::ClipFiles { batch: b, .. } if b.id == 99))).await;
         assert!(events.lock().unwrap().iter().any(|e| matches!(e, TransferEvent::ClipFiles { batch: b, .. } if b.id == 99)));
         assert!(streamed(99).is_none(), "complete batches stop streaming");
         assert_eq!(std::fs::read(base.join("Folder").join("in.txt")).unwrap(), b"inside");
