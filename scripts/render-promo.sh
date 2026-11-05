@@ -12,25 +12,17 @@ FPS=30
 FROM="${1:-0}"
 TO="${2:-46}"
 LANG_TAG="${PROMO_LANG:-id}"
-SUFFIX=""; LANGQ=""
-if [ "$LANG_TAG" = "en" ]; then SUFFIX="-en"; LANGQ="&lang=en"; fi
+SUFFIX=""
+if [ "$LANG_TAG" = "en" ]; then SUFFIX="-en"; fi
 OUT=site/promo/frames${SUFFIX}
 mkdir -p "$OUT"
-PAGE="file://$PWD/site/promo/index.html"
 
 if [ "${MUX_ONLY:-}" = 1 ] && [ -s site/promo/promo${SUFFIX}-silent.mp4 ]; then
   n=0
 else
-n=$(python3 -c "print(int((${TO}-${FROM})*${FPS}))")
-echo "rendering ${n} frames (${FROM}-${TO} s) with ${CHROME}"
-for ((i = 0; i < n; i++)); do
-  t=$(python3 -c "print(round(${FROM} + ${i}/${FPS}, 4))")
-  f=$(printf "%s/f%05d.png" "$OUT" "$i")
-  [ -s "$f" ] && continue
-  "$CHROME" --headless=new --disable-gpu --hide-scrollbars --window-size=1920,1080 --virtual-time-budget=2500 \
-    --screenshot="$f" "$PAGE?t=${t}${LANGQ}" >/dev/null 2>&1
-  (( i % 60 == 0 )) && echo "  $i / $n"
-done
+echo "rendering ${FROM}-${TO} s at ${FPS} fps with ${CHROME}"
+# one Chrome for every frame (scripts/render-promo-frames.mjs): the page loads once, each frame is render(t) + screenshot
+CHROME="$CHROME" node scripts/render-promo-frames.mjs "$OUT" "$FROM" "$TO" "$LANG_TAG"
 
 ffmpeg -y -loglevel error -framerate $FPS -i "$OUT/f%05d.png" -c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p -movflags +faststart site/promo/promo${SUFFIX}-silent.mp4
 echo "video: site/promo/promo${SUFFIX}-silent.mp4"
