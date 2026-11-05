@@ -1,11 +1,13 @@
 // Modified for TCuFlow (2026) from LOKA by Aufa Nirsad; see NOTICE.
-import { useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { quietButton } from "./Pairing";
 import { Toggle } from "./Sharing";
-import { Terminal } from "./Terminal";
+
+// xterm is most of the app's code: fetched the first time a terminal opens, so launch doesn't pay for it
+const Terminal = lazy(() => import("./Terminal").then((m) => ({ default: m.Terminal })));
 
 type Stopped = { device: string; on: boolean; error?: string };
 
@@ -92,7 +94,13 @@ export function Remote({ fingerprint, alias, mac }: { fingerprint: string; alias
         </div>
       )}
       {/* outside the panel: its entrance transform would trap a fixed sheet */}
-      {terminal && createPortal(<Terminal fingerprint={fingerprint} alias={alias} onClose={() => setTerminal(false)} />, document.body)}
+      {terminal &&
+        createPortal(
+          <Suspense fallback={null}>
+            <Terminal fingerprint={fingerprint} alias={alias} onClose={() => setTerminal(false)} />
+          </Suspense>,
+          document.body,
+        )}
     </section>
   );
 }
