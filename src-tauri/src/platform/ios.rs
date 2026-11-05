@@ -2,7 +2,14 @@
 //! platform-specific here is the clipboard, through UIPasteboard as this app, and opening links.
 use objc2::MainThreadMarker;
 use objc2_foundation::{NSDictionary, NSString, NSURL};
-use objc2_ui_kit::{UIApplication, UIPasteboard};
+use objc2_ui_kit::{UIApplication, UIDevice, UIPasteboard};
+
+/// What other devices list this one as: the name in Settings › General › About where iOS hands it over, else
+/// the kind ("iPhone", "iPad"; iOS 16+ gives apps only that without a special entitlement). Main thread.
+pub fn device_name() -> Option<String> {
+    let mtm = MainThreadMarker::new()?;
+    Some(UIDevice::currentDevice(mtm).name().to_string()).filter(|n| !n.trim().is_empty())
+}
 
 /// Opens `url` in Safari (or the app that claims it). UIKit: main thread only.
 pub fn open_url(url: &str) -> Result<(), String> {

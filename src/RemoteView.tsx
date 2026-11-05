@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Channel, invoke } from "@tauri-apps/api/core";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { scanOf } from "./scancodes";
 import { Badge, quietButton } from "./Pairing";
 
@@ -615,6 +616,9 @@ export function RemoteView({ fingerprint, alias, touch = false, onClose }: { fin
           <div className="max-w-md">
             <p className="text-lg font-semibold">Can't show {alias}'s screen</p>
             <p className="mt-2 text-sm leading-relaxed text-muted">{state.why}</p>
+            <button onClick={() => void getCurrentWindow().close()} className={quietButton + " mt-5"}>
+              Close
+            </button>
           </div>
         </div>
       ) : (

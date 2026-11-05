@@ -857,9 +857,11 @@ fn alias() -> String {
         // Android: the name in Settings › About ("Galaxy S23 Ultra", or the one the user gave it), else the model
         // ("SM-S918B"); its hostname is just "localhost"
         .or_else(|| {
+            #[cfg(target_os = "ios")]
+            return platform::ios::device_name();
             #[cfg(target_os = "android")]
             return platform::android::device_name().or_else(|| std::process::Command::new("getprop").arg("ro.product.model").output().ok().map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string()).filter(|h| !h.is_empty()));
-            #[cfg(not(target_os = "android"))]
+            #[cfg(not(any(target_os = "android", target_os = "ios")))]
             None
         })
         .or_else(|| std::fs::read_to_string("/proc/sys/kernel/hostname").ok().map(|h| h.trim().to_string()).filter(|h| !h.is_empty()))

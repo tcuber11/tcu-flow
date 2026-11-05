@@ -49,7 +49,7 @@ objc2-foundation = { version = "0.3", default-features = false, features = ["std
 # iOS: the clipboard through UIPasteboard, links through UIApplication (nothing else of UIKit)
 [target.'cfg(target_os = "ios")'.dependencies]
 objc2 = "0.6"
-objc2-ui-kit = { version = "0.3", default-features = false, features = ["std", "block2", "UIPasteboard", "UIApplication", "UIResponder"] }
+objc2-ui-kit = { version = "0.3", default-features = false, features = ["std", "block2", "UIPasteboard", "UIApplication", "UIResponder", "UIDevice"] }
 objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSString", "NSURL", "NSDictionary"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]

@@ -253,7 +253,8 @@ function Devices({ device, peers, onChange }: { device: Device; peers: Peer[]; o
     return [
       { text: stateOf(p) === "setup" ? `Control: finish setup on ${p.info.alias}` : "Control", enabled: placed(f) && stateOf(p) === "ready", action: () => void invoke("control", { fingerprint: f }) },
       { text: "Send files…", action: () => void sendFiles(f) },
-      { text: "View screen…", enabled: stateOf(p) !== "offline", action: () => void viewScreen(f, p.info.alias) },
+      // phones and tablets can't share their screen (iOS and Android give apps no way to)
+      p.info.deviceType !== "mobile" && { text: "View screen…", enabled: stateOf(p) !== "offline", action: () => void viewScreen(f, p.info.alias) },
       placed(f) && { text: "Take off screens", action: () => void invoke("set_portal", { fingerprint: f, portal: null, sync: true }).then(onChange) },
       { item: "Separator" },
       { text: "Unlink", action: () => unpair(f) },
@@ -396,9 +397,11 @@ function Devices({ device, peers, onChange }: { device: Device; peers: Peer[]; o
                           )}
                           {paired && (
                             <>
-                              <button onClick={() => void viewScreen(f, p.info.alias)} className={quietButton}>
-                                View screen
-                              </button>
+                              {p.info.deviceType !== "mobile" && (
+                                <button onClick={() => void viewScreen(f, p.info.alias)} className={quietButton}>
+                                  View screen
+                                </button>
+                              )}
                               <button onClick={() => unpair(f)} className={quietButton}>
                                 Unlink
                               </button>
