@@ -6,5 +6,9 @@
 <dict>
   <key>LSSupportsOpeningDocumentsInPlace</key>
   <false/>
+  <!-- the export compliance answer App Store Connect recorded for every build so far (standard TLS only), so
+       TestFlight stops holding each new build until it is asked again -->
+  <key>ITSAppUsesNonExemptEncryption</key>
+  <false/>
 </dict>
 </plist>
