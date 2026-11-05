@@ -165,7 +165,17 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev patchelf libasound2-dev libx11-dev libxtst-dev
       - run: npm ci
-      - run: npx tauri build --bundles deb,rpm,appimage
+      - run: npx tauri build --bundles deb,rpm
+      # linuxdeploy and its AppImage plugin are fetched from GitHub at bundle time ("continuous" builds) and fail now
+      # and then (v0.9.14 did). Try again on a fresh download; cargo's work is kept, so a retry only re-bundles.
+      - run: |
+          for attempt in 1 2 3; do
+            npx tauri build --bundles appimage && exit 0
+            echo "::warning::AppImage attempt $attempt failed"
+            rm -rf ~/.cache/tauri
+            sleep 20
+          done
+          exit 1
       - uses: actions/upload-artifact@v4
         with:
           name: TCuFlow-linux
