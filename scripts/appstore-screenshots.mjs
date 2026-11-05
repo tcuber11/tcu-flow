@@ -8,14 +8,16 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const OUT = fileURLToPath(new URL("../docs/appstore/", import.meta.url));
-const BASE = "http://localhost:1420/.preview/index.html?version=9.9.9&theme=dark";
+const BASE = "http://localhost:1420/.preview/index.html?version=9.9.9";
+// light is the clay look's home; the dark set (suffix -dark) is for the listing's dark variants
+const THEMES = ["light", "dark"];
 const DEVICES = [
   { name: "iphone", phone: "ios", w: 402, h: 874, scale: 3, ua: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148" },
   { name: "ipad", phone: "ipad", w: 1032, h: 1376, scale: 2, ua: "Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148" },
 ];
 const SCREENS = [
   ["1-computers", "scenario=linked"],
-  ["2-touchpad", "scenario=linked&tap=Use%20as%20touchpad"],
+  ["2-touchpad", "scenario=linked&tap=Touchpad"],
   ["3-pair", "scenario=incoming"],
 ];
 
@@ -56,8 +58,10 @@ async function shot(out, url, w, h, scale, ua) {
 }
 
 mkdirSync(OUT, { recursive: true });
-for (const d of DEVICES)
-  for (const [name, query] of SCREENS) {
-    await shot(join(OUT, `${d.name}-${name}.png`), `${BASE}&phone=${d.phone}&${query}`, d.w, d.h, d.scale, d.ua);
-    console.log(`${d.name}-${name}.png`);
-  }
+for (const theme of THEMES)
+  for (const d of DEVICES)
+    for (const [name, query] of SCREENS) {
+      const file = `${d.name}-${name}${theme === "dark" ? "-dark" : ""}.png`;
+      await shot(join(OUT, file), `${BASE}&theme=${theme}&phone=${d.phone}&${query}`, d.w, d.h, d.scale, d.ua);
+      console.log(file);
+    }

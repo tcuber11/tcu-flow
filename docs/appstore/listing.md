@@ -51,6 +51,7 @@ Needs TCuFlow on the computer (free for macOS, Windows and Linux) and both devic
 
 - iPhone 6.9" display: `iphone-1-computers.png`, `iphone-2-touchpad.png`, `iphone-3-pair.png`
 - iPad 13" display: `ipad-1-computers.png`, `ipad-2-touchpad.png`, `ipad-3-pair.png`
+- The same screens in dark mode carry the suffix `-dark` (optional extras after the light set; the light set leads, it's the clay look's home).
 
 ## App Privacy
 
