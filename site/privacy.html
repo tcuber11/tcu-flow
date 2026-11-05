@@ -7,30 +7,58 @@
 <meta name="description" content="TCuFlow collects no personal data: no account, no analytics, nothing leaves your local network except update checks.">
 <link rel="icon" href="assets/icon.png">
 <style>
+/* the app's soft-clay world (src/index.css): light by default, dark by the OS */
 :root{
-  --bg:#07090f;--panel:#0e1119;--line:rgb(255 255 255/.09);
-  --fg:#f2f4f8;--muted:#a3abbd;--blue-ink:#7fbcff;
+  --ink:#eceef6;--raised:#fff;--sunken:#f1f2f8;--fg:#1c1f33;--muted:#5f6580;--faint:#686e88;--line:rgb(30 40 90/.1);--tint:#1c1f33;
+  --accent:#5b63f0;--accent-ink:color-mix(in oklab,var(--accent) 78%,black);
+  --page:linear-gradient(180deg,#eceef7 0%,#f3efe9 100%);
+  --clay:inset 0 1.5px 0 rgb(255 255 255/.9),inset 0 -3px 0 rgb(40 50 110/.06),0 2px 4px -1px rgb(40 50 110/.08),0 16px 32px -16px rgb(40 50 110/.35);
+  --clay-key:inset 0 1.5px 0 rgb(255 255 255/.55),inset 0 -4px 0 rgb(0 0 0/.14),0 10px 18px -10px rgb(30 40 110/.55);
+  --clay-dip:inset 0 3px 8px rgb(40 50 110/.10),inset 0 -1px 0 rgb(255 255 255/.8);
+  --display:ui-rounded,"SF Pro Rounded","Nunito",-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
   --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono","Cascadia Mono",Menlo,monospace;
+  color-scheme:light;
 }
-@media (prefers-color-scheme: light){
-  :root:not([data-theme="dark"]){--bg:#f6f7fa;--panel:#fff;--line:rgb(0 0 0/.08);--fg:#0b0d12;--muted:#4f5869;--blue-ink:#0a5fd6}
-}
+@media(prefers-color-scheme:dark){:root{
+  --ink:#14152a;--raised:#23254a;--sunken:#1b1d3a;--fg:#eef0ff;--muted:#a7abc9;--faint:#9a9ebd;--line:rgb(255 255 255/.09);--tint:#fff;
+  --accent:#7b82ff;--accent-ink:color-mix(in oklab,var(--accent) 78%,white);
+  --page:linear-gradient(180deg,#14152a 0%,#1b1530 100%);
+  --clay:inset 0 1.5px 0 rgb(255 255 255/.08),inset 0 -3px 0 rgb(0 0 0/.25),0 16px 32px -16px rgb(0 0 0/.7);
+  --clay-key:inset 0 1.5px 0 rgb(255 255 255/.18),inset 0 -4px 0 rgb(0 0 0/.3),0 10px 18px -10px rgb(0 0 0/.8);
+  --clay-dip:inset 0 3px 8px rgb(0 0 0/.35),inset 0 -1px 0 rgb(255 255 255/.05);
+  color-scheme:dark;
+}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.65 var(--sans);-webkit-font-smoothing:antialiased}
-main{max-width:720px;margin:0 auto;padding:56px 16px 80px}
-a{color:var(--blue-ink)}
-h1{font-size:34px;line-height:1.15;letter-spacing:-.02em;margin:0}
-h2{font-size:19px;margin:36px 0 8px}
-p,li{color:var(--muted)}
+body{margin:0;background:var(--page) fixed,var(--ink);color:var(--fg);font:16px/1.65 var(--sans);-webkit-font-smoothing:antialiased}
+::selection{background:color-mix(in oklab,var(--accent) 28%,transparent)}
+::-webkit-scrollbar{width:12px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:color-mix(in oklab,var(--tint) 18%,transparent);border-radius:999px;border:3px solid var(--ink)}
+main{max-width:720px;margin:0 auto;padding:48px 20px 88px}
+a{color:var(--accent-ink);text-decoration:underline;text-underline-offset:3px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:8px}
+.back{display:inline-flex;align-items:center;height:40px;padding:0 18px;border-radius:999px;background:var(--raised);box-shadow:var(--clay-key);color:var(--fg);text-decoration:none;font-weight:600;font-size:14px;transition:transform .15s ease-out,filter .15s ease-out}
+.back:hover{filter:brightness(.97)}
+.back:active{transform:translateY(1px) scale(.98)}
+h1{font:800 clamp(32px,6vw,40px)/1.1 var(--display);letter-spacing:-.02em;margin:28px 0 0;text-wrap:balance}
+h2{font:700 20px/1.3 var(--display);letter-spacing:-.01em;margin:40px 0 10px}
+p{text-wrap:pretty}
+p,li,td{color:var(--muted)}
 strong{color:var(--fg)}
-.date{margin-top:8px;font-size:14px}
-.lead{margin-top:24px;padding:18px 20px;border:1px solid var(--line);border-radius:16px;background:var(--panel);color:var(--fg)}
+.date{margin-top:8px;font-size:14px;color:var(--faint)}
+.lead{margin-top:24px;padding:22px 24px;border-radius:24px;background:var(--raised);box-shadow:var(--clay);color:var(--fg);font-size:17px}
 ul{padding-left:20px}
+li+li{margin-top:6px}
+code{font-family:var(--mono);font-size:14px;color:var(--fg);background:var(--sunken);box-shadow:var(--clay-dip);padding:1px 7px;border-radius:8px}
+table{border-collapse:collapse;width:100%;margin-top:8px}
+td{padding:10px 0;border-bottom:1px solid var(--line);vertical-align:top}
+td:first-child{color:var(--fg);width:38%;padding-right:12px}
 </style>
 </head>
 <body>
 <main>
-  <p><a href="./">← TCuFlow</a></p>
+  <p><a class="back" href="./">← TCuFlow</a></p>
   <h1>Privacy</h1>
   <p class="date">Last updated 4 November 2026</p>
 
