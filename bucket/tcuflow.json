@@ -1,17 +1,17 @@
 {
-    "version": "0.9.12",
+    "version": "0.9.13",
     "description": "Share one mouse, keyboard and clipboard between computers on a network.",
     "homepage": "https://tcuber11.github.io/tcu-flow/",
     "license": "Apache-2.0",
     "notes": "TCuFlow installs per user (%LOCALAPPDATA%\\TCuFlow) and updates itself from inside the app; `scoop update tcuflow` works too.",
     "architecture": {
         "64bit": {
-            "url": "https://github.com/tcuber11/tcu-flow/releases/download/v0.9.12/TCuFlow_0.9.12_x64-setup.exe#/setup.exe",
-            "hash": "aeb13ff373094804a8ac20f3f79de0c171c1701214b9bc17aca8e817d3d256de"
+            "url": "https://github.com/tcuber11/tcu-flow/releases/download/v0.9.13/TCuFlow_0.9.13_x64-setup.exe#/setup.exe",
+            "hash": "257108c92e705a67e60ec8367c82423b4d5506311da9086fc9ce2c116e46f959"
         },
         "arm64": {
-            "url": "https://github.com/tcuber11/tcu-flow/releases/download/v0.9.12/TCuFlow_0.9.12_arm64-setup.exe#/setup.exe",
-            "hash": "fe796f695d3f2f091e84ba3bf42dde126f1620e667a58bf7da68eeb98ea510af"
+            "url": "https://github.com/tcuber11/tcu-flow/releases/download/v0.9.13/TCuFlow_0.9.13_arm64-setup.exe#/setup.exe",
+            "hash": "af21efd8f2cc5577a6189c81aace40522a52063fbd82e07c33da4e408ba17ea7"
         }
     },
     "installer": {

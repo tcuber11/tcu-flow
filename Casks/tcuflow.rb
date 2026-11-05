@@ -4,8 +4,8 @@
 #   brew install --cask tcuflow
 # scripts/release.mjs sets version and sha256 on every release.
 cask "tcuflow" do
-  version "0.9.12"
-  sha256 "03e22b299b820883a3bf771c71b316e9c97e68d4f59bbf743d8ccd0b5ca7d66c"
+  version "0.9.13"
+  sha256 "11a00cc7a8586d36767ade241a9be8ed18fffbc1d47367d73bca9025b69f9c33"
 
   url "https://github.com/tcuber11/tcu-flow/releases/download/v#{version}/TCuFlow_#{version}_universal.dmg"
   name "TCuFlow"
