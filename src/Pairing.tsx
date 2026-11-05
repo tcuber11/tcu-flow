@@ -43,19 +43,30 @@ export const setupHow = (os: string) =>
         ? "On the Mac: TCuFlow → About → Allow Accessibility"
         : "Open TCuFlow there and follow its setup";
 
-export type DeviceState = "ready" | "setup" | "offline" | "update";
+export type DeviceState = "ready" | "setup" | "touchpad" | "offline" | "update";
 
 /** Whether a device can be driven right now: the one check behind every badge, note and overlay. `peer` absent = not on the network;
- *  setup only matters once paired. */
+ *  setup only matters once paired. An iPhone or iPad is never drivable (iOS lets no app inject input), and no setup changes that:
+ *  it drives this computer as a touchpad instead. */
 export const deviceState = (peer: Peer | undefined, paired: boolean, me: DeviceInfo): DeviceState =>
-  !peer ? "offline" : peer.info.proto !== me.proto ? "update" : paired && peer.info.controllable === false ? "setup" : "ready";
+  !peer
+    ? "offline"
+    : peer.info.proto !== me.proto
+      ? "update"
+      : paired && peer.info.os === "ios"
+        ? "touchpad"
+        : paired && peer.info.controllable === false
+          ? "setup"
+          : "ready";
 
-export const STATE_LABEL: Record<DeviceState, string> = { ready: "Ready", setup: "Needs setup", offline: "Offline", update: "Needs update" };
+export const STATE_LABEL: Record<DeviceState, string> = { ready: "Ready", setup: "Needs setup", touchpad: "Touchpad", offline: "Offline", update: "Needs update" };
 
 /** One line: why `alias` can't be driven and the fix (`os` for setup); `null` when ready. */
 export const stateReason = (state: DeviceState, alias: string, os = "") =>
   state === "setup"
     ? `${alias} isn't ready. ${setupHow(os)}`
+    : state === "touchpad"
+      ? `${alias} works as a touchpad, keyboard and screen viewer for this computer; iOS lets no app be controlled from outside`
     : state === "update"
       ? `${alias} needs a TCuFlow update: install the newest TCuFlow on both devices`
       : state === "offline"
@@ -81,14 +92,14 @@ export function Badge({ tone, icon, children }: { tone: Tone; icon?: React.React
   );
 }
 
-const STATE_TONE: Record<DeviceState, Tone> = { ready: "success", setup: "warning", update: "danger", offline: "neutral" };
+const STATE_TONE: Record<DeviceState, Tone> = { ready: "success", setup: "warning", touchpad: "neutral", update: "danger", offline: "neutral" };
 
 /** Pill naming a blocked state or offline; `dot` for cramped spots, labelled for screen readers and on hover. */
 export function StateBadge({ state, title, dot }: { state: DeviceState; title?: string | null; dot?: boolean }) {
   if (state === "ready") return null;
   const off = state === "offline";
   if (dot)
-    return <span role="img" aria-label={STATE_LABEL[state]} title={title ?? STATE_LABEL[state]} className={`block h-2.5 w-2.5 rounded-full ring-2 ring-raised ${off ? "bg-muted" : state === "setup" ? "bg-warning" : "bg-danger"}`} />;
+    return <span role="img" aria-label={STATE_LABEL[state]} title={title ?? STATE_LABEL[state]} className={`block h-2.5 w-2.5 rounded-full ring-2 ring-raised ${off || state === "touchpad" ? "bg-muted" : state === "setup" ? "bg-warning" : "bg-danger"}`} />;
   return <Badge tone={STATE_TONE[state]}>{STATE_LABEL[state]}</Badge>;
 }
 
