@@ -56,8 +56,8 @@ targets:
           - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
-        CFBundleShortVersionString: 0.9.14
-        CFBundleVersion: "0.9.14"
+        CFBundleShortVersionString: 0.9.15
+        CFBundleVersion: "0.9.15"
     entitlements:
       path: tcuflow_iOS/tcuflow_iOS.entitlements
     scheme:
