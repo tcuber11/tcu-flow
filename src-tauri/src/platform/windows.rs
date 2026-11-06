@@ -301,27 +301,7 @@ impl SpatialPlatformEngine for WindowsEngine {
     }
 
     fn show_cursor(&self, on: bool) {
-        let mut saved = MOUSE_KEYS.lock().unwrap();
-        let set = |mk: &mut MOUSEKEYS| unsafe { SystemParametersInfoW(SPI_SETMOUSEKEYS, mk.cbSize, (mk as *mut MOUSEKEYS).cast(), SPIF_SENDCHANGE) };
-        if !on {
-            if let Some(mut old) = saved.take() {
-                set(&mut old);
-                journal!("MouseKeys restored");
-            }
-            return;
-        }
-        if saved.is_some() || unsafe { GetSystemMetrics(SM_MOUSEPRESENT) } != 0 {
-            return;
-        }
-        let mut old = MOUSEKEYS { cbSize: size_of::<MOUSEKEYS>() as u32, ..Default::default() };
-        if unsafe { SystemParametersInfoW(SPI_GETMOUSEKEYS, old.cbSize, (&mut old as *mut MOUSEKEYS).cast(), 0) } == 0 {
-            return;
-        }
-        // MouseKeys on = Windows counts a pointer and draws the cursor (as Synergy/Input Leap do); not saved to the
-        // profile, so a crash leaves it on only until sign-out. Injected numpad keys don't drive it (checked).
-        set(&mut MOUSEKEYS { dwFlags: MKF_AVAILABLE | MKF_MOUSEKEYSON, ..old });
-        *saved = Some(old);
-        journal!("no mouse attached: MouseKeys forced on so Windows draws the cursor");
+        let _ = MOUSE_KEYS_SWITCH.send(on);
     }
 
     fn lock_key_down(&self) -> bool {
@@ -331,6 +311,44 @@ impl SpatialPlatformEngine for WindowsEngine {
 
 /// MouseKeys as it was before a driven session forced it on (no mouse attached); `None` = untouched.
 static MOUSE_KEYS: Mutex<Option<MOUSEKEYS>> = Mutex::new(None);
+
+/// MouseKeys is switched on a thread of its own, in order: SPIF_SENDCHANGE broadcasts WM_SETTINGCHANGE to every
+/// window on the desktop and waits for each one, which must not hold up a session starting (nor wait on our own
+/// UI thread from the thread that UI may be waiting for).
+static MOUSE_KEYS_SWITCH: std::sync::LazyLock<std::sync::mpsc::Sender<bool>> = std::sync::LazyLock::new(|| {
+    let (tx, rx) = std::sync::mpsc::channel::<bool>();
+    std::thread::spawn(move || {
+        for on in rx {
+            mouse_keys(on);
+        }
+    });
+    tx
+});
+
+/// `true` while being driven with no mouse attached: MouseKeys on so Windows draws the cursor; `false` restores it.
+fn mouse_keys(on: bool) {
+    let mut saved = MOUSE_KEYS.lock().unwrap();
+    let set = |mk: &mut MOUSEKEYS| unsafe { SystemParametersInfoW(SPI_SETMOUSEKEYS, mk.cbSize, (mk as *mut MOUSEKEYS).cast(), SPIF_SENDCHANGE) };
+    if !on {
+        if let Some(mut old) = saved.take() {
+            set(&mut old);
+            journal!("MouseKeys restored");
+        }
+        return;
+    }
+    if saved.is_some() || unsafe { GetSystemMetrics(SM_MOUSEPRESENT) } != 0 {
+        return;
+    }
+    let mut old = MOUSEKEYS { cbSize: size_of::<MOUSEKEYS>() as u32, ..Default::default() };
+    if unsafe { SystemParametersInfoW(SPI_GETMOUSEKEYS, old.cbSize, (&mut old as *mut MOUSEKEYS).cast(), 0) } == 0 {
+        return;
+    }
+    // MouseKeys on = Windows counts a pointer and draws the cursor (as Synergy/Input Leap do); not saved to the
+    // profile, so a crash leaves it on only until sign-out. Injected numpad keys don't drive it (checked).
+    set(&mut MOUSEKEYS { dwFlags: MKF_AVAILABLE | MKF_MOUSEKEYSON, ..old });
+    *saved = Some(old);
+    journal!("no mouse attached: MouseKeys forced on so Windows draws the cursor");
+}
 
 /// Every system cursor (OCR_NORMAL … OCR_PERSON) swapped for a blank one.
 fn hide_cursors() {

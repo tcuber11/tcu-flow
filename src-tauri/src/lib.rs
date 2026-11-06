@@ -1399,6 +1399,8 @@ pub fn run() {
 
             spawn_discovery(handle.clone(), state.clone(), me_rx);
             spawn_watchdog(handle.clone(), state.clone());
+            #[cfg(desktop)]
+            spawn_ui_watchdog(handle.clone());
             spawn_transfer_server(&handle, state.clone(), tls.clone())?;
             // senders whose glow packets this device accepts: paired devices hand their key over `Service::Glow`
             let glow_keys = telemetry::Keys::default();
@@ -1845,10 +1847,38 @@ fn setup_overlays(app: &mut tauri::App, state: AppState, tls: Arc<Tls>) -> tauri
     Ok(())
 }
 
-/// This computer's screens, in the canonical space.
+/// The screens the UI thread last reported: what `screens` answers while that thread is busy.
+static SCREENS: Mutex<Vec<Rect>> = Mutex::new(Vec::new());
+
+/// This computer's screens, in the canonical space. Tauri asks the UI thread for them (every monitor and window
+/// call waits for it); when it doesn't answer within 2 s (busy, or stuck), the last known screens are used and the
+/// stall is logged, so a session starting here can't hang on it. On the UI thread itself the answer is immediate.
 fn screens(app: &AppHandle) -> Vec<Rect> {
-    let monitors = app.available_monitors().unwrap_or_default();
-    monitors.iter().map(|m| Rect { x: m.position().x as f64, y: m.position().y as f64, w: m.size().width as f64, h: m.size().height as f64 }).collect()
+    let ask = {
+        let app = app.clone();
+        move || -> Vec<Rect> {
+            let monitors = app.available_monitors().unwrap_or_default();
+            monitors.iter().map(|m| Rect { x: m.position().x as f64, y: m.position().y as f64, w: m.size().width as f64, h: m.size().height as f64 }).collect()
+        }
+    };
+    let screens = if std::thread::current().name() == Some("main") {
+        Some(ask())
+    } else {
+        let (tx, rx) = std::sync::mpsc::channel();
+        std::thread::spawn(move || { let _ = tx.send(ask()); });
+        rx.recv_timeout(Duration::from_secs(2)).ok()
+    };
+    match screens {
+        Some(screens) => {
+            *SCREENS.lock().unwrap() = screens.clone();
+            screens
+        }
+        None => {
+            let last = SCREENS.lock().unwrap().clone();
+            journal!("screens: the UI thread didn't answer within 2 s; going by the last known {last:?}");
+            last
+        }
+    }
 }
 
 /// Put paired device `fp` on `edge` here (`None`: off this computer's screens), where that edge still has
@@ -1973,8 +2003,11 @@ fn spawn_kvm_receiver(app: AppHandle, engine: Arc<dyn SpatialPlatformEngine>, st
         };
         #[cfg(desktop)]
         let make = move |fp: &str, edge: Edge| {
+            // each step logged: a hang here (the UI thread, the state lock) then shows where in the log
+            journal!("kvm: session from {}…: preparing", &fp[..fp.len().min(12)]);
             let screens = screens(&app);
             if screens.is_empty() {
+                journal!("kvm: no screens known: refusing the session");
                 return None;
             }
             // the whole entry edge leads back to the driver: files dragged there and dropped go to it (reach = Calibrate's REACH)
@@ -2137,6 +2170,33 @@ fn start_session(app: &AppHandle, label: String, fp: String, portal: Portal, y: 
         DRIVING.store(false, Ordering::SeqCst);
     });
     Ok(())
+}
+
+/// A ping to the UI thread every second: every window, monitor and tray call waits for that thread, so when it
+/// stops answering the app seems to hang. Logged once it's 2 s late, every 10 s while it stays silent, and when it
+/// answers again, with the time it was away, so the log shows a stall and what else happened around it.
+#[cfg(desktop)]
+fn spawn_ui_watchdog(app: AppHandle) {
+    let _ = std::thread::Builder::new().name("ui-watchdog".into()).spawn(move || loop {
+        let (tx, rx) = std::sync::mpsc::channel();
+        let sent = std::time::Instant::now();
+        if app.run_on_main_thread(move || { let _ = tx.send(()); }).is_err() {
+            return; // the app is closing
+        }
+        use std::sync::mpsc::RecvTimeoutError::{Disconnected, Timeout};
+        if let Err(Timeout) = rx.recv_timeout(Duration::from_secs(2)) {
+            journal!("ui thread: no answer for 2 s");
+            loop {
+                match rx.recv_timeout(Duration::from_secs(10)) {
+                    Err(Timeout) => journal!("ui thread: still no answer after {} s", sent.elapsed().as_secs()),
+                    Err(Disconnected) => return, // the ping was dropped unrun: the app is closing
+                    Ok(()) => break,
+                }
+            }
+            journal!("ui thread: answering again after {} s", sent.elapsed().as_secs());
+        }
+        std::thread::sleep(Duration::from_secs(1));
+    });
 }
 
 /// The last crossing that failed and when, for `diagnostics`.
